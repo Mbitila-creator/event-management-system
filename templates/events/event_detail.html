@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block title %}
-    {% if LANGUAGE_CODE == "en" %}
+    {% if request.LANGUAGE_CODE == "en" %}
         {{ event.title_en }}
     {% else %}
         {{ event.title_sw }}
@@ -33,7 +33,7 @@
             <div class="detail-heading-content">
                 <div class="detail-badges">
                     <span class="category-badge">
-                        {% if LANGUAGE_CODE == "en" %}
+                        {% if request.LANGUAGE_CODE == "en" %}
                             {{ event.category.name_en }}
                         {% else %}
                             {{ event.category.name_sw }}
@@ -46,7 +46,7 @@
                 </div>
 
                 <h1>
-                    {% if LANGUAGE_CODE == "en" %}
+                    {% if request.LANGUAGE_CODE == "en" %}
                         {{ event.title_en }}
                     {% else %}
                         {{ event.title_sw }}
@@ -54,7 +54,11 @@
                 </h1>
 
                 <p class="detail-organizer">
-                    {{ event.organizer_name }}
+                    {% if request.LANGUAGE_CODE == "en" %}
+                        {{ event.organizer_name_en|default:event.organizer_name_sw }}
+                    {% else %}
+                        {{ event.organizer_name_sw|default:event.organizer_name_en }}
+                    {% endif %}
                 </p>
             </div>
         </div>
@@ -66,14 +70,26 @@
         <div class="detail-main">
             <article class="content-card">
                 <h2>
-                    {% translate "Kuhusu tukio" %}
+                    {% translate "About the event" %}
                 </h2>
 
                 <div class="rich-text">
-                    {% if LANGUAGE_CODE == "en" %}
-                        {{ event.description_en|linebreaks }}
+                    {% if request.LANGUAGE_CODE == "en" %}
+                        {% if event.description_en %}
+                            {{ event.description_en|linebreaks }}
+                        {% else %}
+                            <p>
+                                {% translate "No event description has been provided." %}
+                            </p>
+                        {% endif %}
                     {% else %}
-                        {{ event.description_sw|linebreaks }}
+                        {% if event.description_sw %}
+                            {{ event.description_sw|linebreaks }}
+                        {% else %}
+                            <p>
+                                {% translate "No event description has been provided." %}
+                            </p>
+                        {% endif %}
                     {% endif %}
                 </div>
             </article>
@@ -81,7 +97,7 @@
             {% if active_forms %}
                 <article class="content-card">
                     <h2>
-                        {% translate "Fomu za tukio" %}
+                        {% translate "Event forms" %}
                     </h2>
 
                     <div class="event-form-list">
@@ -89,7 +105,7 @@
                             <div class="event-form-item">
                                 <div>
                                     <h3>
-                                        {% if LANGUAGE_CODE == "en" %}
+                                        {% if request.LANGUAGE_CODE == "en" %}
                                             {{ event_form.name_en }}
                                         {% else %}
                                             {{ event_form.name_sw }}
@@ -105,7 +121,7 @@
                                     href="{% url 'forms_builder:public_event_form' event.slug event_form.slug %}"
                                     class="secondary-button"
                                 >
-                                    {% translate "Fungua fomu" %}
+                                    {% translate "Open form" %}
                                 </a>
                             </div>
                         {% endfor %}
@@ -117,30 +133,36 @@
         <aside class="detail-sidebar">
             <div class="content-card summary-card">
                 <h2>
-                    {% translate "Taarifa muhimu" %}
+                    {% translate "Important information" %}
                 </h2>
 
                 <dl class="event-summary-list">
                     <div>
-                        <dt>{% translate "Tarehe ya kuanza" %}</dt>
+                        <dt>{% translate "Start date" %}</dt>
                         <dd>{{ event.starts_at|date:"d M Y, H:i" }}</dd>
                     </div>
 
                     <div>
-                        <dt>{% translate "Tarehe ya kumalizika" %}</dt>
+                        <dt>{% translate "End date" %}</dt>
                         <dd>{{ event.ends_at|date:"d M Y, H:i" }}</dd>
                     </div>
 
                     {% if event.venue %}
                         <div>
-                            <dt>{% translate "Mahali" %}</dt>
+                            <dt>{% translate "Venue" %}</dt>
                             <dd>
                                 {{ event.venue.name }}
 
                                 {% if event.venue.council %}
                                     <br>
-                                    {{ event.venue.council.name_sw }},
-                                    {{ event.venue.council.region.name_sw }}
+
+                                    {% if request.LANGUAGE_CODE == "en" %}
+                                        {{ event.venue.council.name_en }},
+                                        {{ event.venue.council.region.name_en }}
+                                    {% else %}
+                                        {{ event.venue.council.name_sw }},
+                                        {{ event.venue.council.region.name_sw }}
+                                    {% endif %}
                                 {% endif %}
                             </dd>
                         </div>
@@ -148,14 +170,14 @@
 
                     {% if event.contact_person %}
                         <div>
-                            <dt>{% translate "Mtu wa mawasiliano" %}</dt>
+                            <dt>{% translate "Contact person" %}</dt>
                             <dd>{{ event.contact_person }}</dd>
                         </div>
                     {% endif %}
 
                     {% if event.contact_phone %}
                         <div>
-                            <dt>{% translate "Simu" %}</dt>
+                            <dt>{% translate "Phone" %}</dt>
                             <dd>
                                 <a href="tel:{{ event.contact_phone }}">
                                     {{ event.contact_phone }}
@@ -166,7 +188,7 @@
 
                     {% if event.contact_email %}
                         <div>
-                            <dt>{% translate "Baruapepe" %}</dt>
+                            <dt>{% translate "Email" %}</dt>
                             <dd>
                                 <a href="mailto:{{ event.contact_email }}">
                                     {{ event.contact_email }}
@@ -182,22 +204,22 @@
                             href="{% url 'forms_builder:public_event_form' event.slug registration_form.slug %}"
                             class="primary-button full-width-button"
                         >
-                            {% translate "Jisajili sasa" %}
+                            {% translate "Register now" %}
                         </a>
 
                     {% elif registration_not_open %}
                         <div class="notice notice-warning">
-                            {% translate "Usajili bado haujafunguliwa." %}
+                            {% translate "Registration has not opened yet." %}
                         </div>
 
                     {% elif registration_closed %}
                         <div class="notice notice-danger">
-                            {% translate "Muda wa usajili umekwisha." %}
+                            {% translate "The registration period has ended." %}
                         </div>
 
                     {% elif not registration_form %}
                         <div class="notice notice-neutral">
-                            {% translate "Fomu ya usajili bado haijawekwa." %}
+                            {% translate "The registration form has not been configured yet." %}
                         </div>
                     {% endif %}
 
@@ -206,7 +228,7 @@
                             href="{% url 'forms_builder:public_event_form' event.slug evaluation_form.slug %}"
                             class="secondary-button full-width-button"
                         >
-                            {% translate "Toa tathmini" %}
+                            {% translate "Submit an evaluation" %}
                         </a>
                     {% endif %}
                 </div>

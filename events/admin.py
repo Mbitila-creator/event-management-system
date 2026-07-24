@@ -214,10 +214,11 @@ class EventAdmin(admin.ModelAdmin):
         "code",
         "title_sw",
         "title_en",
-        "organizer_name",
+        "organizer_name_sw",
+        "organizer_name_en",
         "contact_person",
         "contact_email",
-        "contact_phone",
+        "contact_phone",  
     )
 
     ordering = (
@@ -256,7 +257,8 @@ class EventAdmin(admin.ModelAdmin):
             "Organizer Information",
             {
                 "fields": (
-                    "organizer_name",
+                    "organizer_name_sw",
+                    "organizer_name_en",
                     "contact_person",
                     "contact_email",
                     "contact_phone",

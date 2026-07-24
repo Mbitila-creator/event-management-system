@@ -11,8 +11,13 @@
         content="width=device-width, initial-scale=1.0"
     >
 
+    <meta
+        name="description"
+        content="{% translate 'Complete and submit the event form.' %}"
+    >
+
     <title>
-        {% if language_code == "en" %}
+        {% if request.LANGUAGE_CODE == "en" %}
             {{ event_form.name_en }}
         {% else %}
             {{ event_form.name_sw }}
@@ -32,7 +37,7 @@
                 href="{% url 'events:home' %}"
                 class="system-title"
             >
-                {% translate "Mfumo wa Usimamizi wa Matukio" %}
+                {% translate "Event Management System" %}
             </a>
 
             <form
@@ -49,7 +54,7 @@
                 >
 
                 <label for="language-select">
-                    {% translate "Lugha" %}
+                    {% translate "Language" %}
                 </label>
 
                 <select
@@ -66,7 +71,7 @@
 
                     <option
                         value="en"
-                        {% if LANGUAGE_CODE == "en" %}selected{% endif %}
+                        {% if request.LANGUAGE_CODE == "en" %}selected{% endif %}
                     >
                         English
                     </option>
@@ -81,7 +86,7 @@
                 <div class="event-banner">
                     <img
                         src="{{ event.banner.url }}"
-                        alt="{{ event.title_sw }}"
+                        alt="{% if language_code == 'en' %}{{ event.title_en }}{% else %}{{ event.title_sw }}{% endif %}"
                     >
                 </div>
             {% endif %}
@@ -91,7 +96,7 @@
                     <img
                         src="{{ event.logo.url }}"
                         class="event-logo"
-                        alt="{{ event.title_sw }}"
+                        alt="{{ event.code }}"
                     >
                 {% endif %}
 
@@ -101,14 +106,14 @@
                     </span>
 
                     <h1>
-                        {% if language_code == "en" %}
+                        {% if request.LANGUAGE_CODE == "en" %}
                             {{ event.title_en }}
                         {% else %}
                             {{ event.title_sw }}
                         {% endif %}
                     </h1>
 
-                    {% if language_code == "en" %}
+                    {% if request.LANGUAGE_CODE == "en" %}
                         {% if event.description_en %}
                             <div class="event-description">
                                 {{ event.description_en|linebreaks }}
@@ -126,17 +131,21 @@
                 <div class="event-meta-grid">
                     <div class="meta-item">
                         <span class="meta-label">
-                            {% translate "Mratibu" %}
+                            {% translate "Organizer" %}
                         </span>
 
                         <span class="meta-value">
-                            {{ event.organizer_name }}
+                            {% if request.LANGUAGE_CODE == "en" %}
+                                {{ event.organizer_name_en|default:event.organizer_name_sw }}
+                            {% else %}
+                                {{ event.organizer_name_sw|default:event.organizer_name_en }}
+                            {% endif %}
                         </span>
                     </div>
 
                     <div class="meta-item">
                         <span class="meta-label">
-                            {% translate "Tarehe ya kuanza" %}
+                            {% translate "Start date" %}
                         </span>
 
                         <span class="meta-value">
@@ -146,7 +155,7 @@
 
                     <div class="meta-item">
                         <span class="meta-label">
-                            {% translate "Tarehe ya kumalizika" %}
+                            {% translate "End date" %}
                         </span>
 
                         <span class="meta-value">
@@ -157,7 +166,7 @@
                     {% if event.venue %}
                         <div class="meta-item">
                             <span class="meta-label">
-                                {% translate "Mahali" %}
+                                {% translate "Venue" %}
                             </span>
 
                             <span class="meta-value">
@@ -165,8 +174,14 @@
 
                                 {% if event.venue.council %}
                                     <br>
-                                    {{ event.venue.council.name_sw }},
-                                    {{ event.venue.council.region.name_sw }}
+
+                                    {% if request.LANGUAGE_CODE == "en" %}
+                                        {{ event.venue.council.name_en }},
+                                        {{ event.venue.council.region.name_en }}
+                                    {% else %}
+                                        {{ event.venue.council.name_sw }},
+                                        {{ event.venue.council.region.name_sw }}
+                                    {% endif %}
                                 {% endif %}
                             </span>
                         </div>
@@ -178,14 +193,14 @@
         <section class="form-card">
             <div class="form-header">
                 <h2>
-                    {% if language_code == "en" %}
+                    {% if request.LANGUAGE_CODE == "en" %}
                         {{ event_form.name_en }}
                     {% else %}
                         {{ event_form.name_sw }}
                     {% endif %}
                 </h2>
 
-                {% if language_code == "en" %}
+                {% if request.LANGUAGE_CODE == "en" %}
                     {% if event_form.introduction_en %}
                         <div class="form-introduction">
                             {{ event_form.introduction_en|linebreaks }}
@@ -201,13 +216,19 @@
             </div>
 
             {% if form_not_open %}
-                <div class="alert alert-warning">
-                    {% translate "Fomu hii bado haijafunguliwa." %}
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                >
+                    {% translate "This form is not open yet." %}
                 </div>
 
             {% elif form_closed %}
-                <div class="alert alert-danger">
-                    {% translate "Muda wa kujaza fomu hii umekwisha." %}
+                <div
+                    class="alert alert-danger"
+                    role="alert"
+                >
+                    {% translate "The submission period for this form has ended." %}
                 </div>
 
             {% else %}
@@ -222,14 +243,14 @@
                         <section class="form-section">
                             <div class="section-header">
                                 <h3>
-                                    {% if language_code == "en" %}
+                                    {% if request.LANGUAGE_CODE == "en" %}
                                         {{ section.title_en }}
                                     {% else %}
                                         {{ section.title_sw }}
                                     {% endif %}
                                 </h3>
 
-                                {% if language_code == "en" %}
+                                {% if request.LANGUAGE_CODE == "en" %}
                                     {% if section.description_en %}
                                         <p>
                                             {{ section.description_en }}
@@ -247,12 +268,16 @@
                             <div class="questions-container">
                                 {% for question in section.questions.all %}
                                     {% if question.is_active %}
-                                        <div class="form-field">
+                                        <div
+                                            class="form-field"
+                                            data-question-id="{{ question.id }}"
+                                            data-question-type="{{ question.question_type }}"
+                                        >
                                             <label
                                                 for="question-{{ question.id }}"
                                                 class="field-label"
                                             >
-                                                {% if language_code == "en" %}
+                                                {% if request.LANGUAGE_CODE == "en" %}
                                                     {{ question.label_en }}
                                                 {% else %}
                                                     {{ question.label_sw }}
@@ -262,13 +287,14 @@
                                                     <span
                                                         class="required-mark"
                                                         aria-label="{% translate 'Required' %}"
+                                                        title="{% translate 'Required' %}"
                                                     >
                                                         *
                                                     </span>
                                                 {% endif %}
                                             </label>
 
-                                            {% if language_code == "en" %}
+                                            {% if request.LANGUAGE_CODE == "en" %}
                                                 {% with help_text=question.help_text_en placeholder=question.placeholder_en %}
                                                     {% include "forms_builder/partials/question_input.html" %}
                                                 {% endwith %}
@@ -277,18 +303,27 @@
                                                     {% include "forms_builder/partials/question_input.html" %}
                                                 {% endwith %}
                                             {% endif %}
+
+                                            <div
+                                                class="field-error"
+                                                id="error-question-{{ question.id }}"
+                                                aria-live="polite"
+                                            ></div>
                                         </div>
                                     {% endif %}
                                 {% empty %}
                                     <p class="empty-message">
-                                        {% translate "Hakuna maswali katika sehemu hii." %}
+                                        {% translate "There are no questions in this section." %}
                                     </p>
                                 {% endfor %}
                             </div>
                         </section>
                     {% empty %}
-                        <div class="alert alert-warning">
-                            {% translate "Fomu hii bado haina sehemu au maswali." %}
+                        <div
+                            class="alert alert-warning"
+                            role="alert"
+                        >
+                            {% translate "This form has no sections or questions yet." %}
                         </div>
                     {% endfor %}
 
@@ -298,12 +333,12 @@
                                 type="submit"
                                 class="submit-button"
                             >
-                                {% translate "Wasilisha Fomu" %}
+                                {% translate "Submit form" %}
                             </button>
 
                             <p class="required-note">
                                 <span class="required-mark">*</span>
-                                {% translate "Sehemu ya lazima" %}
+                                {% translate "Required field" %}
                             </p>
                         </div>
                     {% endif %}

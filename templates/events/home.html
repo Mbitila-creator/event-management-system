@@ -2,8 +2,8 @@
 {% load i18n %}
 
 {% block title %}
-    {% translate "Matukio" %} |
-    {% translate "Mfumo wa Usimamizi wa Matukio" %}
+    {% translate "Events" %} |
+    {% translate "Event Management System" %}
 {% endblock %}
 
 {% block content %}
@@ -11,15 +11,15 @@
     <div class="page-container">
         <div class="hero-content">
             <span class="hero-label">
-                {% translate "Karibu" %}
+                {% translate "Welcome" %}
             </span>
 
             <h1>
-                {% translate "Mfumo wa Usimamizi wa Matukio" %}
+                {% translate "Event Management System" %}
             </h1>
 
             <p>
-                {% translate "Tazama matukio yanayopatikana, pata maelezo na ujisajili kwa urahisi." %}
+                {% translate "View available events, read the details and register easily." %}
             </p>
         </div>
     </div>
@@ -33,7 +33,7 @@
         >
             <div class="filter-field search-field">
                 <label for="event-search">
-                    {% translate "Tafuta tukio" %}
+                    {% translate "Search for an event" %}
                 </label>
 
                 <input
@@ -41,13 +41,13 @@
                     id="event-search"
                     name="q"
                     value="{{ search_query }}"
-                    placeholder="{% translate 'Andika jina, msimbo au mratibu' %}"
+                    placeholder="{% translate 'Enter a name, code or organizer' %}"
                 >
             </div>
 
             <div class="filter-field">
                 <label for="category-filter">
-                    {% translate "Aina ya tukio" %}
+                    {% translate "Event category" %}
                 </label>
 
                 <select
@@ -55,7 +55,7 @@
                     name="category"
                 >
                     <option value="">
-                        {% translate "Aina zote" %}
+                        {% translate "All categories" %}
                     </option>
 
                     {% for category in categories %}
@@ -65,7 +65,7 @@
                                 selected
                             {% endif %}
                         >
-                            {% if LANGUAGE_CODE == "en" %}
+                            {% if request.LANGUAGE_CODE == "en" %}
                                 {{ category.name_en }}
                             {% else %}
                                 {{ category.name_sw }}
@@ -80,7 +80,7 @@
                     type="submit"
                     class="primary-button"
                 >
-                    {% translate "Tafuta" %}
+                    {% translate "Search" %}
                 </button>
 
                 {% if search_query or selected_category %}
@@ -88,7 +88,7 @@
                         href="{% url 'events:home' %}"
                         class="secondary-button"
                     >
-                        {% translate "Ondoa vichujio" %}
+                        {% translate "Clear filters" %}
                     </a>
                 {% endif %}
             </div>
@@ -97,17 +97,17 @@
         <div class="section-heading">
             <div>
                 <span class="section-kicker">
-                    {% translate "Matukio" %}
+                    {% translate "Events" %}
                 </span>
 
                 <h2>
-                    {% translate "Matukio yanayopatikana" %}
+                    {% translate "Available events" %}
                 </h2>
             </div>
 
             <span class="result-count">
                 {{ events|length }}
-                {% translate "yamepatikana" %}
+                {% translate "found" %}
             </span>
         </div>
 
@@ -134,7 +134,7 @@
                     <div class="event-card-body">
                         <div class="event-card-top">
                             <span class="category-badge">
-                                {% if LANGUAGE_CODE == "en" %}
+                                {% if request.LANGUAGE_CODE == "en" %}
                                     {{ event.category.name_en }}
                                 {% else %}
                                     {{ event.category.name_sw }}
@@ -148,7 +148,7 @@
 
                         <h3>
                             <a href="{% url 'events:event_detail' event.slug %}">
-                                {% if LANGUAGE_CODE == "en" %}
+                                {% if request.LANGUAGE_CODE == "en" %}
                                     {{ event.title_en }}
                                 {% else %}
                                     {{ event.title_sw }}
@@ -157,13 +157,17 @@
                         </h3>
 
                         <p class="event-organizer">
-                            {{ event.organizer_name }}
+                            {% if request.LANGUAGE_CODE == "en" %}
+                                {{ event.organizer_name_en }}
+                            {% else %}
+                                {{ event.organizer_name_sw }}
+                            {% endif %}
                         </p>
 
                         <div class="event-card-meta">
                             <div>
                                 <span class="meta-title">
-                                    {% translate "Tarehe" %}
+                                    {% translate "Date" %}
                                 </span>
 
                                 <span>
@@ -176,7 +180,7 @@
                             {% if event.venue %}
                                 <div>
                                     <span class="meta-title">
-                                        {% translate "Mahali" %}
+                                        {% translate "Venue" %}
                                     </span>
 
                                     <span>
@@ -191,7 +195,7 @@
                                 href="{% url 'events:event_detail' event.slug %}"
                                 class="primary-button"
                             >
-                                {% translate "Angalia maelezo" %}
+                                {% translate "View details" %}
                             </a>
                         </div>
                     </div>
@@ -199,11 +203,11 @@
             {% empty %}
                 <div class="empty-state">
                     <h3>
-                        {% translate "Hakuna matukio yaliyopatikana" %}
+                        {% translate "No events were found" %}
                     </h3>
 
                     <p>
-                        {% translate "Jaribu kubadilisha neno la utafutaji au aina ya tukio." %}
+                        {% translate "Try changing the search term or event category." %}
                     </p>
                 </div>
             {% endfor %}

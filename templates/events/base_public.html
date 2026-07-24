@@ -13,12 +13,12 @@
 
     <meta
         name="description"
-        content="{% translate 'Mfumo wa Usimamizi wa Matukio' %}"
+        content="{% translate 'Event Management System' %}"
     >
 
     <title>
         {% block title %}
-            {% translate "Mfumo wa Usimamizi wa Matukio" %}
+            {% translate "Event Management System" %}
         {% endblock %}
     </title>
 
@@ -40,7 +40,7 @@
                 <span class="brand-mark">EMS</span>
 
                 <span class="brand-text">
-                    {% translate "Mfumo wa Usimamizi wa Matukio" %}
+                    {% translate "Event Management System" %}
                 </span>
             </a>
 
@@ -62,7 +62,7 @@
                         for="public-language"
                         class="sr-only"
                     >
-                        {% translate "Lugha" %}
+                        {% translate "Language" %}
                     </label>
 
                     <select
@@ -91,7 +91,7 @@
                         href="{% url 'admin:index' %}"
                         class="header-link"
                     >
-                        {% translate "Usimamizi" %}
+                        {% translate "Administration" %}
                     </a>
                 {% endif %}
             </div>
@@ -106,7 +106,7 @@
         <div class="footer-inner">
             <p>
                 &copy; {% now "Y" %}
-                {% translate "Mfumo wa Usimamizi wa Matukio" %}
+                {% translate "Event Management System" %}
             </p>
         </div>
     </footer>

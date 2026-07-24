@@ -239,9 +239,16 @@ class Event(BaseModel):
         blank=True,
     )
 
-    organizer_name = models.CharField(
-        _("organizer name"),
+    organizer_name_sw = models.CharField(
+        _("organizer name in Kiswahili"),
         max_length=250,
+        blank=True,
+    )
+
+    organizer_name_en = models.CharField(
+        _("organizer name in English"),
+        max_length=250,
+        blank=True,
     )
 
     contact_person = models.CharField(
