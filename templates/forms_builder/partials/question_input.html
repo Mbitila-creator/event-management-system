@@ -97,12 +97,20 @@
     </select>
 
 {% elif question.question_type == "SINGLE_CHOICE" %}
-    <div class="choice-group">
+    <div
+        class="choice-group"
+        role="radiogroup"
+        aria-labelledby="question-label-{{ question.id }}"
+    >
         {% for option in question.options.all %}
             {% if option.is_active %}
-                <label class="choice-item">
+                <label
+                    class="choice-item"
+                    for="question-{{ question.id }}-option-{{ option.id }}"
+                >
                     <input
                         type="radio"
+                        id="question-{{ question.id }}-option-{{ option.id }}"
                         name="question_{{ question.id }}"
                         value="{{ option.value }}"
                         {% if question.is_required %}required{% endif %}
@@ -125,12 +133,20 @@
     </div>
 
 {% elif question.question_type == "MULTIPLE_CHOICE" %}
-    <div class="choice-group">
+    <div
+        class="choice-group"
+        role="group"
+        aria-labelledby="question-label-{{ question.id }}"
+    >
         {% for option in question.options.all %}
             {% if option.is_active %}
-                <label class="choice-item">
+                <label
+                    class="choice-item"
+                    for="question-{{ question.id }}-option-{{ option.id }}"
+                >
                     <input
                         type="checkbox"
+                        id="question-{{ question.id }}-option-{{ option.id }}"
                         name="question_{{ question.id }}"
                         value="{{ option.value }}"
                     >
@@ -152,39 +168,39 @@
     </div>
 
 {% elif question.question_type == "YES_NO" %}
-    <div class="choice-group choice-group-inline">
-        <label class="choice-item">
+    <div
+        class="choice-group choice-group-inline"
+        role="radiogroup"
+        aria-labelledby="question-label-{{ question.id }}"
+    >
+        <label
+            class="choice-item"
+            for="question-{{ question.id }}-yes"
+        >
             <input
                 type="radio"
+                id="question-{{ question.id }}-yes"
                 name="question_{{ question.id }}"
                 value="yes"
                 {% if question.is_required %}required{% endif %}
             >
 
-            <span>
-                {% if language_code == "en" %}
-                    Yes
-                {% else %}
-                    Ndiyo
-                {% endif %}
-            </span>
+            <span>{% translate "Yes" %}</span>
         </label>
 
-        <label class="choice-item">
+        <label
+            class="choice-item"
+            for="question-{{ question.id }}-no"
+        >
             <input
                 type="radio"
+                id="question-{{ question.id }}-no"
                 name="question_{{ question.id }}"
                 value="no"
                 {% if question.is_required %}required{% endif %}
             >
 
-            <span>
-                {% if language_code == "en" %}
-                    No
-                {% else %}
-                    Hapana
-                {% endif %}
-            </span>
+            <span>{% translate "No" %}</span>
         </label>
     </div>
 

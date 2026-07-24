@@ -2,7 +2,7 @@
 {% load i18n %}
 
 <!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE }}">
+<html lang="{{ request.LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
 
@@ -27,6 +27,12 @@
         href="{% static 'css/events-public.css' %}"
     >
 
+    <link
+        rel="icon"
+        href="{% static 'images/favicon.ico' %}"
+        type="image/x-icon"
+    >
+
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -46,45 +52,47 @@
 
             <div class="header-actions">
                 <form
-                    action="{% url 'set_language' %}"
-                    method="post"
-                    class="language-switcher"
-                >
-                    {% csrf_token %}
+    action="{% url 'set_language' %}"
+    method="post"
+    class="language-switcher"
+    id="language-switcher-form"
+>
+    {% csrf_token %}
 
-                    <input
-                        type="hidden"
-                        name="next"
-                        value="{{ request.get_full_path }}"
-                    >
+    <input
+        type="hidden"
+        name="next"
+        id="language-next-url"
+        value="{{ request.get_full_path }}"
+    >
 
-                    <label
-                        for="public-language"
-                        class="sr-only"
-                    >
-                        {% translate "Language" %}
-                    </label>
+    <label
+        for="public-language"
+        class="sr-only"
+    >
+        {% translate "Language" %}
+    </label>
 
-                    <select
-                        id="public-language"
-                        name="language"
-                        onchange="this.form.submit()"
-                    >
-                        <option
-                            value="sw"
-                            {% if LANGUAGE_CODE == "sw" %}selected{% endif %}
-                        >
-                            Kiswahili
-                        </option>
+    <select
+        id="public-language"
+        name="language"
+        aria-label="{% translate 'Language' %}"
+    >
+        <option
+            value="sw"
+            {% if request.LANGUAGE_CODE == "sw" %}selected{% endif %}
+        >
+            Kiswahili
+        </option>
 
-                        <option
-                            value="en"
-                            {% if LANGUAGE_CODE == "en" %}selected{% endif %}
-                        >
-                            English
-                        </option>
-                    </select>
-                </form>
+        <option
+            value="en"
+            {% if request.LANGUAGE_CODE == "en" %}selected{% endif %}
+        >
+            English
+        </option>
+    </select>
+</form>
 
                 {% if request.user.is_authenticated %}
                     <a
@@ -112,5 +120,83 @@
     </footer>
 
     {% block extra_js %}{% endblock %}
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const languageForm = document.getElementById(
+                "language-switcher-form"
+            );
+
+            const languageSelect = document.getElementById(
+                "public-language"
+            );
+
+            if (!languageForm || !languageSelect) {
+                return;
+            }
+
+            languageSelect.addEventListener("change", function () {
+                if (typeof languageForm.requestSubmit === "function") {
+                    languageForm.requestSubmit();
+                } else {
+                    languageForm.submit();
+                }
+            });
+        });
+    </script>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const languageForm = document.getElementById(
+            "language-switcher-form"
+        );
+
+        const languageSelect = document.getElementById(
+            "public-language"
+        );
+
+        const nextInput = document.getElementById(
+            "language-next-url"
+        );
+
+        if (!languageForm || !languageSelect || !nextInput) {
+            return;
+        }
+
+        languageSelect.addEventListener("change", function () {
+            const selectedLanguage = languageSelect.value;
+            const currentPath = window.location.pathname;
+            const queryString = window.location.search;
+            const hash = window.location.hash;
+
+            let newPath = currentPath;
+
+            if (
+                currentPath.startsWith("/sw/") ||
+                currentPath.startsWith("/en/")
+            ) {
+                newPath = currentPath.replace(
+                    /^\/(sw|en)\//,
+                    "/" + selectedLanguage + "/"
+                );
+            } else {
+                newPath =
+                    "/" +
+                    selectedLanguage +
+                    "/" +
+                    currentPath.replace(/^\/+/, "");
+            }
+
+            nextInput.value = newPath + queryString + hash;
+
+            if (typeof languageForm.requestSubmit === "function") {
+                languageForm.requestSubmit();
+            } else {
+                languageForm.submit();
+            }
+        });
+    });
+</script>
+
 </body>
 </html>

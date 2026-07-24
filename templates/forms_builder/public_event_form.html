@@ -41,42 +41,48 @@
             </a>
 
             <form
-                action="{% url 'set_language' %}"
-                method="post"
-                class="language-form"
-            >
-                {% csrf_token %}
+    action="{% url 'set_language' %}"
+    method="post"
+    class="language-form"
+    id="registration-language-form"
+>
+    {% csrf_token %}
 
-                <input
-                    type="hidden"
-                    name="next"
-                    value="{{ request.get_full_path }}"
-                >
+    <input
+        type="hidden"
+        name="next"
+        value="{{ request.get_full_path }}"
+    >
 
-                <label for="language-select">
-                    {% translate "Language" %}
-                </label>
+    <label for="registration-language-select">
+        {% translate "Language" %}
+    </label>
 
-                <select
-                    id="language-select"
-                    name="language"
-                    onchange="this.form.submit()"
-                >
-                    <option
-                        value="sw"
-                        {% if LANGUAGE_CODE == "sw" %}selected{% endif %}
-                    >
-                        Kiswahili
-                    </option>
+    <select
+        id="registration-language-select"
+        name="language"
+    >
+        <option
+            value="sw"
+            {% if request.LANGUAGE_CODE == "sw" %}selected{% endif %}
+        >
+            Kiswahili
+        </option>
 
-                    <option
-                        value="en"
-                        {% if request.LANGUAGE_CODE == "en" %}selected{% endif %}
-                    >
-                        English
-                    </option>
-                </select>
-            </form>
+        <option
+            value="en"
+            {% if request.LANGUAGE_CODE == "en" %}selected{% endif %}
+        >
+            English
+        </option>
+    </select>
+
+    <noscript>
+        <button type="submit">
+            {% translate "Change language" %}
+        </button>
+    </noscript>
+</form>
         </div>
     </header>
 
@@ -273,26 +279,49 @@
                                             data-question-id="{{ question.id }}"
                                             data-question-type="{{ question.question_type }}"
                                         >
-                                            <label
-                                                for="question-{{ question.id }}"
-                                                class="field-label"
-                                            >
-                                                {% if request.LANGUAGE_CODE == "en" %}
-                                                    {{ question.label_en }}
-                                                {% else %}
-                                                    {{ question.label_sw }}
-                                                {% endif %}
+                                            {% if question.question_type == "SINGLE_CHOICE" or question.question_type == "MULTIPLE_CHOICE" or question.question_type == "YES_NO" %}
+    <div
+        class="field-label"
+        id="question-label-{{ question.id }}"
+    >
+        {% if language_code == "en" %}
+            {{ question.label_en }}
+        {% else %}
+            {{ question.label_sw }}
+        {% endif %}
 
-                                                {% if question.is_required %}
-                                                    <span
-                                                        class="required-mark"
-                                                        aria-label="{% translate 'Required' %}"
-                                                        title="{% translate 'Required' %}"
-                                                    >
-                                                        *
-                                                    </span>
-                                                {% endif %}
-                                            </label>
+        {% if question.is_required %}
+            <span
+                class="required-mark"
+                aria-label="{% translate 'Required' %}"
+                title="{% translate 'Required' %}"
+            >
+                *
+            </span>
+        {% endif %}
+    </div>
+{% else %}
+    <label
+        for="question-{{ question.id }}"
+        class="field-label"
+    >
+        {% if language_code == "en" %}
+            {{ question.label_en }}
+        {% else %}
+            {{ question.label_sw }}
+        {% endif %}
+
+        {% if question.is_required %}
+            <span
+                class="required-mark"
+                aria-label="{% translate 'Required' %}"
+                title="{% translate 'Required' %}"
+            >
+                *
+            </span>
+        {% endif %}
+    </label>
+{% endif %}
 
                                             {% if request.LANGUAGE_CODE == "en" %}
                                                 {% with help_text=question.help_text_en placeholder=question.placeholder_en %}
@@ -348,5 +377,31 @@
     </main>
 
     <script src="{% static 'js/public-event-form.js' %}"></script>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const languageForm = document.getElementById(
+            "registration-language-form"
+        );
+
+        const languageSelect = document.getElementById(
+            "registration-language-select"
+        );
+
+        if (!languageForm || !languageSelect) {
+            return;
+        }
+
+        languageSelect.addEventListener("change", function () {
+            languageSelect.disabled = true;
+
+            if (typeof languageForm.requestSubmit === "function") {
+                languageForm.requestSubmit();
+            } else {
+                languageForm.submit();
+            }
+        });
+    });
+</script>
 </body>
 </html>

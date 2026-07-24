@@ -11,4 +11,9 @@ urlpatterns = [
         views.public_event_form,
         name="public_event_form",
     ),
+    path(
+        "submissions/<str:reference_number>/success/",
+        views.submission_success,
+        name="submission_success",
+    ),
 ]

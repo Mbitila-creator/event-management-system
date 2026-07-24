@@ -1,0 +1,110 @@
+{% load static %}
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE }}">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {% translate "Registration successful" %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/public-event-form.css' %}"
+    >
+
+    <link
+        rel="icon"
+        href="{% static 'images/favicon.ico' %}"
+        type="image/x-icon"
+    >
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="header-container">
+            <a
+                href="{% url 'events:home' %}"
+                class="system-title"
+            >
+                {% translate "Event Management System" %}
+            </a>
+        </div>
+    </header>
+
+    <main class="page-wrapper">
+        <section class="form-card success-card">
+            <div class="success-icon" aria-hidden="true">
+                ✓
+            </div>
+
+            <h1>
+                {% translate "Registration successful" %}
+            </h1>
+
+            <p class="success-message">
+                {% if request.LANGUAGE_CODE == "en" %}
+                    {{ event_form.success_message_en }}
+                {% else %}
+                    {{ event_form.success_message_sw }}
+                {% endif %}
+            </p>
+
+            <div class="reference-box">
+                <span class="reference-label">
+                    {% translate "Reference number" %}
+                </span>
+
+                <strong class="reference-number">
+                    {{ submission.reference_number }}
+                </strong>
+            </div>
+
+            <div class="success-details">
+                <div>
+                    <span>{% translate "Event" %}</span>
+
+                    <strong>
+                        {% if request.LANGUAGE_CODE == "en" %}
+                            {{ event.title_en }}
+                        {% else %}
+                            {{ event.title_sw }}
+                        {% endif %}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>{% translate "Submitted on" %}</span>
+
+                    <strong>
+                        {{ submission.created_at|date:"d M Y, H:i" }}
+                    </strong>
+                </div>
+            </div>
+
+            <div class="success-actions">
+                <a
+                    href="{% url 'events:event_detail' event.slug %}"
+                    class="submit-button success-link"
+                >
+                    {% translate "Return to event" %}
+                </a>
+
+                <a
+                    href="{% url 'events:home' %}"
+                    class="secondary-success-link"
+                >
+                    {% translate "View all events" %}
+                </a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

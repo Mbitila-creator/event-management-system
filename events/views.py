@@ -35,8 +35,12 @@ def home(request):
             | Q(title_en__icontains=search_query)
             | Q(description_sw__icontains=search_query)
             | Q(description_en__icontains=search_query)
-            | Q(organizer_name__icontains=search_query)
-        )
+            | Q(organizer_name_sw__icontains=search_query)
+            | Q(organizer_name_en__icontains=search_query)
+            | Q(contact_person__icontains=search_query)
+            | Q(contact_email__icontains=search_query)
+            | Q(contact_phone__icontains=search_query)
+        ).distinct()
 
     if category_slug:
         events = events.filter(
