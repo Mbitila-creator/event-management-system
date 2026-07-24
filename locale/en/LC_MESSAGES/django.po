@@ -1,0 +1,39 @@
+# English translations for the Event Management System.
+# Copyright (C) 2026
+# This file is distributed under the same license as the project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Event Management System 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-23 01:32+0300\n"
+"PO-Revision-Date: 2026-07-23 01:45+0300\n"
+"Last-Translator: Mbitila <mbitila@gmail.com>\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: templates/registrations/home.html:13
+#: templates/registrations/home.html:25
+#: templates/registrations/home.html:73
+msgid "Mfumo wa Usimamizi wa Matukio"
+msgstr "Event Management System"
+
+#: templates/registrations/home.html:42
+msgid "Lugha"
+msgstr "Language"
+
+#: templates/registrations/home.html:77
+msgid ""
+"Mfumo huu utatumika kusimamia maonesho, vikao, semina, warsha, mikutano na "
+"matukio mengine."
+msgstr ""
+"This system will be used to manage exhibitions, meetings, seminars, "
+"workshops, conferences, and other events."
+
+#: templates/registrations/home.html:81
+msgid "Mfumo upo tayari kuendelea na maendeleo ya kitaalamu."
+msgstr "The system is ready for professional development."

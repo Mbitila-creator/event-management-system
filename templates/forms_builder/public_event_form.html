@@ -1,0 +1,317 @@
+{% load static %}
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {% if language_code == "en" %}
+            {{ event_form.name_en }}
+        {% else %}
+            {{ event_form.name_sw }}
+        {% endif %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/public-event-form.css' %}"
+    >
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="header-container">
+            <a
+                href="{% url 'events:home' %}"
+                class="system-title"
+            >
+                {% translate "Mfumo wa Usimamizi wa Matukio" %}
+            </a>
+
+            <form
+                action="{% url 'set_language' %}"
+                method="post"
+                class="language-form"
+            >
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="next"
+                    value="{{ request.get_full_path }}"
+                >
+
+                <label for="language-select">
+                    {% translate "Lugha" %}
+                </label>
+
+                <select
+                    id="language-select"
+                    name="language"
+                    onchange="this.form.submit()"
+                >
+                    <option
+                        value="sw"
+                        {% if LANGUAGE_CODE == "sw" %}selected{% endif %}
+                    >
+                        Kiswahili
+                    </option>
+
+                    <option
+                        value="en"
+                        {% if LANGUAGE_CODE == "en" %}selected{% endif %}
+                    >
+                        English
+                    </option>
+                </select>
+            </form>
+        </div>
+    </header>
+
+    <main class="page-wrapper">
+        <section class="event-card">
+            {% if event.banner %}
+                <div class="event-banner">
+                    <img
+                        src="{{ event.banner.url }}"
+                        alt="{{ event.title_sw }}"
+                    >
+                </div>
+            {% endif %}
+
+            <div class="event-content">
+                {% if event.logo %}
+                    <img
+                        src="{{ event.logo.url }}"
+                        class="event-logo"
+                        alt="{{ event.title_sw }}"
+                    >
+                {% endif %}
+
+                <div class="event-heading">
+                    <span class="event-code">
+                        {{ event.code }}
+                    </span>
+
+                    <h1>
+                        {% if language_code == "en" %}
+                            {{ event.title_en }}
+                        {% else %}
+                            {{ event.title_sw }}
+                        {% endif %}
+                    </h1>
+
+                    {% if language_code == "en" %}
+                        {% if event.description_en %}
+                            <div class="event-description">
+                                {{ event.description_en|linebreaks }}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        {% if event.description_sw %}
+                            <div class="event-description">
+                                {{ event.description_sw|linebreaks }}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <div class="event-meta-grid">
+                    <div class="meta-item">
+                        <span class="meta-label">
+                            {% translate "Mratibu" %}
+                        </span>
+
+                        <span class="meta-value">
+                            {{ event.organizer_name }}
+                        </span>
+                    </div>
+
+                    <div class="meta-item">
+                        <span class="meta-label">
+                            {% translate "Tarehe ya kuanza" %}
+                        </span>
+
+                        <span class="meta-value">
+                            {{ event.starts_at|date:"d M Y, H:i" }}
+                        </span>
+                    </div>
+
+                    <div class="meta-item">
+                        <span class="meta-label">
+                            {% translate "Tarehe ya kumalizika" %}
+                        </span>
+
+                        <span class="meta-value">
+                            {{ event.ends_at|date:"d M Y, H:i" }}
+                        </span>
+                    </div>
+
+                    {% if event.venue %}
+                        <div class="meta-item">
+                            <span class="meta-label">
+                                {% translate "Mahali" %}
+                            </span>
+
+                            <span class="meta-value">
+                                {{ event.venue.name }}
+
+                                {% if event.venue.council %}
+                                    <br>
+                                    {{ event.venue.council.name_sw }},
+                                    {{ event.venue.council.region.name_sw }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <section class="form-card">
+            <div class="form-header">
+                <h2>
+                    {% if language_code == "en" %}
+                        {{ event_form.name_en }}
+                    {% else %}
+                        {{ event_form.name_sw }}
+                    {% endif %}
+                </h2>
+
+                {% if language_code == "en" %}
+                    {% if event_form.introduction_en %}
+                        <div class="form-introduction">
+                            {{ event_form.introduction_en|linebreaks }}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    {% if event_form.introduction_sw %}
+                        <div class="form-introduction">
+                            {{ event_form.introduction_sw|linebreaks }}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            {% if form_not_open %}
+                <div class="alert alert-warning">
+                    {% translate "Fomu hii bado haijafunguliwa." %}
+                </div>
+
+            {% elif form_closed %}
+                <div class="alert alert-danger">
+                    {% translate "Muda wa kujaza fomu hii umekwisha." %}
+                </div>
+
+            {% else %}
+                <form
+                    method="post"
+                    enctype="multipart/form-data"
+                    id="dynamic-event-form"
+                >
+                    {% csrf_token %}
+
+                    {% for section in sections %}
+                        <section class="form-section">
+                            <div class="section-header">
+                                <h3>
+                                    {% if language_code == "en" %}
+                                        {{ section.title_en }}
+                                    {% else %}
+                                        {{ section.title_sw }}
+                                    {% endif %}
+                                </h3>
+
+                                {% if language_code == "en" %}
+                                    {% if section.description_en %}
+                                        <p>
+                                            {{ section.description_en }}
+                                        </p>
+                                    {% endif %}
+                                {% else %}
+                                    {% if section.description_sw %}
+                                        <p>
+                                            {{ section.description_sw }}
+                                        </p>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+
+                            <div class="questions-container">
+                                {% for question in section.questions.all %}
+                                    {% if question.is_active %}
+                                        <div class="form-field">
+                                            <label
+                                                for="question-{{ question.id }}"
+                                                class="field-label"
+                                            >
+                                                {% if language_code == "en" %}
+                                                    {{ question.label_en }}
+                                                {% else %}
+                                                    {{ question.label_sw }}
+                                                {% endif %}
+
+                                                {% if question.is_required %}
+                                                    <span
+                                                        class="required-mark"
+                                                        aria-label="{% translate 'Required' %}"
+                                                    >
+                                                        *
+                                                    </span>
+                                                {% endif %}
+                                            </label>
+
+                                            {% if language_code == "en" %}
+                                                {% with help_text=question.help_text_en placeholder=question.placeholder_en %}
+                                                    {% include "forms_builder/partials/question_input.html" %}
+                                                {% endwith %}
+                                            {% else %}
+                                                {% with help_text=question.help_text_sw placeholder=question.placeholder_sw %}
+                                                    {% include "forms_builder/partials/question_input.html" %}
+                                                {% endwith %}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% empty %}
+                                    <p class="empty-message">
+                                        {% translate "Hakuna maswali katika sehemu hii." %}
+                                    </p>
+                                {% endfor %}
+                            </div>
+                        </section>
+                    {% empty %}
+                        <div class="alert alert-warning">
+                            {% translate "Fomu hii bado haina sehemu au maswali." %}
+                        </div>
+                    {% endfor %}
+
+                    {% if sections %}
+                        <div class="submit-area">
+                            <button
+                                type="submit"
+                                class="submit-button"
+                            >
+                                {% translate "Wasilisha Fomu" %}
+                            </button>
+
+                            <p class="required-note">
+                                <span class="required-mark">*</span>
+                                {% translate "Sehemu ya lazima" %}
+                            </p>
+                        </div>
+                    {% endif %}
+                </form>
+            {% endif %}
+        </section>
+    </main>
+
+    <script src="{% static 'js/public-event-form.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+{% extends "events/base_public.html" %}
+{% load i18n %}
+
+{% block title %}
+    {% translate "Matukio" %} |
+    {% translate "Mfumo wa Usimamizi wa Matukio" %}
+{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="page-container">
+        <div class="hero-content">
+            <span class="hero-label">
+                {% translate "Karibu" %}
+            </span>
+
+            <h1>
+                {% translate "Mfumo wa Usimamizi wa Matukio" %}
+            </h1>
+
+            <p>
+                {% translate "Tazama matukio yanayopatikana, pata maelezo na ujisajili kwa urahisi." %}
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="events-section">
+    <div class="page-container">
+        <form
+            method="get"
+            class="event-filters"
+        >
+            <div class="filter-field search-field">
+                <label for="event-search">
+                    {% translate "Tafuta tukio" %}
+                </label>
+
+                <input
+                    type="search"
+                    id="event-search"
+                    name="q"
+                    value="{{ search_query }}"
+                    placeholder="{% translate 'Andika jina, msimbo au mratibu' %}"
+                >
+            </div>
+
+            <div class="filter-field">
+                <label for="category-filter">
+                    {% translate "Aina ya tukio" %}
+                </label>
+
+                <select
+                    id="category-filter"
+                    name="category"
+                >
+                    <option value="">
+                        {% translate "Aina zote" %}
+                    </option>
+
+                    {% for category in categories %}
+                        <option
+                            value="{{ category.slug }}"
+                            {% if selected_category == category.slug %}
+                                selected
+                            {% endif %}
+                        >
+                            {% if LANGUAGE_CODE == "en" %}
+                                {{ category.name_en }}
+                            {% else %}
+                                {{ category.name_sw }}
+                            {% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button
+                    type="submit"
+                    class="primary-button"
+                >
+                    {% translate "Tafuta" %}
+                </button>
+
+                {% if search_query or selected_category %}
+                    <a
+                        href="{% url 'events:home' %}"
+                        class="secondary-button"
+                    >
+                        {% translate "Ondoa vichujio" %}
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+
+        <div class="section-heading">
+            <div>
+                <span class="section-kicker">
+                    {% translate "Matukio" %}
+                </span>
+
+                <h2>
+                    {% translate "Matukio yanayopatikana" %}
+                </h2>
+            </div>
+
+            <span class="result-count">
+                {{ events|length }}
+                {% translate "yamepatikana" %}
+            </span>
+        </div>
+
+        <div class="event-grid">
+            {% for event in events %}
+                <article class="event-list-card">
+                    <a
+                        href="{% url 'events:event_detail' event.slug %}"
+                        class="event-image-link"
+                    >
+                        {% if event.banner %}
+                            <img
+                                src="{{ event.banner.url }}"
+                                alt="{% if LANGUAGE_CODE == 'en' %}{{ event.title_en }}{% else %}{{ event.title_sw }}{% endif %}"
+                                class="event-card-image"
+                            >
+                        {% else %}
+                            <div class="event-image-placeholder">
+                                <span>{{ event.code }}</span>
+                            </div>
+                        {% endif %}
+                    </a>
+
+                    <div class="event-card-body">
+                        <div class="event-card-top">
+                            <span class="category-badge">
+                                {% if LANGUAGE_CODE == "en" %}
+                                    {{ event.category.name_en }}
+                                {% else %}
+                                    {{ event.category.name_sw }}
+                                {% endif %}
+                            </span>
+
+                            <span class="status-badge status-{{ event.status|lower }}">
+                                {{ event.get_status_display }}
+                            </span>
+                        </div>
+
+                        <h3>
+                            <a href="{% url 'events:event_detail' event.slug %}">
+                                {% if LANGUAGE_CODE == "en" %}
+                                    {{ event.title_en }}
+                                {% else %}
+                                    {{ event.title_sw }}
+                                {% endif %}
+                            </a>
+                        </h3>
+
+                        <p class="event-organizer">
+                            {{ event.organizer_name }}
+                        </p>
+
+                        <div class="event-card-meta">
+                            <div>
+                                <span class="meta-title">
+                                    {% translate "Tarehe" %}
+                                </span>
+
+                                <span>
+                                    {{ event.starts_at|date:"d M Y" }}
+                                    –
+                                    {{ event.ends_at|date:"d M Y" }}
+                                </span>
+                            </div>
+
+                            {% if event.venue %}
+                                <div>
+                                    <span class="meta-title">
+                                        {% translate "Mahali" %}
+                                    </span>
+
+                                    <span>
+                                        {{ event.venue.name }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="event-card-actions">
+                            <a
+                                href="{% url 'events:event_detail' event.slug %}"
+                                class="primary-button"
+                            >
+                                {% translate "Angalia maelezo" %}
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-state">
+                    <h3>
+                        {% translate "Hakuna matukio yaliyopatikana" %}
+                    </h3>
+
+                    <p>
+                        {% translate "Jaribu kubadilisha neno la utafutaji au aina ya tukio." %}
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

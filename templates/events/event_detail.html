@@ -1,0 +1,217 @@
+{% extends "events/base_public.html" %}
+{% load i18n %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == "en" %}
+        {{ event.title_en }}
+    {% else %}
+        {{ event.title_sw }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<section class="event-detail-hero">
+    {% if event.banner %}
+        <div class="detail-banner">
+            <img
+                src="{{ event.banner.url }}"
+                alt="{% if LANGUAGE_CODE == 'en' %}{{ event.title_en }}{% else %}{{ event.title_sw }}{% endif %}"
+            >
+        </div>
+    {% endif %}
+
+    <div class="page-container">
+        <div class="detail-heading-card">
+            {% if event.logo %}
+                <img
+                    src="{{ event.logo.url }}"
+                    alt="{{ event.code }}"
+                    class="detail-logo"
+                >
+            {% endif %}
+
+            <div class="detail-heading-content">
+                <div class="detail-badges">
+                    <span class="category-badge">
+                        {% if LANGUAGE_CODE == "en" %}
+                            {{ event.category.name_en }}
+                        {% else %}
+                            {{ event.category.name_sw }}
+                        {% endif %}
+                    </span>
+
+                    <span class="event-code-badge">
+                        {{ event.code }}
+                    </span>
+                </div>
+
+                <h1>
+                    {% if LANGUAGE_CODE == "en" %}
+                        {{ event.title_en }}
+                    {% else %}
+                        {{ event.title_sw }}
+                    {% endif %}
+                </h1>
+
+                <p class="detail-organizer">
+                    {{ event.organizer_name }}
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="event-detail-section">
+    <div class="page-container detail-layout">
+        <div class="detail-main">
+            <article class="content-card">
+                <h2>
+                    {% translate "Kuhusu tukio" %}
+                </h2>
+
+                <div class="rich-text">
+                    {% if LANGUAGE_CODE == "en" %}
+                        {{ event.description_en|linebreaks }}
+                    {% else %}
+                        {{ event.description_sw|linebreaks }}
+                    {% endif %}
+                </div>
+            </article>
+
+            {% if active_forms %}
+                <article class="content-card">
+                    <h2>
+                        {% translate "Fomu za tukio" %}
+                    </h2>
+
+                    <div class="event-form-list">
+                        {% for event_form in active_forms %}
+                            <div class="event-form-item">
+                                <div>
+                                    <h3>
+                                        {% if LANGUAGE_CODE == "en" %}
+                                            {{ event_form.name_en }}
+                                        {% else %}
+                                            {{ event_form.name_sw }}
+                                        {% endif %}
+                                    </h3>
+
+                                    <p>
+                                        {{ event_form.get_form_type_display }}
+                                    </p>
+                                </div>
+
+                                <a
+                                    href="{% url 'forms_builder:public_event_form' event.slug event_form.slug %}"
+                                    class="secondary-button"
+                                >
+                                    {% translate "Fungua fomu" %}
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </article>
+            {% endif %}
+        </div>
+
+        <aside class="detail-sidebar">
+            <div class="content-card summary-card">
+                <h2>
+                    {% translate "Taarifa muhimu" %}
+                </h2>
+
+                <dl class="event-summary-list">
+                    <div>
+                        <dt>{% translate "Tarehe ya kuanza" %}</dt>
+                        <dd>{{ event.starts_at|date:"d M Y, H:i" }}</dd>
+                    </div>
+
+                    <div>
+                        <dt>{% translate "Tarehe ya kumalizika" %}</dt>
+                        <dd>{{ event.ends_at|date:"d M Y, H:i" }}</dd>
+                    </div>
+
+                    {% if event.venue %}
+                        <div>
+                            <dt>{% translate "Mahali" %}</dt>
+                            <dd>
+                                {{ event.venue.name }}
+
+                                {% if event.venue.council %}
+                                    <br>
+                                    {{ event.venue.council.name_sw }},
+                                    {{ event.venue.council.region.name_sw }}
+                                {% endif %}
+                            </dd>
+                        </div>
+                    {% endif %}
+
+                    {% if event.contact_person %}
+                        <div>
+                            <dt>{% translate "Mtu wa mawasiliano" %}</dt>
+                            <dd>{{ event.contact_person }}</dd>
+                        </div>
+                    {% endif %}
+
+                    {% if event.contact_phone %}
+                        <div>
+                            <dt>{% translate "Simu" %}</dt>
+                            <dd>
+                                <a href="tel:{{ event.contact_phone }}">
+                                    {{ event.contact_phone }}
+                                </a>
+                            </dd>
+                        </div>
+                    {% endif %}
+
+                    {% if event.contact_email %}
+                        <div>
+                            <dt>{% translate "Baruapepe" %}</dt>
+                            <dd>
+                                <a href="mailto:{{ event.contact_email }}">
+                                    {{ event.contact_email }}
+                                </a>
+                            </dd>
+                        </div>
+                    {% endif %}
+                </dl>
+
+                <div class="detail-actions">
+                    {% if registration_available %}
+                        <a
+                            href="{% url 'forms_builder:public_event_form' event.slug registration_form.slug %}"
+                            class="primary-button full-width-button"
+                        >
+                            {% translate "Jisajili sasa" %}
+                        </a>
+
+                    {% elif registration_not_open %}
+                        <div class="notice notice-warning">
+                            {% translate "Usajili bado haujafunguliwa." %}
+                        </div>
+
+                    {% elif registration_closed %}
+                        <div class="notice notice-danger">
+                            {% translate "Muda wa usajili umekwisha." %}
+                        </div>
+
+                    {% elif not registration_form %}
+                        <div class="notice notice-neutral">
+                            {% translate "Fomu ya usajili bado haijawekwa." %}
+                        </div>
+                    {% endif %}
+
+                    {% if event.evaluation_enabled and evaluation_form %}
+                        <a
+                            href="{% url 'forms_builder:public_event_form' event.slug evaluation_form.slug %}"
+                            class="secondary-button full-width-button"
+                        >
+                            {% translate "Toa tathmini" %}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </aside>
+    </div>
+</section>
+{% endblock %}

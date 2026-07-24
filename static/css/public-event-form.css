@@ -1,0 +1,386 @@
+* {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #eef2f7;
+    color: #1f2937;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #ffffff;
+    border-bottom: 1px solid #dbe3ee;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.header-container {
+    width: 100%;
+    max-width: 1200px;
+    min-height: 64px;
+    margin: auto;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.system-title {
+    color: #17365d;
+    font-size: 17px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.language-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.language-form label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.language-form select {
+    min-height: 42px;
+    padding: 8px 10px;
+    border: 1px solid #b8c4d4;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.page-wrapper {
+    width: 100%;
+    max-width: 1000px;
+    margin: auto;
+    padding: 18px 12px 40px;
+}
+
+.event-card,
+.form-card {
+    overflow: hidden;
+    margin-bottom: 18px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.08);
+}
+
+.event-banner {
+    width: 100%;
+    max-height: 340px;
+    overflow: hidden;
+}
+
+.event-banner img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: 340px;
+    object-fit: cover;
+}
+
+.event-content {
+    padding: 20px 16px;
+}
+
+.event-logo {
+    width: 86px;
+    max-height: 86px;
+    margin-bottom: 14px;
+    object-fit: contain;
+}
+
+.event-code {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 6px 10px;
+    background: #e8eef8;
+    border-radius: 20px;
+    color: #17365d;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.event-heading h1 {
+    margin: 0 0 14px;
+    color: #17365d;
+    font-size: 26px;
+    line-height: 1.25;
+}
+
+.event-description {
+    color: #4b5563;
+    line-height: 1.65;
+}
+
+.event-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.meta-item {
+    padding: 13px;
+    background: #f7f9fc;
+    border: 1px solid #e5eaf1;
+    border-radius: 9px;
+}
+
+.meta-label,
+.meta-value {
+    display: block;
+}
+
+.meta-label {
+    margin-bottom: 5px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.meta-value {
+    color: #1f2937;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.form-header {
+    padding: 22px 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.form-header h2 {
+    margin: 0 0 10px;
+    color: #17365d;
+    font-size: 24px;
+}
+
+.form-introduction {
+    color: #4b5563;
+    line-height: 1.65;
+}
+
+.form-section {
+    padding: 22px 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.section-header {
+    margin-bottom: 20px;
+}
+
+.section-header h3 {
+    margin: 0 0 7px;
+    color: #17365d;
+    font-size: 20px;
+}
+
+.section-header p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.55;
+}
+
+.questions-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.form-field {
+    min-width: 0;
+}
+
+.field-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #27364a;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.required-mark {
+    color: #c62828;
+    font-weight: 800;
+}
+
+input,
+select,
+textarea,
+button {
+    font: inherit;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="file"],
+select,
+textarea {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 12px;
+    border: 1px solid #b9c4d3;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #1f2937;
+}
+
+textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 3px solid rgba(37, 99, 235, 0.15);
+    border-color: #2563eb;
+}
+
+.help-text {
+    display: block;
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.choice-group {
+    display: grid;
+    gap: 10px;
+}
+
+.choice-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    min-height: 46px;
+    padding: 11px 12px;
+    border: 1px solid #d6deea;
+    border-radius: 8px;
+    background: #f9fbfd;
+    cursor: pointer;
+}
+
+.choice-item input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+.choice-item span {
+    line-height: 1.45;
+}
+
+.alert {
+    margin: 18px 16px;
+    padding: 15px;
+    border-radius: 8px;
+    line-height: 1.5;
+}
+
+.alert-warning {
+    background: #fff8e1;
+    color: #7a5300;
+    border: 1px solid #f1d47a;
+}
+
+.alert-danger {
+    background: #ffebee;
+    color: #8e1b1b;
+    border: 1px solid #ef9a9a;
+}
+
+.submit-area {
+    padding: 22px 16px;
+}
+
+.submit-button {
+    width: 100%;
+    min-height: 52px;
+    padding: 13px 18px;
+    border: 0;
+    border-radius: 9px;
+    background: #17365d;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.submit-button:hover {
+    background: #0f2949;
+}
+
+.required-note {
+    margin: 12px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    text-align: center;
+}
+
+.empty-message {
+    color: #64748b;
+}
+
+/* Tablet */
+@media (min-width: 640px) {
+    .page-wrapper {
+        padding: 28px 20px 50px;
+    }
+
+    .event-content,
+    .form-header,
+    .form-section,
+    .submit-area {
+        padding-left: 28px;
+        padding-right: 28px;
+    }
+
+    .event-meta-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .choice-group-inline {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Desktop */
+@media (min-width: 900px) {
+    .event-heading h1 {
+        font-size: 34px;
+    }
+
+    .event-meta-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .form-header h2 {
+        font-size: 28px;
+    }
+}

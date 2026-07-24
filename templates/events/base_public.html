@@ -1,0 +1,116 @@
+{% load static %}
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="{% translate 'Mfumo wa Usimamizi wa Matukio' %}"
+    >
+
+    <title>
+        {% block title %}
+            {% translate "Mfumo wa Usimamizi wa Matukio" %}
+        {% endblock %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/events-public.css' %}"
+    >
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <header class="public-header">
+        <div class="header-inner">
+            <a
+                href="{% url 'events:home' %}"
+                class="brand"
+            >
+                <span class="brand-mark">EMS</span>
+
+                <span class="brand-text">
+                    {% translate "Mfumo wa Usimamizi wa Matukio" %}
+                </span>
+            </a>
+
+            <div class="header-actions">
+                <form
+                    action="{% url 'set_language' %}"
+                    method="post"
+                    class="language-switcher"
+                >
+                    {% csrf_token %}
+
+                    <input
+                        type="hidden"
+                        name="next"
+                        value="{{ request.get_full_path }}"
+                    >
+
+                    <label
+                        for="public-language"
+                        class="sr-only"
+                    >
+                        {% translate "Lugha" %}
+                    </label>
+
+                    <select
+                        id="public-language"
+                        name="language"
+                        onchange="this.form.submit()"
+                    >
+                        <option
+                            value="sw"
+                            {% if LANGUAGE_CODE == "sw" %}selected{% endif %}
+                        >
+                            Kiswahili
+                        </option>
+
+                        <option
+                            value="en"
+                            {% if LANGUAGE_CODE == "en" %}selected{% endif %}
+                        >
+                            English
+                        </option>
+                    </select>
+                </form>
+
+                {% if request.user.is_authenticated %}
+                    <a
+                        href="{% url 'admin:index' %}"
+                        class="header-link"
+                    >
+                        {% translate "Usimamizi" %}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="public-footer">
+        <div class="footer-inner">
+            <p>
+                &copy; {% now "Y" %}
+                {% translate "Mfumo wa Usimamizi wa Matukio" %}
+            </p>
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
