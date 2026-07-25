@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,6 +27,10 @@ SECRET_KEY = 'django-insecure-=2f3=^e3+8qt8@s^6!tsz)&zxnuu*$fg6jz4rc)$)!jx&)c$es
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
+
+# Optional permanent address used inside generated QR codes.
+# Leave empty during local development to use the current request address.
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
 
 
 

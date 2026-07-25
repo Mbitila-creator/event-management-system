@@ -1,4 +1,8 @@
 from django.contrib import admin
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.urls import path, reverse
+from django.utils.html import format_html
 
 from .models import (
     EventForm,
@@ -7,6 +11,11 @@ from .models import (
     FormSection,
     FormSubmission,
     QuestionOption,
+)
+from .services import (
+    generate_qr_png,
+    public_form_path,
+    public_form_url,
 )
 
 
@@ -56,6 +65,7 @@ class EventFormAdmin(AuditAdminMixin, admin.ModelAdmin):
         "event",
         "form_type",
         "is_published",
+        "registration_tools",
         "requires_login",
         "is_active",
     )
@@ -78,11 +88,75 @@ class EventFormAdmin(AuditAdminMixin, admin.ModelAdmin):
 
     readonly_fields = AuditAdminMixin.readonly_fields + (
         "slug",
+        "registration_tools",
     )
 
     inlines = [
         FormSectionInline,
     ]
+
+    @admin.display(description="Registration link and QR code")
+    def registration_tools(self, obj):
+        if not obj or not obj.pk:
+            return "Save the form first."
+
+        if not obj.is_published or not obj.is_active:
+            return "Publish and activate the form first."
+
+        public_url = public_form_path(obj)
+        qr_url = reverse(
+            "admin:forms_builder_eventform_qr_code",
+            args=[obj.pk],
+        )
+        download_url = f"{qr_url}?download=1"
+
+        return format_html(
+            '<a href="{}" target="_blank" rel="noopener">Open form</a>'
+            ' &nbsp;|&nbsp; '
+            '<a href="{}" target="_blank" rel="noopener">View QR</a>'
+            ' &nbsp;|&nbsp; '
+            '<a href="{}">Download QR</a>',
+            public_url,
+            qr_url,
+            download_url,
+        )
+
+    def get_urls(self):
+        custom_urls = [
+            path(
+                "<int:form_id>/qr-code/",
+                self.admin_site.admin_view(self.qr_code_view),
+                name="forms_builder_eventform_qr_code",
+            ),
+        ]
+        return custom_urls + super().get_urls()
+
+    def qr_code_view(self, request, form_id):
+        event_form = get_object_or_404(
+            EventForm.objects.select_related("event"),
+            pk=form_id,
+            is_active=True,
+            is_published=True,
+        )
+        registration_url = public_form_url(
+            event_form,
+            request=request,
+            language="sw",
+        )
+        image_data = generate_qr_png(registration_url)
+        response = HttpResponse(image_data, content_type="image/png")
+
+        if request.GET.get("download") == "1":
+            filename = (
+                f"{event_form.event.code}-"
+                f"{event_form.slug}-registration-qr.png"
+            )
+            response["Content-Disposition"] = (
+                f'attachment; filename="{filename}"'
+            )
+
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
 
 
 @admin.register(FormSection)
