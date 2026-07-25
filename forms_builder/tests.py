@@ -1,9 +1,24 @@
 from django.test import TestCase
 
 # Create your tests here.
+from datetime import timedelta
 from types import SimpleNamespace
+from unittest.mock import Mock
 
-from django.test import RequestFactory, SimpleTestCase, override_settings
+from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.test import (
+    RequestFactory,
+    SimpleTestCase,
+    TestCase,
+    override_settings,
+)
+from django.utils import timezone
+
+from events.models import Event, EventCategory
+
+from .admin import FormSubmissionAdmin
+from .models import EventForm, FormSubmission
 
 from .services import (
     generate_qr_png,
@@ -84,3 +99,90 @@ class PublicFormServiceTests(SimpleTestCase):
             safe_spreadsheet_value("Participant name"),
             "Participant name",
         )
+
+
+class SubmissionReviewAdminTests(TestCase):
+    def setUp(self):
+        self.reviewer = get_user_model().objects.create_user(
+            username="reviewer",
+            email="reviewer@example.org",
+            password="test-password",
+            is_staff=True,
+        )
+        category = EventCategory.objects.create(
+            name_sw="Mkutano",
+            name_en="Conference",
+            code="CONF",
+        )
+        starts_at = timezone.now() + timedelta(days=30)
+        event = Event.objects.create(
+            category=category,
+            code="TEST-2026",
+            title_sw="Tukio la Majaribio",
+            title_en="Test Event",
+            starts_at=starts_at,
+            ends_at=starts_at + timedelta(days=1),
+        )
+        event_form = EventForm.objects.create(
+            event=event,
+            name_sw="Fomu ya Majaribio",
+            name_en="Test Form",
+            is_published=True,
+        )
+        self.submission = FormSubmission.objects.create(
+            event_form=event_form,
+            submitter_email="participant@example.org",
+        )
+        self.model_admin = FormSubmissionAdmin(
+            FormSubmission,
+            admin.site,
+        )
+        self.model_admin.message_user = Mock()
+        self.request = RequestFactory().post("/admin/")
+        self.request.user = self.reviewer
+
+    def test_approve_action_records_reviewer_and_time(self):
+        self.model_admin.approve_submissions(
+            self.request,
+            FormSubmission.objects.filter(pk=self.submission.pk),
+        )
+
+        self.submission.refresh_from_db()
+        self.assertEqual(
+            self.submission.review_status,
+            FormSubmission.ReviewStatus.APPROVED,
+        )
+        self.assertEqual(self.submission.reviewed_by, self.reviewer)
+        self.assertIsNotNone(self.submission.reviewed_at)
+
+    def test_reject_action_records_reviewer_and_time(self):
+        self.model_admin.reject_submissions(
+            self.request,
+            FormSubmission.objects.filter(pk=self.submission.pk),
+        )
+
+        self.submission.refresh_from_db()
+        self.assertEqual(
+            self.submission.review_status,
+            FormSubmission.ReviewStatus.REJECTED,
+        )
+        self.assertEqual(self.submission.reviewed_by, self.reviewer)
+        self.assertIsNotNone(self.submission.reviewed_at)
+
+    def test_pending_action_clears_review_information(self):
+        self.model_admin.approve_submissions(
+            self.request,
+            FormSubmission.objects.filter(pk=self.submission.pk),
+        )
+        self.model_admin.reset_submissions_to_pending(
+            self.request,
+            FormSubmission.objects.filter(pk=self.submission.pk),
+        )
+
+        self.submission.refresh_from_db()
+        self.assertEqual(
+            self.submission.review_status,
+            FormSubmission.ReviewStatus.PENDING,
+        )
+        self.assertIsNone(self.submission.reviewed_by)
+        self.assertIsNone(self.submission.reviewed_at)

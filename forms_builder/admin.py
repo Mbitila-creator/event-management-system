@@ -1,7 +1,8 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.html import format_html
 
 from .models import (
@@ -278,6 +279,7 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "submitter_phone",
         "language",
         "is_complete",
+        "review_status_badge",
         "submitted_on",
     )
 
@@ -286,6 +288,7 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "event_form",
         "language",
         "is_complete",
+        "review_status",
         "created_at",
     )
 
@@ -308,6 +311,8 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "ip_address",
         "user_agent",
         "is_complete",
+        "reviewed_by",
+        "reviewed_at",
         "created_by",
         "updated_by",
         "created_at",
@@ -321,6 +326,9 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "event_form__event",
     )
     actions = (
+        "approve_submissions",
+        "reject_submissions",
+        "reset_submissions_to_pending",
         "export_submissions_csv",
     )
 
@@ -342,6 +350,93 @@ class FormSubmissionAdmin(admin.ModelAdmin):
     @admin.display(description="Submitted on", ordering="created_at")
     def submitted_on(self, obj):
         return obj.created_at
+
+    @admin.display(description="Review status", ordering="review_status")
+    def review_status_badge(self, obj):
+        colors = {
+            FormSubmission.ReviewStatus.PENDING: ("#854d0e", "#fef9c3"),
+            FormSubmission.ReviewStatus.APPROVED: ("#166534", "#dcfce7"),
+            FormSubmission.ReviewStatus.REJECTED: ("#991b1b", "#fee2e2"),
+        }
+        foreground, background = colors[obj.review_status]
+        return format_html(
+            '<span style="display:inline-block;padding:3px 8px;'
+            'border-radius:999px;color:{};background:{};font-weight:700">'
+            "{}</span>",
+            foreground,
+            background,
+            obj.get_review_status_display(),
+        )
+
+    def save_model(self, request, obj, form, change):
+        old_status = None
+        if change:
+            old_status = (
+                FormSubmission.objects
+                .filter(pk=obj.pk)
+                .values_list("review_status", flat=True)
+                .first()
+            )
+
+        if obj.review_status != old_status:
+            if obj.review_status == FormSubmission.ReviewStatus.PENDING:
+                obj.reviewed_by = None
+                obj.reviewed_at = None
+            else:
+                obj.reviewed_by = request.user
+                obj.reviewed_at = timezone.now()
+
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
+
+    def _set_review_status(self, request, queryset, status):
+        current_time = timezone.now()
+        reviewer = (
+            request.user
+            if status != FormSubmission.ReviewStatus.PENDING
+            else None
+        )
+        reviewed_at = (
+            current_time
+            if status != FormSubmission.ReviewStatus.PENDING
+            else None
+        )
+        updated = queryset.update(
+            review_status=status,
+            reviewed_by=reviewer,
+            reviewed_at=reviewed_at,
+            updated_by=request.user,
+            updated_at=current_time,
+        )
+        self.message_user(
+            request,
+            f"{updated} submission(s) updated.",
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Approve selected submissions")
+    def approve_submissions(self, request, queryset):
+        self._set_review_status(
+            request,
+            queryset,
+            FormSubmission.ReviewStatus.APPROVED,
+        )
+
+    @admin.action(description="Reject selected submissions")
+    def reject_submissions(self, request, queryset):
+        self._set_review_status(
+            request,
+            queryset,
+            FormSubmission.ReviewStatus.REJECTED,
+        )
+
+    @admin.action(description="Reset selected submissions to pending")
+    def reset_submissions_to_pending(self, request, queryset):
+        self._set_review_status(
+            request,
+            queryset,
+            FormSubmission.ReviewStatus.PENDING,
+        )
 
     @admin.action(description="Export selected submissions to CSV")
     def export_submissions_csv(self, request, queryset):

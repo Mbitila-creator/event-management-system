@@ -124,6 +124,10 @@ def submissions_csv(submissions):
         "Phone",
         "Language",
         "Complete",
+        "Review Status",
+        "Reviewed By",
+        "Reviewed On",
+        "Internal Review Notes",
         "Submitted On",
     ]
     question_headers = [
@@ -137,9 +141,16 @@ def submissions_csv(submissions):
             answer.question_id: answer_export_value(answer)
             for answer in submission.answers.all()
         }
-        submitted_on = timezone.localtime(
-            submission.created_at
-        ).strftime("%Y-%m-%d %H:%M:%S")
+        submitted_on = timezone.localtime(submission.created_at).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+        reviewed_on = (
+            timezone.localtime(submission.reviewed_at).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            if submission.reviewed_at
+            else ""
+        )
         fixed_values = [
             submission.reference_number,
             submission.event_form.event.code,
@@ -148,6 +159,10 @@ def submissions_csv(submissions):
             submission.submitter_phone,
             submission.language,
             "Yes" if submission.is_complete else "No",
+            submission.get_review_status_display(),
+            str(submission.reviewed_by or ""),
+            reviewed_on,
+            submission.review_notes,
             submitted_on,
         ]
         question_values = [

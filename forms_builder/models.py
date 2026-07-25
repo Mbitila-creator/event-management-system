@@ -314,6 +314,11 @@ class QuestionOption(BaseModel):
         return self.label_sw
 
 class FormSubmission(BaseModel):
+    class ReviewStatus(models.TextChoices):
+        PENDING = "PENDING", _("Pending review")
+        APPROVED = "APPROVED", _("Approved")
+        REJECTED = "REJECTED", _("Rejected")
+
     event_form = models.ForeignKey(
         EventForm,
         verbose_name=_("event form"),
@@ -372,6 +377,37 @@ class FormSubmission(BaseModel):
     is_complete = models.BooleanField(
         _("complete submission"),
         default=True,
+    )
+
+    review_status = models.CharField(
+        _("review status"),
+        max_length=20,
+        choices=ReviewStatus.choices,
+        default=ReviewStatus.PENDING,
+        db_index=True,
+    )
+
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("reviewed by"),
+        related_name="reviewed_form_submissions",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    reviewed_at = models.DateTimeField(
+        _("reviewed at"),
+        null=True,
+        blank=True,
+    )
+
+    review_notes = models.TextField(
+        _("internal review notes"),
+        blank=True,
+        help_text=_(
+            "Visible to administrators only. Do not include passwords or secrets."
+        ),
     )
 
     class Meta:
