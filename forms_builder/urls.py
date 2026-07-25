@@ -7,6 +7,11 @@ app_name = "forms_builder"
 
 urlpatterns = [
     path(
+        "registration-status/",
+        views.registration_status,
+        name="registration_status",
+    ),
+    path(
         "events/<slug:event_slug>/forms/<slug:form_slug>/",
         views.public_event_form,
         name="public_event_form",

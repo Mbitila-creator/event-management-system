@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-25 11:05+0300\n"
+"POT-Creation-Date: 2026-07-25 23:45+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -41,11 +41,11 @@ msgstr "Afisa Ripoti"
 msgid "Participant"
 msgstr "Mshiriki"
 
-#: accounts/models.py:22 forms_builder/models.py:344
+#: accounts/models.py:22 forms_builder/models.py:349
 msgid "Kiswahili"
 msgstr "Kiswahili"
 
-#: accounts/models.py:23 forms_builder/models.py:345
+#: accounts/models.py:23 forms_builder/models.py:350
 msgid "English"
 msgstr "Kiingereza"
 
@@ -518,7 +518,7 @@ msgid "published"
 msgstr "imechapishwa"
 
 #: forms_builder/models.py:99 forms_builder/models.py:123
-#: forms_builder/models.py:319
+#: forms_builder/models.py:324
 msgid "event form"
 msgstr "fomu ya tukio"
 
@@ -658,7 +658,7 @@ msgstr "swali la fomu"
 msgid "form questions"
 msgstr "maswali ya fomu"
 
-#: forms_builder/models.py:276 forms_builder/models.py:427
+#: forms_builder/models.py:276 forms_builder/models.py:463
 msgid "question"
 msgstr "swali"
 
@@ -682,96 +682,129 @@ msgstr "chaguo la swali"
 msgid "question options"
 msgstr "chaguo za swali"
 
-#: forms_builder/models.py:326
+#: forms_builder/models.py:318
+msgid "Pending review"
+msgstr "Inasubiri ukaguzi"
+
+#: forms_builder/models.py:319
+msgid "Approved"
+msgstr "Imepitishwa"
+
+#: forms_builder/models.py:320
+msgid "Rejected"
+msgstr "Imekataliwa"
+
+#: forms_builder/models.py:331
 msgid "submitted by"
 msgstr "imewasilishwa na"
 
-#: forms_builder/models.py:334
+#: forms_builder/models.py:339
 msgid "reference number"
 msgstr "namba ya kumbukumbu"
 
-#: forms_builder/models.py:341
+#: forms_builder/models.py:346
 msgid "submission language"
 msgstr "lugha ya uwasilishaji"
 
-#: forms_builder/models.py:351
+#: forms_builder/models.py:356
 msgid "submitter email"
 msgstr "baruapepe ya mwasilishaji"
 
-#: forms_builder/models.py:356
+#: forms_builder/models.py:361
 msgid "submitter phone"
 msgstr "simu ya mwasilishaji"
 
-#: forms_builder/models.py:362
+#: forms_builder/models.py:367
 msgid "IP address"
 msgstr "anwani ya IP"
 
-#: forms_builder/models.py:368
+#: forms_builder/models.py:373
 msgid "user agent"
 msgstr "taarifa za kivinjari"
 
-#: forms_builder/models.py:373
+#: forms_builder/models.py:378
 msgid "complete submission"
 msgstr "uwasilishaji umekamilika"
 
-#: forms_builder/models.py:378
+#: forms_builder/models.py:383
+msgid "review status"
+msgstr "hali ya ukaguzi"
+
+#: forms_builder/models.py:392
+msgid "reviewed by"
+msgstr "imekaguliwa na"
+
+#: forms_builder/models.py:400
+msgid "reviewed at"
+msgstr "imekaguliwa tarehe"
+
+#: forms_builder/models.py:406
+msgid "internal review notes"
+msgstr "maelezo ya ndani ya ukaguzi"
+
+#: forms_builder/models.py:409
+msgid "Visible to administrators only. Do not include passwords or secrets."
+msgstr "Yanaonekana kwa wasimamizi pekee. Usiweke nywila au taarifa za siri."
+
+#: forms_builder/models.py:414
 msgid "form submission"
 msgstr "uwasilishaji wa fomu"
 
-#: forms_builder/models.py:379
+#: forms_builder/models.py:415
 msgid "form submissions"
 msgstr "uwasilishaji wa fomu"
 
-#: forms_builder/models.py:420
+#: forms_builder/models.py:456
 msgid "submission"
 msgstr "uwasilishaji"
 
-#: forms_builder/models.py:433
+#: forms_builder/models.py:469
 msgid "text value"
 msgstr "thamani ya maandishi"
 
-#: forms_builder/models.py:438
+#: forms_builder/models.py:474
 msgid "number value"
 msgstr "thamani ya namba"
 
-#: forms_builder/models.py:446
+#: forms_builder/models.py:482
 msgid "date value"
 msgstr "thamani ya tarehe"
 
-#: forms_builder/models.py:452
+#: forms_builder/models.py:488
 msgid "date and time value"
 msgstr "thamani ya tarehe na muda"
 
-#: forms_builder/models.py:458
+#: forms_builder/models.py:494
 msgid "boolean value"
 msgstr "thamani ya ndiyo/hapana"
 
-#: forms_builder/models.py:465
+#: forms_builder/models.py:501
 msgid "selected options"
 msgstr "chaguo zilizochaguliwa"
 
-#: forms_builder/models.py:471
+#: forms_builder/models.py:507
 msgid "uploaded file"
 msgstr "faili lililopakiwa"
 
-#: forms_builder/models.py:478
+#: forms_builder/models.py:514
 msgid "form answer"
 msgstr "jibu la fomu"
 
-#: forms_builder/models.py:479
+#: forms_builder/models.py:515
 msgid "form answers"
 msgstr "majibu ya fomu"
 
 #: templates/events/base_public.html:16 templates/events/base_public.html:21
 #: templates/events/base_public.html:49 templates/events/base_public.html:117
 #: templates/events/home.html:6 templates/events/home.html:18
-#: templates/forms_builder/public_event_form.html:46
+#: templates/forms_builder/public_event_form.html:57
 #: templates/forms_builder/submission_success.html:37
 msgid "Event Management System"
 msgstr "Mfumo wa Usimamizi wa Matukio"
 
 #: templates/events/base_public.html:73 templates/events/base_public.html:79
-#: templates/forms_builder/public_event_form.html:64
+#: templates/forms_builder/public_event_form.html:63
+#: templates/forms_builder/public_event_form.html:66
 msgid "Language"
 msgstr "Lugha"
 
@@ -800,17 +833,17 @@ msgid "Important information"
 msgstr "Taarifa muhimu"
 
 #: templates/events/event_detail.html:141
-#: templates/forms_builder/public_event_form.html:160
+#: templates/forms_builder/public_event_form.html:159
 msgid "Start date"
 msgstr "Tarehe ya kuanza"
 
 #: templates/events/event_detail.html:146
-#: templates/forms_builder/public_event_form.html:170
+#: templates/forms_builder/public_event_form.html:169
 msgid "End date"
 msgstr "Tarehe ya kumalizika"
 
 #: templates/events/event_detail.html:152 templates/events/home.html:183
-#: templates/forms_builder/public_event_form.html:181
+#: templates/forms_builder/public_event_form.html:180
 msgid "Venue"
 msgstr "Mahali"
 
@@ -927,98 +960,165 @@ msgstr "Hapana"
 msgid "Complete and submit the event form."
 msgstr "Jaza na uwasilishe fomu ya tukio."
 
-#: templates/forms_builder/public_event_form.html:88
-msgid "Change language"
-msgstr "Badili lugha"
-
+#: templates/forms_builder/public_event_form.html:50
 msgid "Back"
 msgstr "Rudi"
 
-#: templates/forms_builder/public_event_form.html:146
+#: templates/forms_builder/public_event_form.html:145
 msgid "Organizer"
 msgstr "Mratibu"
 
-#: templates/forms_builder/public_event_form.html:235
+#: templates/forms_builder/public_event_form.html:234
 msgid "This form is not open yet."
 msgstr "Fomu hii bado haijafunguliwa."
 
-#: templates/forms_builder/public_event_form.html:243
+#: templates/forms_builder/public_event_form.html:242
 msgid "The submission period for this form has ended."
 msgstr "Muda wa kujaza fomu hii umekwisha."
 
-#: templates/forms_builder/public_event_form.html:257
+#: templates/forms_builder/public_event_form.html:256
 msgid "Form progress"
 msgstr "Maendeleo ya fomu"
 
-#: templates/forms_builder/public_event_form.html:283
+#: templates/forms_builder/public_event_form.html:282
 msgid "Form steps"
 msgstr "Hatua za fomu"
 
+#: templates/forms_builder/public_event_form.html:342
 #: templates/forms_builder/public_event_form.html:343
-#: templates/forms_builder/public_event_form.html:344
+#: templates/forms_builder/public_event_form.html:363
 #: templates/forms_builder/public_event_form.html:364
-#: templates/forms_builder/public_event_form.html:365
 msgid "Required"
 msgstr "Lazima"
 
-#: templates/forms_builder/public_event_form.html:392
+#: templates/forms_builder/public_event_form.html:391
 msgid "There are no questions in this section."
 msgstr "Hakuna maswali katika sehemu hii."
 
-#: templates/forms_builder/public_event_form.html:402
+#: templates/forms_builder/public_event_form.html:401
 msgid "This form has no sections or questions yet."
 msgstr "Fomu hii bado haina sehemu au maswali."
 
-#: templates/forms_builder/public_event_form.html:409
-#: templates/forms_builder/public_event_form.html:414
+#: templates/forms_builder/public_event_form.html:408
+#: templates/forms_builder/public_event_form.html:413
 msgid "Review and submit"
 msgstr "Kagua na uwasilishe"
 
-#: templates/forms_builder/public_event_form.html:417
+#: templates/forms_builder/public_event_form.html:416
 msgid "Please review your information before submitting the form."
 msgstr "Tafadhali kagua taarifa zako kabla ya kuwasilisha fomu."
 
-#: templates/forms_builder/public_event_form.html:428
+#: templates/forms_builder/public_event_form.html:427
 msgid "Please review the information above before submitting."
 msgstr "Tafadhali kagua taarifa zilizo hapo juu kabla ya kuwasilisha."
 
-#: templates/forms_builder/public_event_form.html:442
+#: templates/forms_builder/public_event_form.html:441
 msgid "Previous"
 msgstr "Iliyotangulia"
 
-#: templates/forms_builder/public_event_form.html:449
+#: templates/forms_builder/public_event_form.html:448
 msgid "Next"
 msgstr "Inayofuata"
 
-#: templates/forms_builder/public_event_form.html:457
+#: templates/forms_builder/public_event_form.html:456
 msgid "Submit form"
 msgstr "Wasilisha fomu"
 
-#: templates/forms_builder/public_event_form.html:463
+#: templates/forms_builder/public_event_form.html:462
 msgid "Required field"
 msgstr "Sehemu ya lazima"
+
+#: templates/forms_builder/registration_status.html:6
+#: templates/forms_builder/registration_status.html:24
+#: templates/forms_builder/submission_success.html:97
+msgid "Check registration status"
+msgstr "Angalia hali ya usajili"
+
+#: templates/forms_builder/registration_status.html:21
+msgid "Registration"
+msgstr "Usajili"
+
+#: templates/forms_builder/registration_status.html:27
+msgid ""
+"Enter your reference number and the email address or phone number used "
+"during registration."
+msgstr ""
+"Weka namba yako ya kumbukumbu na anwani ya baruapepe au namba ya simu "
+"uliyotumia wakati wa usajili."
+
+#: templates/forms_builder/registration_status.html:36
+msgid "We could not verify a registration with those details."
+msgstr "Hatukuweza kuthibitisha usajili kwa taarifa hizo."
+
+#: templates/forms_builder/registration_status.html:42
+#: templates/forms_builder/registration_status.html:79
+#: templates/forms_builder/submission_success.html:62
+msgid "Reference number"
+msgstr "Namba ya kumbukumbu"
+
+#: templates/forms_builder/registration_status.html:58
+msgid "Registered email or phone number"
+msgstr "Baruapepe au namba ya simu iliyotumika kusajili"
+
+#: templates/forms_builder/registration_status.html:71
+msgid "Check status"
+msgstr "Angalia hali"
+
+#: templates/forms_builder/registration_status.html:90
+#: templates/forms_builder/submission_success.html:72
+msgid "Event"
+msgstr "Tukio"
+
+#: templates/forms_builder/registration_status.html:101
+#: templates/forms_builder/submission_success.html:84
+msgid "Submitted on"
+msgstr "Iliwasilishwa tarehe"
+
+#: templates/forms_builder/registration_status.html:108
+msgid "Registration approved"
+msgstr "Usajili umeidhinishwa"
+
+#: templates/forms_builder/registration_status.html:110
+msgid ""
+"Your registration has been approved. Keep your reference number for future "
+"event services."
+msgstr ""
+"Usajili wako umeidhinishwa. Hifadhi namba yako ya kumbukumbu kwa huduma za "
+"tukio zijazo."
+
+#: templates/forms_builder/registration_status.html:113
+msgid "Registration not approved"
+msgstr "Usajili haujaidhinishwa"
+
+#: templates/forms_builder/registration_status.html:115
+msgid ""
+"Your registration was not approved. Contact the event organizer if you need "
+"assistance."
+msgstr ""
+"Usajili wako haujaidhinishwa. Wasiliana na mratibu wa tukio ikiwa unahitaji "
+"msaada."
+
+#: templates/forms_builder/registration_status.html:118
+msgid "Registration pending review"
+msgstr "Usajili unasubiri kukaguliwa"
+
+#: templates/forms_builder/registration_status.html:120
+msgid ""
+"Your registration was received and is waiting for administrative review."
+msgstr "Usajili wako umepokelewa na unasubiri ukaguzi wa kiutawala."
 
 #: templates/forms_builder/submission_success.html:15
 #: templates/forms_builder/submission_success.html:49
 msgid "Registration successful"
 msgstr "Usajili umefanikiwa"
 
-#: templates/forms_builder/submission_success.html:62
-msgid "Reference number"
-msgstr "Namba ya kumbukumbu"
-
-#: templates/forms_builder/submission_success.html:72
-msgid "Event"
-msgstr "Tukio"
-
-#: templates/forms_builder/submission_success.html:84
-msgid "Submitted on"
-msgstr "Iliwasilishwa tarehe"
-
-#: templates/forms_builder/submission_success.html:97
+#: templates/forms_builder/submission_success.html:104
 msgid "Return to event"
 msgstr "Rudi kwenye tukio"
 
-#: templates/forms_builder/submission_success.html:104
+#: templates/forms_builder/submission_success.html:111
 msgid "View all events"
 msgstr "Tazama matukio yote"
+
+#~ msgid "Change language"
+#~ msgstr "Badili lugha"

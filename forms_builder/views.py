@@ -441,3 +441,55 @@ def submission_success(request, reference_number):
             "event": submission.event_form.event,
         },
     )
+
+
+@require_http_methods(["GET", "POST"])
+def registration_status(request):
+    submission = None
+    lookup_error = ""
+    reference_number = request.GET.get("reference", "").strip().upper()
+
+    if request.method == "POST":
+        reference_number = (
+            request.POST.get("reference_number", "").strip().upper()
+        )
+        contact = request.POST.get("contact", "").strip()
+        candidate = (
+            FormSubmission.objects
+            .select_related("event_form__event")
+            .filter(
+                reference_number=reference_number,
+                is_complete=True,
+            )
+            .first()
+        )
+
+        email_matches = (
+            candidate
+            and candidate.submitter_email
+            and candidate.submitter_email.casefold() == contact.casefold()
+        )
+        normalized_contact = "".join(contact.split())
+        phone_matches = (
+            candidate
+            and candidate.submitter_phone
+            and "".join(candidate.submitter_phone.split())
+            == normalized_contact
+        )
+
+        if candidate and (email_matches or phone_matches):
+            submission = candidate
+        else:
+            lookup_error = (
+                "We could not verify a registration with those details."
+            )
+
+    return render(
+        request,
+        "forms_builder/registration_status.html",
+        {
+            "submission": submission,
+            "lookup_error": lookup_error,
+            "reference_number": reference_number,
+        },
+    )

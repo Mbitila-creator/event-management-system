@@ -186,3 +186,68 @@ class SubmissionReviewAdminTests(TestCase):
         )
         self.assertIsNone(self.submission.reviewed_by)
         self.assertIsNone(self.submission.reviewed_at)
+
+    def test_status_lookup_accepts_matching_email(self):
+        FormSubmission.objects.filter(pk=self.submission.pk).update(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            reviewed_by=self.reviewer,
+            reviewed_at=timezone.now(),
+            review_notes="Private internal decision notes",
+        )
+
+        response = self.client.post(
+            "/en/registration-status/",
+            {
+                "reference_number": self.submission.reference_number,
+                "contact": "PARTICIPANT@example.org",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Registration approved")
+        self.assertNotContains(response, "Private internal decision notes")
+
+    def test_kiswahili_status_uses_translated_choice_label(self):
+        FormSubmission.objects.filter(pk=self.submission.pk).update(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            reviewed_by=self.reviewer,
+            reviewed_at=timezone.now(),
+        )
+
+        response = self.client.post(
+            "/sw/registration-status/",
+            {
+                "reference_number": self.submission.reference_number,
+                "contact": "participant@example.org",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Imepitishwa")
+        self.assertContains(response, "Usajili umeidhinishwa")
+        self.assertNotContains(response, ">Approved<")
+
+    def test_status_lookup_rejects_incorrect_contact(self):
+        response = self.client.post(
+            "/en/registration-status/",
+            {
+                "reference_number": self.submission.reference_number,
+                "contact": "someone-else@example.org",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "We could not verify a registration with those details.",
+        )
+        self.assertNotContains(response, self.submission.event_form.name_en)
+
+    def test_status_page_prefills_reference_from_success_link(self):
+        response = self.client.get(
+            "/en/registration-status/",
+            {"reference": self.submission.reference_number},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.submission.reference_number)

@@ -91,8 +91,15 @@
 
             <div class="success-actions">
                 <a
-                    href="{% url 'events:event_detail' event.slug %}"
+                    href="{% url 'forms_builder:registration_status' %}?reference={{ submission.reference_number|urlencode }}"
                     class="submit-button success-link"
+                >
+                    {% translate "Check registration status" %}
+                </a>
+
+                <a
+                    href="{% url 'events:event_detail' event.slug %}"
+                    class="secondary-success-link"
                 >
                     {% translate "Return to event" %}
                 </a>
