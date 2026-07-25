@@ -2,7 +2,7 @@
 {% load i18n %}
 
 <!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE }}">
+<html lang="{{ request.LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
 
@@ -28,6 +28,12 @@
         rel="stylesheet"
         href="{% static 'css/public-event-form.css' %}"
     >
+
+    <link
+        rel="icon"
+        href="{% static 'images/favicon.ico' %}"
+        type="image/x-icon"
+    >
 </head>
 
 <body>
@@ -41,48 +47,48 @@
             </a>
 
             <form
-    action="{% url 'set_language' %}"
-    method="post"
-    class="language-form"
-    id="registration-language-form"
->
-    {% csrf_token %}
+                action="{% url 'set_language' %}"
+                method="post"
+                class="language-form"
+                id="registration-language-form"
+            >
+                {% csrf_token %}
 
-    <input
-        type="hidden"
-        name="next"
-        value="{{ request.get_full_path }}"
-    >
+                <input
+                    type="hidden"
+                    name="next"
+                    value="{{ request.get_full_path }}"
+                >
 
-    <label for="registration-language-select">
-        {% translate "Language" %}
-    </label>
+                <label for="registration-language-select">
+                    {% translate "Language" %}
+                </label>
 
-    <select
-        id="registration-language-select"
-        name="language"
-    >
-        <option
-            value="sw"
-            {% if request.LANGUAGE_CODE == "sw" %}selected{% endif %}
-        >
-            Kiswahili
-        </option>
+                <select
+                    id="registration-language-select"
+                    name="language"
+                >
+                    <option
+                        value="sw"
+                        {% if request.LANGUAGE_CODE == "sw" %}selected{% endif %}
+                    >
+                        Kiswahili
+                    </option>
 
-        <option
-            value="en"
-            {% if request.LANGUAGE_CODE == "en" %}selected{% endif %}
-        >
-            English
-        </option>
-    </select>
+                    <option
+                        value="en"
+                        {% if request.LANGUAGE_CODE == "en" %}selected{% endif %}
+                    >
+                        English
+                    </option>
+                </select>
 
-    <noscript>
-        <button type="submit">
-            {% translate "Change language" %}
-        </button>
-    </noscript>
-</form>
+                <noscript>
+                    <button type="submit">
+                        {% translate "Change language" %}
+                    </button>
+                </noscript>
+            </form>
         </div>
     </header>
 
@@ -245,9 +251,49 @@
                 >
                     {% csrf_token %}
 
+                    {% if sections %}
+                        <div
+                            class="wizard-progress"
+                            aria-label="{% translate 'Form progress' %}"
+                        >
+                            <div class="wizard-progress-copy">
+                                <p
+                                    class="wizard-step-count"
+                                    aria-live="polite"
+                                ></p>
+
+                                <p
+                                    class="wizard-progress-percent"
+                                    aria-live="polite"
+                                ></p>
+                            </div>
+
+                            <div
+                                class="wizard-progress-track"
+                                role="progressbar"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-valuenow="0"
+                            >
+                                <span class="wizard-progress-fill"></span>
+                            </div>
+
+                            <ol
+                                class="wizard-step-dots"
+                                aria-label="{% translate 'Form steps' %}"
+                            ></ol>
+                        </div>
+                    {% endif %}
+
+                    <div class="wizard-steps">
                     {% for section in sections %}
-                        <section class="form-section">
+                        <section
+                            class="form-section wizard-step"
+                            data-step-title="{% if request.LANGUAGE_CODE == 'en' %}{{ section.title_en }}{% else %}{{ section.title_sw }}{% endif %}"
+                        >
                             <div class="section-header">
+                                <p class="section-eyebrow"></p>
+
                                 <h3>
                                     {% if request.LANGUAGE_CODE == "en" %}
                                         {{ section.title_en }}
@@ -278,50 +324,51 @@
                                             class="form-field"
                                             data-question-id="{{ question.id }}"
                                             data-question-type="{{ question.question_type }}"
+                                            data-question-label="{% if request.LANGUAGE_CODE == 'en' %}{{ question.label_en }}{% else %}{{ question.label_sw }}{% endif %}"
                                         >
                                             {% if question.question_type == "SINGLE_CHOICE" or question.question_type == "MULTIPLE_CHOICE" or question.question_type == "YES_NO" %}
-    <div
-        class="field-label"
-        id="question-label-{{ question.id }}"
-    >
-        {% if language_code == "en" %}
-            {{ question.label_en }}
-        {% else %}
-            {{ question.label_sw }}
-        {% endif %}
+                                                <div
+                                                    class="field-label"
+                                                    id="question-label-{{ question.id }}"
+                                                >
+                                                    {% if language_code == "en" %}
+                                                        {{ question.label_en }}
+                                                    {% else %}
+                                                        {{ question.label_sw }}
+                                                    {% endif %}
 
-        {% if question.is_required %}
-            <span
-                class="required-mark"
-                aria-label="{% translate 'Required' %}"
-                title="{% translate 'Required' %}"
-            >
-                *
-            </span>
-        {% endif %}
-    </div>
-{% else %}
-    <label
-        for="question-{{ question.id }}"
-        class="field-label"
-    >
-        {% if language_code == "en" %}
-            {{ question.label_en }}
-        {% else %}
-            {{ question.label_sw }}
-        {% endif %}
+                                                    {% if question.is_required %}
+                                                        <span
+                                                            class="required-mark"
+                                                            aria-label="{% translate 'Required' %}"
+                                                            title="{% translate 'Required' %}"
+                                                        >
+                                                            *
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            {% else %}
+                                                <label
+                                                    for="question-{{ question.id }}"
+                                                    class="field-label"
+                                                >
+                                                    {% if language_code == "en" %}
+                                                        {{ question.label_en }}
+                                                    {% else %}
+                                                        {{ question.label_sw }}
+                                                    {% endif %}
 
-        {% if question.is_required %}
-            <span
-                class="required-mark"
-                aria-label="{% translate 'Required' %}"
-                title="{% translate 'Required' %}"
-            >
-                *
-            </span>
-        {% endif %}
-    </label>
-{% endif %}
+                                                    {% if question.is_required %}
+                                                        <span
+                                                            class="required-mark"
+                                                            aria-label="{% translate 'Required' %}"
+                                                            title="{% translate 'Required' %}"
+                                                        >
+                                                            *
+                                                        </span>
+                                                    {% endif %}
+                                                </label>
+                                            {% endif %}
 
                                             {% if request.LANGUAGE_CODE == "en" %}
                                                 {% with help_text=question.help_text_en placeholder=question.placeholder_en %}
@@ -357,19 +404,64 @@
                     {% endfor %}
 
                     {% if sections %}
-                        <div class="submit-area">
+                        <section
+                            class="form-section wizard-step wizard-review-step"
+                            data-step-title="{% translate 'Review and submit' %}"
+                        >
+                            <div class="section-header">
+                                <p class="section-eyebrow"></p>
+
+                                <h3>{% translate "Review and submit" %}</h3>
+
+                                <p>
+                                    {% translate "Please review your information before submitting the form." %}
+                                </p>
+                            </div>
+
+                            <div
+                                class="review-sections"
+                                aria-live="polite"
+                            ></div>
+
+                            <noscript>
+                                <p class="alert alert-warning">
+                                    {% translate "Please review the information above before submitting." %}
+                                </p>
+                            </noscript>
+                        </section>
+                    {% endif %}
+                    </div>
+
+                    {% if sections %}
+                        <div class="wizard-actions">
+                            <button
+                                type="button"
+                                class="wizard-button wizard-button-secondary wizard-previous"
+                            >
+                                <span aria-hidden="true">←</span>
+                                {% translate "Previous" %}
+                            </button>
+
+                            <button
+                                type="button"
+                                class="wizard-button wizard-button-primary wizard-next"
+                            >
+                                {% translate "Next" %}
+                                <span aria-hidden="true">→</span>
+                            </button>
+
                             <button
                                 type="submit"
-                                class="submit-button"
+                                class="submit-button wizard-submit"
                             >
                                 {% translate "Submit form" %}
                             </button>
-
-                            <p class="required-note">
-                                <span class="required-mark">*</span>
-                                {% translate "Required field" %}
-                            </p>
                         </div>
+
+                        <p class="required-note">
+                            <span class="required-mark">*</span>
+                            {% translate "Required field" %}
+                        </p>
                     {% endif %}
                 </form>
             {% endif %}
@@ -379,29 +471,29 @@
     <script src="{% static 'js/public-event-form.js' %}"></script>
 
     <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const languageForm = document.getElementById(
-            "registration-language-form"
-        );
+        document.addEventListener("DOMContentLoaded", function () {
+            const languageForm = document.getElementById(
+                "registration-language-form"
+            );
 
-        const languageSelect = document.getElementById(
-            "registration-language-select"
-        );
+            const languageSelect = document.getElementById(
+                "registration-language-select"
+            );
 
-        if (!languageForm || !languageSelect) {
-            return;
-        }
-
-        languageSelect.addEventListener("change", function () {
-            languageSelect.disabled = true;
-
-            if (typeof languageForm.requestSubmit === "function") {
-                languageForm.requestSubmit();
-            } else {
-                languageForm.submit();
+            if (!languageForm || !languageSelect) {
+                return;
             }
+
+            languageSelect.addEventListener("change", function () {
+                languageSelect.disabled = true;
+
+                if (typeof languageForm.requestSubmit === "function") {
+                    languageForm.requestSubmit();
+                } else {
+                    languageForm.submit();
+                }
+            });
         });
-    });
-</script>
+    </script>
 </body>
 </html>

@@ -6,8 +6,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const submitButton = form.querySelector(".submit-button");
+    const steps = Array.from(form.querySelectorAll(".wizard-step"));
+    const previousButton = form.querySelector(".wizard-previous");
+    const nextButton = form.querySelector(".wizard-next");
+    const progressTrack = form.querySelector(".wizard-progress-track");
+    const progressFill = form.querySelector(".wizard-progress-fill");
+    const progressPercent = form.querySelector(".wizard-progress-percent");
+    const stepCount = form.querySelector(".wizard-step-count");
+    const stepDots = form.querySelector(".wizard-step-dots");
+    const reviewContainer = form.querySelector(".review-sections");
     const language =
         document.documentElement.lang === "en" ? "en" : "sw";
+    let currentStep = 0;
 
     const originalButtonText = submitButton
         ? submitButton.textContent.trim()
@@ -31,6 +41,245 @@ document.addEventListener("DOMContentLoaded", () => {
             oldMessage.remove();
         }
     };
+
+    const text = {
+        step: language === "en" ? "Step" : "Hatua",
+        of: language === "en" ? "of" : "kati ya",
+        complete: language === "en" ? "complete" : "imekamilika",
+        notAnswered:
+            language === "en" ? "Not answered" : "Haijajibiwa",
+        noFile:
+            language === "en" ? "No file selected" : "Hakuna faili",
+        edit: language === "en" ? "Edit" : "Hariri",
+    };
+
+    const getFieldValue = (field) => {
+        const controls = Array.from(
+            field.querySelectorAll("input, select, textarea")
+        );
+        const checked = controls.filter(
+            (control) =>
+                (control.type === "checkbox" ||
+                    control.type === "radio") &&
+                control.checked
+        );
+
+        if (checked.length) {
+            return checked.map((control) => {
+                const choice = control.closest(".choice-item");
+                return choice
+                    ? choice.textContent.trim()
+                    : control.value;
+            }).join(", ");
+        }
+
+        const control = controls.find(
+            (item) =>
+                item.type !== "checkbox" &&
+                item.type !== "radio" &&
+                item.type !== "hidden"
+        );
+
+        if (!control) {
+            return text.notAnswered;
+        }
+
+        if (control.type === "file") {
+            return control.files && control.files.length
+                ? Array.from(control.files)
+                    .map((file) => file.name)
+                    .join(", ")
+                : text.noFile;
+        }
+
+        if (control.tagName === "SELECT" && control.selectedIndex >= 0) {
+            return control.value
+                ? control.options[control.selectedIndex].text.trim()
+                : text.notAnswered;
+        }
+
+        return control.value.trim() || text.notAnswered;
+    };
+
+    const buildReview = () => {
+        if (!reviewContainer) {
+            return;
+        }
+
+        reviewContainer.replaceChildren();
+
+        steps.slice(0, -1).forEach((step, index) => {
+            const section = document.createElement("section");
+            section.className = "review-section";
+
+            const heading = document.createElement("div");
+            heading.className = "review-section-heading";
+
+            const title = document.createElement("h4");
+            title.textContent = step.dataset.stepTitle;
+
+            const editButton = document.createElement("button");
+            editButton.type = "button";
+            editButton.className = "review-edit-button";
+            editButton.textContent = text.edit;
+            editButton.addEventListener("click", () => showStep(index));
+
+            heading.append(title, editButton);
+            section.append(heading);
+
+            step.querySelectorAll(".form-field").forEach((field) => {
+                const item = document.createElement("div");
+                item.className = "review-item";
+
+                const label = document.createElement("dt");
+                label.textContent = field.dataset.questionLabel;
+
+                const value = document.createElement("dd");
+                value.textContent = getFieldValue(field);
+
+                item.append(label, value);
+                section.append(item);
+            });
+
+            reviewContainer.append(section);
+        });
+    };
+
+    const updateProgress = () => {
+        const total = steps.length;
+        const percent = total
+            ? Math.round(((currentStep + 1) / total) * 100)
+            : 0;
+
+        if (stepCount) {
+            stepCount.textContent =
+                `${text.step} ${currentStep + 1} ${text.of} ${total}`;
+        }
+
+        if (progressPercent) {
+            progressPercent.textContent = `${percent}% ${text.complete}`;
+        }
+
+        if (progressFill) {
+            progressFill.style.width = `${percent}%`;
+        }
+
+        if (progressTrack) {
+            progressTrack.setAttribute("aria-valuenow", String(percent));
+        }
+
+        form.querySelectorAll(".wizard-step-dot").forEach((dot, index) => {
+            dot.classList.toggle("is-active", index === currentStep);
+            dot.classList.toggle("is-complete", index < currentStep);
+            dot.setAttribute(
+                "aria-current",
+                index === currentStep ? "step" : "false"
+            );
+        });
+    };
+
+    const showStep = (index, focusHeading = true) => {
+        currentStep = Math.max(0, Math.min(index, steps.length - 1));
+
+        steps.forEach((step, stepIndex) => {
+            const active = stepIndex === currentStep;
+            step.hidden = !active;
+            step.classList.toggle("is-active", active);
+
+            const eyebrow = step.querySelector(".section-eyebrow");
+            if (eyebrow) {
+                eyebrow.textContent =
+                    `${text.step} ${stepIndex + 1} ${text.of} ${steps.length}`;
+            }
+        });
+
+        if (currentStep === steps.length - 1) {
+            buildReview();
+        }
+
+        if (previousButton) {
+            previousButton.hidden = currentStep === 0;
+        }
+
+        if (nextButton) {
+            nextButton.hidden = currentStep === steps.length - 1;
+        }
+
+        if (submitButton) {
+            submitButton.hidden = currentStep !== steps.length - 1;
+        }
+
+        updateProgress();
+
+        if (focusHeading) {
+            const heading = steps[currentStep].querySelector("h3");
+            heading?.setAttribute("tabindex", "-1");
+            heading?.focus({preventScroll: true});
+            form.querySelector(".wizard-progress")?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }
+    };
+
+    const validateCurrentStep = () => {
+        const step = steps[currentStep];
+        const controls = Array.from(
+            step.querySelectorAll("input, select, textarea")
+        );
+        const invalid = controls.find((control) => !control.checkValidity());
+
+        if (!invalid) {
+            return true;
+        }
+
+        invalid.reportValidity();
+        invalid.focus({preventScroll: true});
+        invalid.closest(".form-field")?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+        });
+        return false;
+    };
+
+    if (steps.length) {
+        form.classList.add("wizard-ready");
+
+        steps.forEach((step, index) => {
+            if (!stepDots) {
+                return;
+            }
+
+            const item = document.createElement("li");
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "wizard-step-dot";
+            button.setAttribute(
+                "aria-label",
+                `${text.step} ${index + 1}: ${step.dataset.stepTitle}`
+            );
+            button.addEventListener("click", () => {
+                if (index < currentStep) {
+                    showStep(index);
+                }
+            });
+            item.append(button);
+            stepDots.append(item);
+        });
+
+        previousButton?.addEventListener(
+            "click",
+            () => showStep(currentStep - 1)
+        );
+
+        nextButton?.addEventListener("click", () => {
+            if (validateCurrentStep()) {
+                showStep(currentStep + 1);
+            }
+        });
+
+        showStep(0, false);
+    }
 
     const showGeneralMessage = (message, type = "error") => {
         const messageBox = document.createElement("div");
@@ -88,7 +337,16 @@ document.addEventListener("DOMContentLoaded", () => {
         clearErrors();
 
         if (!form.checkValidity()) {
-            form.reportValidity();
+            const firstInvalid = form.querySelector(":invalid");
+            const invalidStep = steps.findIndex(
+                (step) => firstInvalid && step.contains(firstInvalid)
+            );
+
+            if (invalidStep >= 0) {
+                showStep(invalidStep);
+            }
+
+            firstInvalid?.reportValidity();
             return;
         }
 
@@ -128,6 +386,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (data.errors) {
                     showFieldErrors(data.errors);
+
+                    const firstErrorId = Object.keys(data.errors)[0];
+                    const errorField = form.querySelector(
+                        `[data-question-id="${firstErrorId}"]`
+                    );
+                    const errorStep = steps.findIndex(
+                        (step) => errorField && step.contains(errorField)
+                    );
+
+                    if (errorStep >= 0) {
+                        showStep(errorStep);
+                    }
                 }
 
                 return;

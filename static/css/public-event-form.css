@@ -183,6 +183,135 @@ img {
     border-bottom: 1px solid #e5e7eb;
 }
 
+.wizard-progress {
+    position: sticky;
+    top: 64px;
+    z-index: 20;
+    padding: 18px 16px 14px;
+    background: rgba(255, 255, 255, 0.97);
+    border-bottom: 1px solid #e5e7eb;
+    backdrop-filter: blur(8px);
+}
+
+.wizard-progress-copy {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 9px;
+}
+
+.wizard-step-count,
+.wizard-progress-percent {
+    margin: 0;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.wizard-progress-track {
+    height: 9px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e2e8f0;
+}
+
+.wizard-progress-fill {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #17365d, #2f6fac);
+    transition: width 240ms ease;
+}
+
+.wizard-step-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 13px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wizard-step-dot {
+    width: 10px;
+    height: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #cbd5e1;
+}
+
+.wizard-step-dot.is-active {
+    width: 26px;
+    border-radius: 999px;
+    background: #17365d;
+}
+
+.wizard-step-dot.is-complete {
+    background: #4f8a66;
+    cursor: pointer;
+}
+
+.section-eyebrow {
+    margin: 0 0 7px;
+    color: #2f6fac;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.wizard-step[hidden],
+.wizard-ready .wizard-submit[hidden],
+.wizard-ready .wizard-button[hidden] {
+    display: none;
+}
+
+.wizard-actions {
+    display: flex;
+    gap: 12px;
+    padding: 20px 16px 8px;
+}
+
+.wizard-button,
+.wizard-submit {
+    min-height: 50px;
+    padding: 12px 20px;
+    border-radius: 9px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.wizard-button {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.wizard-button-primary {
+    margin-left: auto;
+    border: 1px solid #17365d;
+    background: #17365d;
+    color: #ffffff;
+}
+
+.wizard-button-primary:hover {
+    background: #0f2949;
+}
+
+.wizard-button-secondary {
+    border: 1px solid #b8c4d4;
+    background: #ffffff;
+    color: #17365d;
+}
+
+.wizard-button-secondary:hover {
+    background: #f1f5f9;
+}
+
 .section-header {
     margin-bottom: 20px;
 }
@@ -316,10 +445,6 @@ textarea:focus {
     border: 1px solid #ef9a9a;
 }
 
-.submit-area {
-    padding: 22px 16px;
-}
-
 .submit-button {
     width: 100%;
     min-height: 52px;
@@ -337,7 +462,7 @@ textarea:focus {
 }
 
 .required-note {
-    margin: 12px 0 0;
+    margin: 8px 16px 20px;
     color: #64748b;
     font-size: 13px;
     text-align: center;
@@ -345,6 +470,69 @@ textarea:focus {
 
 .empty-message {
     color: #64748b;
+}
+
+.review-sections {
+    display: grid;
+    gap: 16px;
+}
+
+.review-section {
+    overflow: hidden;
+    border: 1px solid #dde5ef;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.review-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 15px;
+    background: #f3f7fb;
+    border-bottom: 1px solid #dde5ef;
+}
+
+.review-section h4 {
+    margin: 0;
+    color: #17365d;
+    font-size: 16px;
+}
+
+.review-edit-button {
+    padding: 5px 10px;
+    border: 1px solid #9fb0c5;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #17365d;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.review-item {
+    display: grid;
+    gap: 4px;
+    padding: 12px 15px;
+    border-bottom: 1px solid #edf1f5;
+}
+
+.review-item:last-child {
+    border-bottom: 0;
+}
+
+.review-item dt {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.review-item dd {
+    overflow-wrap: anywhere;
+    margin: 0;
+    color: #1f2937;
+    line-height: 1.5;
 }
 
 /* Tablet */
@@ -356,7 +544,8 @@ textarea:focus {
     .event-content,
     .form-header,
     .form-section,
-    .submit-area {
+    .wizard-progress,
+    .wizard-actions {
         padding-left: 28px;
         padding-right: 28px;
     }
@@ -367,6 +556,22 @@ textarea:focus {
 
     .choice-group-inline {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .wizard-actions {
+        justify-content: flex-end;
+    }
+
+    .wizard-button,
+    .wizard-submit {
+        width: auto;
+        min-width: 150px;
+        flex: 0 0 auto;
+    }
+
+    .review-item {
+        grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1.2fr);
+        gap: 18px;
     }
 }
 

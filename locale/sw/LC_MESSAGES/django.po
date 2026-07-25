@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-24 17:49+0300\n"
+"POT-Creation-Date: 2026-07-25 11:05+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -763,19 +763,19 @@ msgid "form answers"
 msgstr "majibu ya fomu"
 
 #: templates/events/base_public.html:16 templates/events/base_public.html:21
-#: templates/events/base_public.html:43 templates/events/base_public.html:111
+#: templates/events/base_public.html:49 templates/events/base_public.html:117
 #: templates/events/home.html:6 templates/events/home.html:18
-#: templates/forms_builder/public_event_form.html:40
-#: templates/forms_builder/submission_success.html:31
+#: templates/forms_builder/public_event_form.html:46
+#: templates/forms_builder/submission_success.html:37
 msgid "Event Management System"
 msgstr "Mfumo wa Usimamizi wa Matukio"
 
-#: templates/events/base_public.html:67 templates/events/base_public.html:73
-#: templates/forms_builder/public_event_form.html:58
+#: templates/events/base_public.html:73 templates/events/base_public.html:79
+#: templates/forms_builder/public_event_form.html:64
 msgid "Language"
 msgstr "Lugha"
 
-#: templates/events/base_public.html:96
+#: templates/events/base_public.html:102
 msgid "Administration"
 msgstr "Usimamizi"
 
@@ -800,17 +800,17 @@ msgid "Important information"
 msgstr "Taarifa muhimu"
 
 #: templates/events/event_detail.html:141
-#: templates/forms_builder/public_event_form.html:154
+#: templates/forms_builder/public_event_form.html:160
 msgid "Start date"
 msgstr "Tarehe ya kuanza"
 
 #: templates/events/event_detail.html:146
-#: templates/forms_builder/public_event_form.html:164
+#: templates/forms_builder/public_event_form.html:170
 msgid "End date"
 msgstr "Tarehe ya kumalizika"
 
 #: templates/events/event_detail.html:152 templates/events/home.html:183
-#: templates/forms_builder/public_event_form.html:175
+#: templates/forms_builder/public_event_form.html:181
 msgid "Venue"
 msgstr "Mahali"
 
@@ -910,76 +910,112 @@ msgstr "Chagua"
 msgid "Chagua"
 msgstr "Chagua"
 
-#: templates/forms_builder/partials/question_input.html:122
-#: templates/forms_builder/partials/question_input.html:149
+#: templates/forms_builder/partials/question_input.html:130
+#: templates/forms_builder/partials/question_input.html:165
 msgid "No options have been configured for this question."
 msgstr "Hakuna chaguo zilizowekwa kwa swali hili."
+
+#: templates/forms_builder/partials/question_input.html:188
+msgid "Yes"
+msgstr "Ndiyo"
+
+#: templates/forms_builder/partials/question_input.html:203
+msgid "No"
+msgstr "Hapana"
 
 #: templates/forms_builder/public_event_form.html:16
 msgid "Complete and submit the event form."
 msgstr "Jaza na uwasilishe fomu ya tukio."
 
-#: templates/forms_builder/public_event_form.html:82
+#: templates/forms_builder/public_event_form.html:88
 msgid "Change language"
 msgstr "Badili lugha"
 
-#: templates/forms_builder/public_event_form.html:140
+#: templates/forms_builder/public_event_form.html:146
 msgid "Organizer"
 msgstr "Mratibu"
 
-#: templates/forms_builder/public_event_form.html:229
+#: templates/forms_builder/public_event_form.html:235
 msgid "This form is not open yet."
 msgstr "Fomu hii bado haijafunguliwa."
 
-#: templates/forms_builder/public_event_form.html:237
+#: templates/forms_builder/public_event_form.html:243
 msgid "The submission period for this form has ended."
 msgstr "Muda wa kujaza fomu hii umekwisha."
 
-#: templates/forms_builder/public_event_form.html:295
-#: templates/forms_builder/public_event_form.html:296
+#: templates/forms_builder/public_event_form.html:257
+msgid "Form progress"
+msgstr "Maendeleo ya fomu"
+
+#: templates/forms_builder/public_event_form.html:283
+msgid "Form steps"
+msgstr "Hatua za fomu"
+
+#: templates/forms_builder/public_event_form.html:343
+#: templates/forms_builder/public_event_form.html:344
+#: templates/forms_builder/public_event_form.html:364
+#: templates/forms_builder/public_event_form.html:365
 msgid "Required"
 msgstr "Lazima"
 
-#: templates/forms_builder/public_event_form.html:322
+#: templates/forms_builder/public_event_form.html:392
 msgid "There are no questions in this section."
 msgstr "Hakuna maswali katika sehemu hii."
 
-#: templates/forms_builder/public_event_form.html:332
+#: templates/forms_builder/public_event_form.html:402
 msgid "This form has no sections or questions yet."
 msgstr "Fomu hii bado haina sehemu au maswali."
 
-#: templates/forms_builder/public_event_form.html:342
+#: templates/forms_builder/public_event_form.html:409
+#: templates/forms_builder/public_event_form.html:414
+msgid "Review and submit"
+msgstr "Kagua na uwasilishe"
+
+#: templates/forms_builder/public_event_form.html:417
+msgid "Please review your information before submitting the form."
+msgstr "Tafadhali kagua taarifa zako kabla ya kuwasilisha fomu."
+
+#: templates/forms_builder/public_event_form.html:428
+msgid "Please review the information above before submitting."
+msgstr "Tafadhali kagua taarifa zilizo hapo juu kabla ya kuwasilisha."
+
+#: templates/forms_builder/public_event_form.html:442
+msgid "Previous"
+msgstr "Iliyotangulia"
+
+#: templates/forms_builder/public_event_form.html:449
+msgid "Next"
+msgstr "Inayofuata"
+
+#: templates/forms_builder/public_event_form.html:457
 msgid "Submit form"
 msgstr "Wasilisha fomu"
 
-#: templates/forms_builder/public_event_form.html:347
+#: templates/forms_builder/public_event_form.html:463
 msgid "Required field"
 msgstr "Sehemu ya lazima"
 
 #: templates/forms_builder/submission_success.html:15
-#: templates/forms_builder/submission_success.html:43
+#: templates/forms_builder/submission_success.html:49
 msgid "Registration successful"
 msgstr "Usajili umefanikiwa"
 
-#: templates/forms_builder/submission_success.html:56
+#: templates/forms_builder/submission_success.html:62
 msgid "Reference number"
 msgstr "Namba ya kumbukumbu"
 
-#: templates/forms_builder/submission_success.html:66
+#: templates/forms_builder/submission_success.html:72
 msgid "Event"
 msgstr "Tukio"
 
-#: templates/forms_builder/submission_success.html:78
+#: templates/forms_builder/submission_success.html:84
 msgid "Submitted on"
 msgstr "Iliwasilishwa tarehe"
 
-#: templates/forms_builder/submission_success.html:91
+#: templates/forms_builder/submission_success.html:97
 msgid "Return to event"
 msgstr "Rudi kwenye tukio"
 
-#: templates/forms_builder/submission_success.html:98
+#: templates/forms_builder/submission_success.html:104
 msgid "View all events"
 msgstr "Tazama matukio yote"
-
-#~ msgid "organizer name"
-#~ msgstr "jina la mratibu"
