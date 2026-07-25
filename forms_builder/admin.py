@@ -16,6 +16,7 @@ from .services import (
     generate_qr_png,
     public_form_path,
     public_form_url,
+    submissions_csv,
 )
 
 
@@ -271,12 +272,13 @@ class FormAnswerInline(admin.TabularInline):
 class FormSubmissionAdmin(admin.ModelAdmin):
     list_display = (
         "reference_number",
-        "event_form",
+        "event_name",
+        "form_name",
         "submitter_email",
         "submitter_phone",
         "language",
         "is_complete",
-        "created_at",
+        "submitted_on",
     )
 
     list_filter = (
@@ -313,6 +315,14 @@ class FormSubmissionAdmin(admin.ModelAdmin):
     )
 
     date_hierarchy = "created_at"
+    list_per_page = 50
+    list_select_related = (
+        "event_form",
+        "event_form__event",
+    )
+    actions = (
+        "export_submissions_csv",
+    )
 
     inlines = [
         FormAnswerInline,
@@ -320,6 +330,40 @@ class FormSubmissionAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+    @admin.display(description="Event", ordering="event_form__event__code")
+    def event_name(self, obj):
+        return obj.event_form.event.code
+
+    @admin.display(description="Form", ordering="event_form__name_en")
+    def form_name(self, obj):
+        return obj.event_form.name_en
+
+    @admin.display(description="Submitted on", ordering="created_at")
+    def submitted_on(self, obj):
+        return obj.created_at
+
+    @admin.action(description="Export selected submissions to CSV")
+    def export_submissions_csv(self, request, queryset):
+        submissions = (
+            queryset
+            .select_related("event_form", "event_form__event")
+            .prefetch_related(
+                "answers__question",
+                "answers__selected_options",
+            )
+            .order_by("-created_at")
+        )
+        csv_content = submissions_csv(submissions)
+        response = HttpResponse(
+            "\ufeff" + csv_content,
+            content_type="text/csv; charset=utf-8",
+        )
+        response["Content-Disposition"] = (
+            'attachment; filename="registration-submissions.csv"'
+        )
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
 
 
 @admin.register(FormAnswer)

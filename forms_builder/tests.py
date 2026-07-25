@@ -9,6 +9,7 @@ from .services import (
     generate_qr_png,
     public_form_path,
     public_form_url,
+    safe_spreadsheet_value,
 )
 
 
@@ -67,3 +68,19 @@ class PublicFormServiceTests(SimpleTestCase):
         image_data = generate_qr_png("https://example.org/register/")
 
         self.assertTrue(image_data.startswith(b"\x89PNG\r\n\x1a\n"))
+
+    def test_spreadsheet_formula_values_are_escaped(self):
+        self.assertEqual(
+            safe_spreadsheet_value('=HYPERLINK("bad")'),
+            "'=HYPERLINK(\"bad\")",
+        )
+        self.assertEqual(
+            safe_spreadsheet_value("  +SUM(1,2)"),
+            "'  +SUM(1,2)",
+        )
+
+    def test_normal_spreadsheet_values_are_unchanged(self):
+        self.assertEqual(
+            safe_spreadsheet_value("Participant name"),
+            "Participant name",
+        )
