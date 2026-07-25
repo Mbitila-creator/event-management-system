@@ -931,6 +931,9 @@ msgstr "Jaza na uwasilishe fomu ya tukio."
 msgid "Change language"
 msgstr "Badili lugha"
 
+msgid "Back"
+msgstr "Rudi"
+
 #: templates/forms_builder/public_event_form.html:146
 msgid "Organizer"
 msgstr "Mratibu"

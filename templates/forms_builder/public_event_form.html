@@ -39,56 +39,55 @@
 <body>
     <header class="site-header">
         <div class="header-container">
-            <a
-                href="{% url 'events:home' %}"
-                class="system-title"
-            >
-                {% translate "Event Management System" %}
-            </a>
-
-            <form
-                action="{% url 'set_language' %}"
-                method="post"
-                class="language-form"
-                id="registration-language-form"
-            >
-                {% csrf_token %}
-
-                <input
-                    type="hidden"
-                    name="next"
-                    value="{{ request.get_full_path }}"
+            <div class="header-navigation">
+                <button
+                    type="button"
+                    class="page-back-button"
+                    id="registration-back-button"
+                    data-fallback-url="{% url 'events:event_detail' event.slug %}"
                 >
+                    <span aria-hidden="true">←</span>
+                    {% translate "Back" %}
+                </button>
 
-                <label for="registration-language-select">
-                    {% translate "Language" %}
-                </label>
-
-                <select
-                    id="registration-language-select"
-                    name="language"
+                <a
+                    href="{% url 'events:home' %}"
+                    class="system-title"
                 >
-                    <option
-                        value="sw"
-                        {% if request.LANGUAGE_CODE == "sw" %}selected{% endif %}
+                    {% translate "Event Management System" %}
+                </a>
+            </div>
+
+            <nav
+                class="language-navigation"
+                aria-label="{% translate 'Language' %}"
+            >
+                <span class="language-navigation-label">
+                    {% translate "Language" %}:
+                </span>
+
+                {% language "sw" %}
+                    <a
+                        href="{% url 'forms_builder:public_event_form' event.slug event_form.slug %}"
+                        class="language-link"
+                        lang="sw"
+                        {% if request.LANGUAGE_CODE == "sw" %}aria-current="page"{% endif %}
                     >
                         Kiswahili
-                    </option>
+                    </a>
+                {% endlanguage %}
 
-                    <option
-                        value="en"
-                        {% if request.LANGUAGE_CODE == "en" %}selected{% endif %}
+                {% language "en" %}
+                    <a
+                        href="{% url 'forms_builder:public_event_form' event.slug event_form.slug %}"
+                        class="language-link"
+                        lang="en"
+                        {% if request.LANGUAGE_CODE == "en" %}aria-current="page"{% endif %}
                     >
                         English
-                    </option>
-                </select>
-
-                <noscript>
-                    <button type="submit">
-                        {% translate "Change language" %}
-                    </button>
-                </noscript>
-            </form>
+                    </a>
+                {% endlanguage %}
+            </nav>
         </div>
     </header>
 
@@ -472,27 +471,25 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const languageForm = document.getElementById(
-                "registration-language-form"
+            const backButton = document.getElementById(
+                "registration-back-button"
             );
 
-            const languageSelect = document.getElementById(
-                "registration-language-select"
-            );
+            if (backButton) {
+                backButton.addEventListener("click", function () {
+                    const hasPreviousPage =
+                        document.referrer &&
+                        document.referrer !== window.location.href;
 
-            if (!languageForm || !languageSelect) {
-                return;
+                    if (hasPreviousPage) {
+                        window.history.back();
+                    } else {
+                        window.location.assign(
+                            backButton.dataset.fallbackUrl
+                        );
+                    }
+                });
             }
-
-            languageSelect.addEventListener("change", function () {
-                languageSelect.disabled = true;
-
-                if (typeof languageForm.requestSubmit === "function") {
-                    languageForm.requestSubmit();
-                } else {
-                    languageForm.submit();
-                }
-            });
         });
     </script>
 </body>

@@ -40,6 +40,38 @@ img {
     gap: 15px;
 }
 
+.header-navigation {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-back-button {
+    display: inline-flex;
+    min-height: 42px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid #b8c4d4;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #17365d;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.page-back-button:hover {
+    background: #f1f5f9;
+}
+
+.page-back-button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.18);
+    border-color: #2563eb;
+}
+
 .system-title {
     color: #17365d;
     font-size: 17px;
@@ -47,23 +79,69 @@ img {
     text-decoration: none;
 }
 
-.language-form {
+.language-navigation {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 5px;
 }
 
-.language-form label {
+.language-navigation-label {
+    margin-right: 3px;
     font-size: 14px;
     font-weight: 600;
 }
 
-.language-form select {
-    min-height: 42px;
-    padding: 8px 10px;
-    border: 1px solid #b8c4d4;
-    border-radius: 8px;
+.language-link {
+    display: inline-flex;
+    min-height: 38px;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 10px;
+    border: 1px solid transparent;
+    border-radius: 7px;
     background: #ffffff;
+    color: #17365d;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.language-link:hover {
+    background: #f1f5f9;
+}
+
+.language-link[aria-current="page"] {
+    border-color: #17365d;
+    background: #17365d;
+    color: #ffffff;
+    cursor: default;
+}
+
+.language-link:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.18);
+    border-color: #2563eb;
+}
+
+@media (max-width: 639px) {
+    .header-container {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .header-navigation {
+        width: 100%;
+    }
+
+    .system-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .language-navigation {
+        width: 100%;
+        justify-content: flex-end;
+    }
 }
 
 .page-wrapper {
