@@ -1,7 +1,7 @@
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
@@ -14,6 +14,7 @@ from .models import (
     FormSubmission,
     QuestionOption,
 )
+from .services import generate_qr_png, participant_badge_url
 
 
 def get_client_ip(request):
@@ -493,3 +494,55 @@ def registration_status(request):
             "reference_number": reference_number,
         },
     )
+
+
+def get_approved_badge_submission(participant_token):
+    return get_object_or_404(
+        FormSubmission.objects.select_related(
+            "event_form",
+            "event_form__event",
+            "event_form__event__venue",
+        ),
+        participant_token=participant_token,
+        review_status=FormSubmission.ReviewStatus.APPROVED,
+        is_complete=True,
+        is_active=True,
+        event_form__event__badge_enabled=True,
+    )
+
+
+@require_http_methods(["GET"])
+def participant_badge(request, participant_token):
+    submission = get_approved_badge_submission(participant_token)
+
+    return render(
+        request,
+        "forms_builder/participant_badge.html",
+        {
+            "submission": submission,
+            "event": submission.event_form.event,
+        },
+    )
+
+
+@require_http_methods(["GET"])
+def participant_badge_qr(request, participant_token):
+    submission = get_approved_badge_submission(participant_token)
+    badge_url = participant_badge_url(
+        submission,
+        request=request,
+        language=submission.language,
+    )
+    response = HttpResponse(
+        generate_qr_png(badge_url),
+        content_type="image/png",
+    )
+
+    if request.GET.get("download") == "1":
+        response["Content-Disposition"] = (
+            "attachment; "
+            f'filename="{submission.reference_number}-badge-qr.png"'
+        )
+
+    response["X-Content-Type-Options"] = "nosniff"
+    return response

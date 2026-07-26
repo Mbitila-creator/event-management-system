@@ -161,6 +161,10 @@
     line-height: 1.6;
 }
 
+.status-badge-link {
+    margin-top: 16px;
+}
+
 @media (min-width: 640px) {
     .status-form,
     .status-result {

@@ -251,3 +251,48 @@ class SubmissionReviewAdminTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.submission.reference_number)
+
+    def test_pending_submission_cannot_open_badge(self):
+        response = self.client.get(
+            f"/en/participants/{self.submission.participant_token}/badge/"
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_approved_submission_can_open_printable_badge(self):
+        FormSubmission.objects.filter(pk=self.submission.pk).update(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            reviewed_by=self.reviewer,
+            reviewed_at=timezone.now(),
+            badge_name="Asha Mwangaza",
+            badge_organization="Innovation Institute",
+            badge_title="Exhibitor",
+        )
+
+        response = self.client.get(
+            f"/en/participants/{self.submission.participant_token}/badge/"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Asha Mwangaza")
+        self.assertContains(response, "Innovation Institute")
+        self.assertContains(response, "Exhibitor")
+        self.assertContains(response, self.submission.reference_number)
+
+    def test_approved_participant_qr_is_png(self):
+        FormSubmission.objects.filter(pk=self.submission.pk).update(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            reviewed_by=self.reviewer,
+            reviewed_at=timezone.now(),
+        )
+
+        response = self.client.get(
+            (
+                f"/en/participants/{self.submission.participant_token}"
+                "/badge/qr/"
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/png")
+        self.assertTrue(response.content.startswith(b"\x89PNG\r\n\x1a\n"))

@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "core",
     "events",
     "forms_builder",
+    "checkin",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

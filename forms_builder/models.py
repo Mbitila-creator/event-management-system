@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.utils.text import slugify
 from django.conf import settings
@@ -410,6 +412,32 @@ class FormSubmission(BaseModel):
         ),
     )
 
+    participant_token = models.UUIDField(
+        _("participant token"),
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+
+    badge_name = models.CharField(
+        _("badge name"),
+        max_length=200,
+        blank=True,
+        help_text=_("Name that will be printed on the participant badge."),
+    )
+
+    badge_organization = models.CharField(
+        _("badge organization"),
+        max_length=250,
+        blank=True,
+    )
+
+    badge_title = models.CharField(
+        _("badge title or role"),
+        max_length=150,
+        blank=True,
+    )
+
     class Meta:
         verbose_name = _("form submission")
         verbose_name_plural = _("form submissions")
@@ -448,6 +476,15 @@ class FormSubmission(BaseModel):
 
     def __str__(self):
         return self.reference_number
+
+    @property
+    def badge_display_name(self):
+        return (
+            self.badge_name
+            or self.submitter_email
+            or self.submitter_phone
+            or self.reference_number
+        )
 
 
 class FormAnswer(BaseModel):

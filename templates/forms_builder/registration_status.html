@@ -109,6 +109,15 @@
                             <p>
                                 {% translate "Your registration has been approved. Keep your reference number for future event services." %}
                             </p>
+
+                            {% if submission.event_form.event.badge_enabled %}
+                                <a
+                                    href="{% url 'forms_builder:participant_badge' submission.participant_token %}"
+                                    class="primary-button status-badge-link"
+                                >
+                                    {% translate "View participant badge" %}
+                                </a>
+                            {% endif %}
                         {% elif submission.review_status == "REJECTED" %}
                             <h2>{% translate "Registration not approved" %}</h2>
                             <p>

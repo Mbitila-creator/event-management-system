@@ -17,6 +17,7 @@ from .services import (
     generate_qr_png,
     public_form_path,
     public_form_url,
+    participant_badge_path,
     submissions_csv,
 )
 
@@ -280,6 +281,7 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "language",
         "is_complete",
         "review_status_badge",
+        "badge_tools",
         "submitted_on",
     )
 
@@ -313,6 +315,8 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "is_complete",
         "reviewed_by",
         "reviewed_at",
+        "participant_token",
+        "badge_tools",
         "created_by",
         "updated_by",
         "created_at",
@@ -366,6 +370,27 @@ class FormSubmissionAdmin(admin.ModelAdmin):
             foreground,
             background,
             obj.get_review_status_display(),
+        )
+
+    @admin.display(description="Participant badge")
+    def badge_tools(self, obj):
+        if obj.review_status != FormSubmission.ReviewStatus.APPROVED:
+            return "Available after approval."
+
+        if not obj.event_form.event.badge_enabled:
+            return "Badges are disabled for this event."
+
+        badge_url = participant_badge_path(obj, language=obj.language)
+        qr_url = reverse(
+            "forms_builder:participant_badge_qr",
+            kwargs={"participant_token": obj.participant_token},
+        )
+        return format_html(
+            '<a href="{}" target="_blank" rel="noopener">Open badge</a>'
+            ' &nbsp;|&nbsp; '
+            '<a href="{}?download=1">Download badge QR</a>',
+            badge_url,
+            qr_url,
         )
 
     def save_model(self, request, obj, form, change):

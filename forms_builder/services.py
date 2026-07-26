@@ -35,6 +35,27 @@ def public_form_url(event_form, request=None, language="sw"):
     return path
 
 
+def participant_badge_path(submission, language="sw"):
+    with translation.override(language):
+        return reverse(
+            "forms_builder:participant_badge",
+            kwargs={"participant_token": submission.participant_token},
+        )
+
+
+def participant_badge_url(submission, request=None, language="sw"):
+    path = participant_badge_path(submission, language=language)
+    base_url = settings.PUBLIC_BASE_URL
+
+    if base_url:
+        return urljoin(f"{base_url}/", path.lstrip("/"))
+
+    if request is not None:
+        return request.build_absolute_uri(path)
+
+    return path
+
+
 def generate_qr_png(value):
     qr_code = qrcode.QRCode(
         error_correction=qrcode.constants.ERROR_CORRECT_M,
