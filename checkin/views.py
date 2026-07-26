@@ -5,6 +5,7 @@ from django.views.decorators.http import require_http_methods
 
 from accounts.models import User
 from forms_builder.models import FormSubmission
+from forms_builder.services import participant_certificate_path
 
 from .models import ParticipantCheckIn
 
@@ -103,8 +104,15 @@ def participant_check_in(request, participant_token):
         submission=submission
     ).select_related("checked_in_by").first()
     just_checked_in = False
+    automatic_check_in = (
+        request.method == "GET" and request.GET.get("auto") == "1"
+    )
 
-    if request.method == "POST" and check_in is None and is_eligible:
+    if (
+        (request.method == "POST" or automatic_check_in)
+        and check_in is None
+        and is_eligible
+    ):
         with transaction.atomic():
             locked_submission = (
                 approved_submission_queryset()
@@ -132,6 +140,13 @@ def participant_check_in(request, participant_token):
             "check_in": check_in,
             "just_checked_in": just_checked_in,
             "is_eligible": is_eligible,
-            "auto_check_in": request.GET.get("auto") == "1",
+            "certificate_path": (
+                participant_certificate_path(
+                    submission,
+                    language=request.LANGUAGE_CODE,
+                )
+                if check_in and submission.event_form.event.certificate_enabled
+                else ""
+            ),
         },
     )

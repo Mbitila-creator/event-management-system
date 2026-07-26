@@ -43,6 +43,14 @@ def participant_badge_path(submission, language="sw"):
         )
 
 
+def participant_certificate_path(submission, language="sw"):
+    with translation.override(language):
+        return reverse(
+            "forms_builder:participant_certificate",
+            kwargs={"participant_token": submission.participant_token},
+        )
+
+
 def participant_badge_url(submission, request=None, language="sw"):
     path = participant_badge_path(submission, language=language)
     base_url = settings.PUBLIC_BASE_URL
@@ -113,7 +121,7 @@ def sync_badge_identity_from_answers(submission):
         badge_organization or submission.badge_organization
     )
     submission.badge_title = (
-        "Participant" if submission.language == "en" else "Mshiriki"
+        "Representative" if submission.language == "en" else "Mwakilishi"
     )
     submission.save(
         update_fields=[

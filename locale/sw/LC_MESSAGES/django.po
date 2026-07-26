@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-26 09:22+0300\n"
+"POT-Creation-Date: 2026-07-26 10:19+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -896,44 +896,50 @@ msgstr "Mahudhurio yamethibitishwa"
 msgid "Participant checked in successfully."
 msgstr "Mahudhurio ya mshiriki yamethibitishwa kwa mafanikio."
 
-#: templates/checkin/participant_check_in.html:34
+#: templates/checkin/participant_check_in.html:32
+#: templates/checkin/participant_check_in.html:43
+#: templates/forms_builder/registration_status.html:126
+msgid "View certificate"
+msgstr "Tazama cheti"
+
+#: templates/checkin/participant_check_in.html:39
 msgid "Already checked in"
 msgstr "Mahudhurio tayari yamethibitishwa"
 
-#: templates/checkin/participant_check_in.html:35
+#: templates/checkin/participant_check_in.html:40
 msgid "This participant is already checked in."
 msgstr "Mahudhurio ya mshiriki huyu tayari yamethibitishwa."
 
-#: templates/checkin/participant_check_in.html:40
+#: templates/checkin/participant_check_in.html:50
 msgid "Check-in not allowed"
 msgstr "Uthibitishaji wa mahudhurio hauruhusiwi"
 
-#: templates/checkin/participant_check_in.html:42
+#: templates/checkin/participant_check_in.html:52
 msgid "This registration is not approved or is not eligible for check-in."
 msgstr "Usajili huu haujaidhinishwa au haustahili kuthibitishwa mahudhurio."
 
-#: templates/checkin/participant_check_in.html:51
+#: templates/checkin/participant_check_in.html:61
 #: templates/forms_builder/participant_badge.html:20
 msgid "Approved participant"
 msgstr "Mshiriki aliyeidhinishwa"
 
-#: templates/checkin/participant_check_in.html:52
+#: templates/checkin/participant_check_in.html:62
 msgid "Identity token verified"
 msgstr "Kitambulisho kimethibitishwa"
 
-#: templates/checkin/participant_check_in.html:58
+#: templates/checkin/participant_check_in.html:68
 msgid "Participant name"
 msgstr "Jina la mshiriki"
 
-#: templates/checkin/participant_check_in.html:64
+#: templates/checkin/participant_check_in.html:74
 msgid "Organization"
 msgstr "Taasisi"
 
-#: templates/checkin/participant_check_in.html:71
+#: templates/checkin/participant_check_in.html:81
 msgid "Role or title"
 msgstr "Jukumu au cheo"
 
-#: templates/checkin/participant_check_in.html:77
+#: templates/checkin/participant_check_in.html:87
 #: templates/forms_builder/participant_badge.html:83
 #: templates/forms_builder/registration_status.html:42
 #: templates/forms_builder/registration_status.html:79
@@ -941,21 +947,21 @@ msgstr "Jukumu au cheo"
 msgid "Reference number"
 msgstr "Namba ya kumbukumbu"
 
-#: templates/checkin/participant_check_in.html:82
+#: templates/checkin/participant_check_in.html:92
 #: templates/forms_builder/registration_status.html:90
 #: templates/forms_builder/submission_success.html:72
 msgid "Event"
 msgstr "Tukio"
 
-#: templates/checkin/participant_check_in.html:95
+#: templates/checkin/participant_check_in.html:105
 msgid "Checked in at"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: templates/checkin/participant_check_in.html:97
+#: templates/checkin/participant_check_in.html:107
 msgid "Checked in by"
 msgstr "Mahudhurio yamethibitishwa na"
 
-#: templates/checkin/participant_check_in.html:108
+#: templates/checkin/participant_check_in.html:118
 msgid "Confirm participant check-in"
 msgstr "Thibitisha mahudhurio ya mshiriki"
 
@@ -1151,6 +1157,48 @@ msgstr "Msimbo wa QR wa kuthibitisha mshiriki"
 msgid "Approved and verified"
 msgstr "Ameidhinishwa na kuthibitishwa"
 
+#: templates/forms_builder/participant_certificate.html:5
+#: templates/forms_builder/participant_certificate.html:24
+#: templates/forms_builder/participant_certificate.html:41
+msgid "Certificate of Participation"
+msgstr "Cheti cha Ushiriki"
+
+#: templates/forms_builder/participant_certificate.html:15
+#: templates/forms_builder/participant_certificate.html:58
+msgid "Attendance verified"
+msgstr "Mahudhurio yamethibitishwa"
+
+#: templates/forms_builder/participant_certificate.html:16
+msgid "Participant certificate"
+msgstr "Cheti cha mshiriki"
+
+#: templates/forms_builder/participant_certificate.html:17
+msgid "Print the certificate or save it as a PDF from your browser."
+msgstr "Chapisha cheti au kihifadhi kama PDF kupitia kivinjari chako."
+
+#: templates/forms_builder/participant_certificate.html:20
+msgid "Print or save certificate"
+msgstr "Chapisha au hifadhi cheti"
+
+#: templates/forms_builder/participant_certificate.html:42
+msgid "This certificate is proudly presented to"
+msgstr "Cheti hiki kinatolewa kwa fahari kwa"
+
+#: templates/forms_builder/participant_certificate.html:48
+#, python-format
+msgid "for participating in %(event_name)s and completing verified attendance."
+msgstr ""
+"kwa kushiriki katika %(event_name)s na kukamilisha mahudhurio "
+"yaliyothibitishwa."
+
+#: templates/forms_builder/participant_certificate.html:54
+msgid "Event date"
+msgstr "Tarehe ya tukio"
+
+#: templates/forms_builder/participant_certificate.html:62
+msgid "Certificate number"
+msgstr "Namba ya cheti"
+
 #: templates/forms_builder/public_event_form.html:16
 msgid "Complete and submit the event form."
 msgstr "Jaza na uwasilishe fomu ya tukio."
@@ -1274,11 +1322,11 @@ msgstr ""
 msgid "View participant badge"
 msgstr "Tazama beji ya mshiriki"
 
-#: templates/forms_builder/registration_status.html:122
+#: templates/forms_builder/registration_status.html:130
 msgid "Registration not approved"
 msgstr "Usajili haujaidhinishwa"
 
-#: templates/forms_builder/registration_status.html:124
+#: templates/forms_builder/registration_status.html:132
 msgid ""
 "Your registration was not approved. Contact the event organizer if you need "
 "assistance."
@@ -1286,11 +1334,11 @@ msgstr ""
 "Usajili wako haujaidhinishwa. Wasiliana na mratibu wa tukio ikiwa unahitaji "
 "msaada."
 
-#: templates/forms_builder/registration_status.html:127
+#: templates/forms_builder/registration_status.html:135
 msgid "Registration pending review"
 msgstr "Usajili unasubiri kukaguliwa"
 
-#: templates/forms_builder/registration_status.html:129
+#: templates/forms_builder/registration_status.html:137
 msgid ""
 "Your registration was received and is waiting for administrative review."
 msgstr "Usajili wako umepokelewa na unasubiri ukaguzi wa kiutawala."
@@ -1307,6 +1355,3 @@ msgstr "Rudi kwenye tukio"
 #: templates/forms_builder/submission_success.html:111
 msgid "View all events"
 msgstr "Tazama matukio yote"
-
-#~ msgid "Change language"
-#~ msgstr "Badili lugha"

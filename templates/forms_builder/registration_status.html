@@ -118,6 +118,14 @@
                                     {% translate "View participant badge" %}
                                 </a>
                             {% endif %}
+                            {% if submission.event_form.event.certificate_enabled and submission.check_in %}
+                                <a
+                                    href="{% url 'forms_builder:participant_certificate' submission.participant_token %}"
+                                    class="secondary-button status-badge-link"
+                                >
+                                    {% translate "View certificate" %}
+                                </a>
+                            {% endif %}
                         {% elif submission.review_status == "REJECTED" %}
                             <h2>{% translate "Registration not approved" %}</h2>
                             <p>

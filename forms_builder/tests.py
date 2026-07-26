@@ -16,6 +16,7 @@ from django.test import (
 from django.utils import timezone
 
 from events.models import Event, EventCategory
+from checkin.models import ParticipantCheckIn
 
 from .admin import FormSubmissionAdmin
 from .models import (
@@ -324,6 +325,61 @@ class SubmissionReviewAdminTests(TestCase):
         self.assertEqual(response["Content-Type"], "image/png")
         self.assertTrue(response.content.startswith(b"\x89PNG\r\n\x1a\n"))
 
+    def test_checked_in_participant_can_open_certificate(self):
+        event = self.submission.event_form.event
+        event.certificate_enabled = True
+        event.save(update_fields=["certificate_enabled"])
+        FormSubmission.objects.filter(pk=self.submission.pk).update(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            reviewed_by=self.reviewer,
+            reviewed_at=timezone.now(),
+            badge_name="Asha Mwangaza",
+            badge_organization="Innovation Institute",
+        )
+        ParticipantCheckIn.objects.create(
+            submission=self.submission,
+            checked_in_by=self.reviewer,
+        )
+
+        response = self.client.get(
+            f"/en/participants/{self.submission.participant_token}/certificate/"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Certificate of Participation")
+        self.assertContains(response, "Asha Mwangaza")
+        self.assertContains(response, "Innovation Institute")
+        self.assertContains(response, f"CERT-{event.code}-")
+
+    def test_certificate_requires_participant_check_in(self):
+        event = self.submission.event_form.event
+        event.certificate_enabled = True
+        event.save(update_fields=["certificate_enabled"])
+        FormSubmission.objects.filter(pk=self.submission.pk).update(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+        )
+
+        response = self.client.get(
+            f"/en/participants/{self.submission.participant_token}/certificate/"
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_certificate_requires_event_setting(self):
+        FormSubmission.objects.filter(pk=self.submission.pk).update(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+        )
+        ParticipantCheckIn.objects.create(
+            submission=self.submission,
+            checked_in_by=self.reviewer,
+        )
+
+        response = self.client.get(
+            f"/en/participants/{self.submission.participant_token}/certificate/"
+        )
+
+        self.assertEqual(response.status_code, 404)
+
     def test_badge_identity_is_filled_from_registration_answers(self):
         section = FormSection.objects.create(
             event_form=self.submission.event_form,
@@ -359,4 +415,4 @@ class SubmissionReviewAdminTests(TestCase):
             self.submission.badge_organization,
             "Taasisi ya Elimu",
         )
-        self.assertEqual(self.submission.badge_title, "Mshiriki")
+        self.assertEqual(self.submission.badge_title, "Mwakilishi")

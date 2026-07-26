@@ -27,12 +27,22 @@
                     <span class="checkin-result-icon" aria-hidden="true">✓</span>
                     <h2>{% translate "Check-in successful" %}</h2>
                     <p>{% translate "Participant checked in successfully." %}</p>
+                    {% if certificate_path %}
+                        <a href="{{ certificate_path }}" class="primary-button">
+                            {% translate "View certificate" %}
+                        </a>
+                    {% endif %}
                 </div>
             {% elif check_in %}
                 <div class="checkin-result-panel checkin-result-error" role="alert">
                     <span class="checkin-result-icon" aria-hidden="true">×</span>
                     <h2>{% translate "Already checked in" %}</h2>
                     <p>{% translate "This participant is already checked in." %}</p>
+                    {% if certificate_path %}
+                        <a href="{{ certificate_path }}" class="primary-button">
+                            {% translate "View certificate" %}
+                        </a>
+                    {% endif %}
                 </div>
             {% elif not is_eligible %}
                 <div class="checkin-result-panel checkin-result-error" role="alert">
@@ -112,24 +122,4 @@
             </article>
         </div>
     </section>
-{% endblock %}
-
-{% block extra_js %}
-    {% if auto_check_in and is_eligible and not check_in %}
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                const checkInForm = document.getElementById(
-                    "automatic-check-in-form"
-                );
-
-                if (checkInForm) {
-                    if (typeof checkInForm.requestSubmit === "function") {
-                        checkInForm.requestSubmit();
-                    } else {
-                        checkInForm.submit();
-                    }
-                }
-            });
-        </script>
-    {% endif %}
 {% endblock %}

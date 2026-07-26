@@ -18,6 +18,7 @@ from .services import (
     public_form_path,
     public_form_url,
     participant_badge_path,
+    participant_certificate_path,
     submissions_csv,
 )
 
@@ -282,6 +283,7 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "is_complete",
         "review_status_badge",
         "badge_tools",
+        "certificate_tools",
         "submitted_on",
     )
 
@@ -317,6 +319,7 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "reviewed_at",
         "participant_token",
         "badge_tools",
+        "certificate_tools",
         "created_by",
         "updated_by",
         "created_at",
@@ -328,6 +331,7 @@ class FormSubmissionAdmin(admin.ModelAdmin):
     list_select_related = (
         "event_form",
         "event_form__event",
+        "check_in",
     )
     actions = (
         "approve_submissions",
@@ -391,6 +395,27 @@ class FormSubmissionAdmin(admin.ModelAdmin):
             '<a href="{}?download=1">Download badge QR</a>',
             badge_url,
             qr_url,
+        )
+
+    @admin.display(description="Certificate")
+    def certificate_tools(self, obj):
+        if not obj.event_form.event.certificate_enabled:
+            return "Certificates are disabled for this event."
+
+        if obj.review_status != FormSubmission.ReviewStatus.APPROVED:
+            return "Available after approval and check-in."
+
+        if not hasattr(obj, "check_in"):
+            return "Available after participant check-in."
+
+        certificate_url = participant_certificate_path(
+            obj,
+            language=obj.language,
+        )
+        return format_html(
+            '<a href="{}" target="_blank" rel="noopener">'
+            "Open certificate</a>",
+            certificate_url,
         )
 
     def save_model(self, request, obj, form, change):

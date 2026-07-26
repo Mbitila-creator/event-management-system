@@ -532,6 +532,42 @@ def participant_badge(request, participant_token):
 
 
 @require_http_methods(["GET"])
+def participant_certificate(request, participant_token):
+    submission = get_object_or_404(
+        FormSubmission.objects.select_related(
+            "event_form",
+            "event_form__event",
+            "event_form__event__venue",
+            "check_in",
+        ),
+        participant_token=participant_token,
+        review_status=FormSubmission.ReviewStatus.APPROVED,
+        is_complete=True,
+        is_active=True,
+        event_form__event__certificate_enabled=True,
+        check_in__isnull=False,
+    )
+
+    return render(
+        request,
+        "forms_builder/participant_certificate.html",
+        {
+            "submission": submission,
+            "event": submission.event_form.event,
+            "event_display_name": (
+                submission.event_form.event.title_en
+                if request.LANGUAGE_CODE == "en"
+                else submission.event_form.event.title_sw
+            ),
+            "certificate_number": (
+                f"CERT-{submission.event_form.event.code}-"
+                f"{submission.reference_number}"
+            ),
+        },
+    )
+
+
+@require_http_methods(["GET"])
 def participant_badge_qr(request, participant_token):
     submission = get_approved_badge_submission(participant_token)
     check_in_url = participant_check_in_url(
