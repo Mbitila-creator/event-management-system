@@ -152,6 +152,89 @@ class PublicFormServiceTests(SimpleTestCase):
         )
 
 
+class PublicEvaluationTests(TestCase):
+    def setUp(self):
+        category = EventCategory.objects.create(
+            name_sw="Maonesho",
+            name_en="Exhibition",
+            code="EVAL",
+        )
+        starts_at = timezone.now() + timedelta(days=5)
+        self.event = Event.objects.create(
+            category=category,
+            code="VISITOR-2026",
+            title_sw="Wiki ya Ubunifu",
+            title_en="Innovation Week",
+            starts_at=starts_at,
+            ends_at=starts_at + timedelta(days=4),
+            registration_enabled=False,
+            evaluation_enabled=True,
+        )
+        self.event_form = EventForm.objects.create(
+            event=self.event,
+            name_sw="Tathmini ya Mgeni",
+            name_en="Visitor Evaluation",
+            form_type=EventForm.FormType.EVALUATION,
+            is_published=True,
+            success_message_sw="Asante kwa maoni yako.",
+            success_message_en="Thank you for your feedback.",
+        )
+        section = FormSection.objects.create(
+            event_form=self.event_form,
+            title_sw="Maoni",
+            title_en="Feedback",
+        )
+        self.question = FormQuestion.objects.create(
+            section=section,
+            label_sw="Ulipenda nini?",
+            label_en="What did you like?",
+            question_type=FormQuestion.QuestionType.LONG_TEXT,
+            is_required=True,
+        )
+        self.url = (
+            f"/en/events/{self.event.slug}/forms/{self.event_form.slug}/"
+        )
+
+    def test_anonymous_visitor_can_submit_evaluation(self):
+        page_response = self.client.get(self.url)
+        self.assertEqual(page_response.status_code, 200)
+        self.assertContains(page_response, "Submit evaluation")
+        self.assertContains(
+            page_response,
+            'class="question-number"',
+            count=1,
+        )
+
+        response = self.client.post(
+            self.url,
+            {f"question_{self.question.pk}": "The learning booth."},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["success"])
+        submission = FormSubmission.objects.get(event_form=self.event_form)
+        self.assertIsNone(submission.submitted_by)
+        self.assertEqual(submission.badge_name, "")
+        self.assertEqual(
+            submission.answers.get(question=self.question).text_value,
+            "The learning booth.",
+        )
+
+        success_response = self.client.get(payload["redirect_url"])
+        self.assertContains(success_response, "Thank you for your feedback")
+        self.assertNotContains(success_response, "Check registration status")
+
+    def test_disabled_evaluation_is_not_public(self):
+        self.event.evaluation_enabled = False
+        self.event.save(update_fields=["evaluation_enabled"])
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 404)
+
+
 class SubmissionReviewAdminTests(TestCase):
     def setUp(self):
         self.reviewer = get_user_model().objects.create_user(

@@ -330,6 +330,7 @@
                                                     class="field-label"
                                                     id="question-label-{{ question.id }}"
                                                 >
+                                                    <span class="question-number" aria-hidden="true"></span>
                                                     {% if language_code == "en" %}
                                                         {{ question.label_en }}
                                                     {% else %}
@@ -351,6 +352,7 @@
                                                     for="question-{{ question.id }}"
                                                     class="field-label"
                                                 >
+                                                    <span class="question-number" aria-hidden="true"></span>
                                                     {% if language_code == "en" %}
                                                         {{ question.label_en }}
                                                     {% else %}
@@ -405,15 +407,19 @@
                     {% if sections %}
                         <section
                             class="form-section wizard-step wizard-review-step"
-                            data-step-title="{% translate 'Review and submit' %}"
+                            data-step-title="{% if is_evaluation %}{% translate 'Review evaluation' %}{% else %}{% translate 'Review and submit' %}{% endif %}"
                         >
                             <div class="section-header">
                                 <p class="section-eyebrow"></p>
 
-                                <h3>{% translate "Review and submit" %}</h3>
+                                <h3>{% if is_evaluation %}{% translate "Review evaluation" %}{% else %}{% translate "Review and submit" %}{% endif %}</h3>
 
                                 <p>
-                                    {% translate "Please review your information before submitting the form." %}
+                                    {% if is_evaluation %}
+                                        {% translate "Please review your feedback before submitting the evaluation." %}
+                                    {% else %}
+                                        {% translate "Please review your information before submitting the form." %}
+                                    {% endif %}
                                 </p>
                             </div>
 
@@ -453,7 +459,7 @@
                                 type="submit"
                                 class="submit-button wizard-submit"
                             >
-                                {% translate "Submit form" %}
+                                {% if is_evaluation %}{% translate "Submit evaluation" %}{% else %}{% translate "Submit form" %}{% endif %}
                             </button>
                         </div>
 

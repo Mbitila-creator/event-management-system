@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-26 13:06+0300\n"
+"POT-Creation-Date: 2026-07-26 13:57+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -121,7 +121,7 @@ msgstr "uthibitishaji wa mahudhurio ya mshiriki"
 msgid "participant check-ins"
 msgstr "uthibitishaji wa mahudhurio ya washiriki"
 
-#: checkin/views.py:239 templates/checkin/participant_check_in.html:87
+#: checkin/views.py:249 templates/checkin/participant_check_in.html:87
 #: templates/checkin/reports.html:76
 #: templates/forms_builder/participant_badge.html:83
 #: templates/forms_builder/registration_status.html:42
@@ -130,51 +130,51 @@ msgstr "uthibitishaji wa mahudhurio ya washiriki"
 msgid "Reference number"
 msgstr "Namba ya kumbukumbu"
 
-#: checkin/views.py:240 templates/checkin/reports.html:77
+#: checkin/views.py:250 templates/checkin/reports.html:77
 #: templates/forms_builder/certificate_verification.html:21
 msgid "Representative"
 msgstr "Mwakilishi"
 
-#: checkin/views.py:241 templates/checkin/participant_check_in.html:74
+#: checkin/views.py:251 templates/checkin/participant_check_in.html:74
 #: templates/checkin/reports.html:78
 #: templates/forms_builder/certificate_verification.html:26
 msgid "Organization"
 msgstr "Taasisi"
 
-#: checkin/views.py:242
+#: checkin/views.py:252
 #, fuzzy
 #| msgid "review status"
 msgid "Review status"
 msgstr "hali ya ukaguzi"
 
-#: checkin/views.py:243 templates/checkin/reports.html:46
+#: checkin/views.py:253 templates/checkin/reports.html:46
 #: templates/checkin/reports.html:93
 #, fuzzy
 #| msgid "Checked in at"
 msgid "Checked in"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: checkin/views.py:244 templates/checkin/participant_check_in.html:105
+#: checkin/views.py:254 templates/checkin/participant_check_in.html:105
 #: templates/checkin/reports.html:81
 msgid "Checked in at"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: checkin/views.py:245 templates/checkin/participant_check_in.html:107
+#: checkin/views.py:255 templates/checkin/participant_check_in.html:107
 msgid "Checked in by"
 msgstr "Mahudhurio yamethibitishwa na"
 
-#: checkin/views.py:248 forms_builder/services.py:258
+#: checkin/views.py:258 forms_builder/services.py:258
 #: templates/forms_builder/certificate_verification.html:41
 #: templates/forms_builder/participant_certificate.html:70
 msgid "Certificate number"
 msgstr "Namba ya cheti"
 
-#: checkin/views.py:258
+#: checkin/views.py:268
 #: templates/forms_builder/partials/question_input.html:188
 msgid "Yes"
 msgstr "Ndiyo"
 
-#: checkin/views.py:258
+#: checkin/views.py:268
 #: templates/forms_builder/partials/question_input.html:203
 msgid "No"
 msgstr "Hapana"
@@ -1397,36 +1397,49 @@ msgstr "Fomu hii bado haina sehemu au maswali."
 
 #: templates/forms_builder/public_event_form.html:408
 #: templates/forms_builder/public_event_form.html:413
+msgid "Review evaluation"
+msgstr "Kagua tathmini"
+
+#: templates/forms_builder/public_event_form.html:408
+#: templates/forms_builder/public_event_form.html:413
 msgid "Review and submit"
 msgstr "Kagua na uwasilishe"
 
-#: templates/forms_builder/public_event_form.html:416
+#: templates/forms_builder/public_event_form.html:417
+msgid "Please review your feedback before submitting the evaluation."
+msgstr "Tafadhali kagua maoni yako kabla ya kuwasilisha tathmini."
+
+#: templates/forms_builder/public_event_form.html:419
 msgid "Please review your information before submitting the form."
 msgstr "Tafadhali kagua taarifa zako kabla ya kuwasilisha fomu."
 
-#: templates/forms_builder/public_event_form.html:427
+#: templates/forms_builder/public_event_form.html:431
 msgid "Please review the information above before submitting."
 msgstr "Tafadhali kagua taarifa zilizo hapo juu kabla ya kuwasilisha."
 
-#: templates/forms_builder/public_event_form.html:441
+#: templates/forms_builder/public_event_form.html:445
 msgid "Previous"
 msgstr "Iliyotangulia"
 
-#: templates/forms_builder/public_event_form.html:448
+#: templates/forms_builder/public_event_form.html:452
 msgid "Next"
 msgstr "Inayofuata"
 
-#: templates/forms_builder/public_event_form.html:456
+#: templates/forms_builder/public_event_form.html:460
+msgid "Submit evaluation"
+msgstr "Wasilisha tathmini"
+
+#: templates/forms_builder/public_event_form.html:460
 msgid "Submit form"
 msgstr "Wasilisha fomu"
 
-#: templates/forms_builder/public_event_form.html:462
+#: templates/forms_builder/public_event_form.html:466
 msgid "Required field"
 msgstr "Sehemu ya lazima"
 
 #: templates/forms_builder/registration_status.html:6
 #: templates/forms_builder/registration_status.html:24
-#: templates/forms_builder/submission_success.html:97
+#: templates/forms_builder/submission_success.html:98
 msgid "Check registration status"
 msgstr "Angalia hali ya usajili"
 
@@ -1497,14 +1510,26 @@ msgid ""
 msgstr "Usajili wako umepokelewa na unasubiri ukaguzi wa kiutawala."
 
 #: templates/forms_builder/submission_success.html:15
+msgid "Evaluation submitted"
+msgstr "Tathmini imewasilishwa"
+
+#: templates/forms_builder/submission_success.html:15
 #: templates/forms_builder/submission_success.html:49
 msgid "Registration successful"
 msgstr "Usajili umefanikiwa"
 
-#: templates/forms_builder/submission_success.html:104
+#: templates/forms_builder/submission_success.html:49
+msgid "Thank you for your feedback"
+msgstr "Asante kwa maoni yako"
+
+#: templates/forms_builder/submission_success.html:62
+msgid "Evaluation reference"
+msgstr "Kumbukumbu ya tathmini"
+
+#: templates/forms_builder/submission_success.html:106
 msgid "Return to event"
 msgstr "Rudi kwenye tukio"
 
-#: templates/forms_builder/submission_success.html:111
+#: templates/forms_builder/submission_success.html:113
 msgid "View all events"
 msgstr "Tazama matukio yote"

@@ -223,3 +223,26 @@ class ParticipantCheckInTests(TestCase):
         )
         self.assertContains(all_response, "Neema Maarifa")
         self.assertContains(all_response, "Pending Person")
+
+    def test_evaluation_responses_do_not_change_participant_reports(self):
+        evaluation_form = EventForm.objects.create(
+            event=self.event,
+            name_sw="Tathmini ya Wageni",
+            name_en="Visitor Evaluation",
+            form_type=EventForm.FormType.EVALUATION,
+            is_published=True,
+        )
+        FormSubmission.objects.create(
+            event_form=evaluation_form,
+            badge_name="Visitor Feedback",
+        )
+        self.client.force_login(self.report_officer)
+
+        response = self.client.get(
+            "/en/reports/attendance/",
+            {"event": self.event.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["summary"]["registered"], 1)
+        self.assertNotContains(response, "Visitor Feedback")

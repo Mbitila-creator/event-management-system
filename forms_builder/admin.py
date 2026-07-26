@@ -99,7 +99,7 @@ class EventFormAdmin(AuditAdminMixin, admin.ModelAdmin):
         FormSectionInline,
     ]
 
-    @admin.display(description="Registration link and QR code")
+    @admin.display(description="Public link and QR code")
     def registration_tools(self, obj):
         if not obj or not obj.pk:
             return "Save the form first."
@@ -153,7 +153,7 @@ class EventFormAdmin(AuditAdminMixin, admin.ModelAdmin):
         if request.GET.get("download") == "1":
             filename = (
                 f"{event_form.event.code}-"
-                f"{event_form.slug}-registration-qr.png"
+                f"{event_form.slug}-form-qr.png"
             )
             response["Content-Disposition"] = (
                 f'attachment; filename="{filename}"'
@@ -361,6 +361,8 @@ class FormSubmissionAdmin(admin.ModelAdmin):
 
     @admin.display(description="Review status", ordering="review_status")
     def review_status_badge(self, obj):
+        if obj.event_form.form_type == EventForm.FormType.EVALUATION:
+            return "Not applicable"
         colors = {
             FormSubmission.ReviewStatus.PENDING: ("#854d0e", "#fef9c3"),
             FormSubmission.ReviewStatus.APPROVED: ("#166534", "#dcfce7"),
@@ -378,6 +380,8 @@ class FormSubmissionAdmin(admin.ModelAdmin):
 
     @admin.display(description="Participant badge")
     def badge_tools(self, obj):
+        if obj.event_form.form_type == EventForm.FormType.EVALUATION:
+            return "Not applicable"
         if obj.review_status != FormSubmission.ReviewStatus.APPROVED:
             return "Available after approval."
 
@@ -399,6 +403,8 @@ class FormSubmissionAdmin(admin.ModelAdmin):
 
     @admin.display(description="Certificate")
     def certificate_tools(self, obj):
+        if obj.event_form.form_type == EventForm.FormType.EVALUATION:
+            return "Not applicable"
         if not obj.event_form.event.certificate_enabled:
             return "Certificates are disabled for this event."
 
@@ -446,6 +452,9 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
     def _set_review_status(self, request, queryset, status):
+        queryset = queryset.exclude(
+            event_form__form_type=EventForm.FormType.EVALUATION
+        )
         current_time = timezone.now()
         reviewer = (
             request.user

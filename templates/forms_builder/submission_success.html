@@ -12,7 +12,7 @@
     >
 
     <title>
-        {% translate "Registration successful" %}
+        {% if is_evaluation %}{% translate "Evaluation submitted" %}{% else %}{% translate "Registration successful" %}{% endif %}
     </title>
 
     <link
@@ -46,7 +46,7 @@
             </div>
 
             <h1>
-                {% translate "Registration successful" %}
+                {% if is_evaluation %}{% translate "Thank you for your feedback" %}{% else %}{% translate "Registration successful" %}{% endif %}
             </h1>
 
             <p class="success-message">
@@ -59,7 +59,7 @@
 
             <div class="reference-box">
                 <span class="reference-label">
-                    {% translate "Reference number" %}
+                    {% if is_evaluation %}{% translate "Evaluation reference" %}{% else %}{% translate "Reference number" %}{% endif %}
                 </span>
 
                 <strong class="reference-number">
@@ -90,12 +90,14 @@
             </div>
 
             <div class="success-actions">
-                <a
-                    href="{% url 'forms_builder:registration_status' %}?reference={{ submission.reference_number|urlencode }}"
-                    class="submit-button success-link"
-                >
-                    {% translate "Check registration status" %}
-                </a>
+                {% if not is_evaluation %}
+                    <a
+                        href="{% url 'forms_builder:registration_status' %}?reference={{ submission.reference_number|urlencode }}"
+                        class="submit-button success-link"
+                    >
+                        {% translate "Check registration status" %}
+                    </a>
+                {% endif %}
 
                 <a
                     href="{% url 'events:event_detail' event.slug %}"

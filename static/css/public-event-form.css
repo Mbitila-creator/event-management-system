@@ -425,6 +425,13 @@ img {
     line-height: 1.45;
 }
 
+.question-number {
+    display: inline-block;
+    min-width: 1.7em;
+    color: #17365d;
+    font-weight: 800;
+}
+
 .required-mark {
     color: #c62828;
     font-weight: 800;

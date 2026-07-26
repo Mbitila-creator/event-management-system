@@ -10,7 +10,7 @@ from django.views.decorators.http import require_http_methods
 
 from accounts.models import User
 from events.models import Event
-from forms_builder.models import FormSubmission
+from forms_builder.models import EventForm, FormSubmission
 from forms_builder.services import (
     certificate_number,
     participant_certificate_path,
@@ -78,6 +78,11 @@ def approved_submission_queryset():
         is_complete=True,
         is_active=True,
         event_form__event__qr_checkin_enabled=True,
+        event_form__form_type__in=[
+            EventForm.FormType.REGISTRATION,
+            EventForm.FormType.EXHIBITOR,
+            EventForm.FormType.SPEAKER,
+        ],
     )
 
 
@@ -86,6 +91,11 @@ def report_submissions(event):
         event_form__event=event,
         is_active=True,
         is_complete=True,
+        event_form__form_type__in=[
+            EventForm.FormType.REGISTRATION,
+            EventForm.FormType.EXHIBITOR,
+            EventForm.FormType.SPEAKER,
+        ],
     ).select_related(
         "event_form__event",
         "check_in",
@@ -314,6 +324,12 @@ def participant_check_in(request, participant_token):
     is_eligible = bool(
         submission.review_status
         == FormSubmission.ReviewStatus.APPROVED
+        and submission.event_form.form_type
+        in {
+            EventForm.FormType.REGISTRATION,
+            EventForm.FormType.EXHIBITOR,
+            EventForm.FormType.SPEAKER,
+        }
         and submission.is_complete
         and submission.is_active
         and submission.event_form.event.qr_checkin_enabled

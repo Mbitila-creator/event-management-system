@@ -2,6 +2,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
+from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
@@ -35,7 +36,7 @@ def get_client_ip(request):
 
 
 def get_public_event_form(event_slug, form_slug):
-    return get_object_or_404(
+    event_form = get_object_or_404(
         EventForm.objects.select_related(
             "event",
             "event__category",
@@ -49,10 +50,19 @@ def get_public_event_form(event_slug, form_slug):
         slug=form_slug,
         event__is_active=True,
         event__is_public=True,
-        event__registration_enabled=True,
         is_active=True,
         is_published=True,
     )
+    is_evaluation = event_form.form_type == EventForm.FormType.EVALUATION
+    form_enabled = (
+        event_form.event.evaluation_enabled
+        if is_evaluation
+        else event_form.event.registration_enabled
+    )
+    if not form_enabled:
+        raise Http404("This public form is not enabled.")
+
+    return event_form
 
 
 def form_availability(event_form):
@@ -396,7 +406,8 @@ def public_event_form(request, event_slug, form_slug):
                         selected_options
                     )
 
-        sync_badge_identity_from_answers(submission)
+        if event_form.form_type != EventForm.FormType.EVALUATION:
+            sync_badge_identity_from_answers(submission)
 
         success_url = (
             f"/{language_code}/submissions/"
@@ -423,6 +434,9 @@ def public_event_form(request, event_slug, form_slug):
         "language_code": language_code,
         "form_not_open": form_not_open,
         "form_closed": form_closed,
+        "is_evaluation": (
+            event_form.form_type == EventForm.FormType.EVALUATION
+        ),
     }
 
     return render(
@@ -450,6 +464,10 @@ def submission_success(request, reference_number):
             "submission": submission,
             "event_form": submission.event_form,
             "event": submission.event_form.event,
+            "is_evaluation": (
+                submission.event_form.form_type
+                == EventForm.FormType.EVALUATION
+            ),
         },
     )
 
@@ -471,6 +489,11 @@ def registration_status(request):
             .filter(
                 reference_number=reference_number,
                 is_complete=True,
+                event_form__form_type__in=[
+                    EventForm.FormType.REGISTRATION,
+                    EventForm.FormType.EXHIBITOR,
+                    EventForm.FormType.SPEAKER,
+                ],
             )
             .first()
         )
@@ -518,6 +541,11 @@ def get_approved_badge_submission(participant_token):
         is_complete=True,
         is_active=True,
         event_form__event__badge_enabled=True,
+        event_form__form_type__in=[
+            EventForm.FormType.REGISTRATION,
+            EventForm.FormType.EXHIBITOR,
+            EventForm.FormType.SPEAKER,
+        ],
     )
 
 
@@ -550,6 +578,11 @@ def participant_certificate(request, participant_token):
         is_active=True,
         event_form__event__certificate_enabled=True,
         check_in__isnull=False,
+        event_form__form_type__in=[
+            EventForm.FormType.REGISTRATION,
+            EventForm.FormType.EXHIBITOR,
+            EventForm.FormType.SPEAKER,
+        ],
     )
 
     return render(
@@ -591,6 +624,11 @@ def get_certificate_submission(participant_token):
         is_active=True,
         event_form__event__certificate_enabled=True,
         check_in__isnull=False,
+        event_form__form_type__in=[
+            EventForm.FormType.REGISTRATION,
+            EventForm.FormType.EXHIBITOR,
+            EventForm.FormType.SPEAKER,
+        ],
     )
 
 
