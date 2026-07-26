@@ -15,20 +15,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const stepCount = form.querySelector(".wizard-step-count");
     const stepDots = form.querySelector(".wizard-step-dots");
     const reviewContainer = form.querySelector(".review-sections");
-    const questionFields = Array.from(
-        form.querySelectorAll(".form-field")
-    );
     const language =
         document.documentElement.lang === "en" ? "en" : "sw";
     let currentStep = 0;
-
-    questionFields.forEach((field, index) => {
-        const numberElement = field.querySelector(".question-number");
-
-        if (numberElement) {
-            numberElement.textContent = `${index + 1}.`;
-        }
-    });
 
     const originalButtonText = submitButton
         ? submitButton.textContent.trim()

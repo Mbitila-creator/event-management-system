@@ -199,11 +199,6 @@ class PublicEvaluationTests(TestCase):
         page_response = self.client.get(self.url)
         self.assertEqual(page_response.status_code, 200)
         self.assertContains(page_response, "Submit evaluation")
-        self.assertContains(
-            page_response,
-            'class="question-number"',
-            count=1,
-        )
 
         response = self.client.post(
             self.url,
