@@ -99,8 +99,18 @@ class ParticipantCheckInTests(TestCase):
 
         response = self.client.get(self.url)
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Check-in not allowed")
         self.assertFalse(ParticipantCheckIn.objects.exists())
+
+    def test_scan_url_prepares_automatic_check_in(self):
+        self.client.force_login(self.officer)
+
+        response = self.client.get(f"{self.url}?auto=1")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="automatic-check-in-form"')
+        self.assertContains(response, "checkInForm.requestSubmit()")
 
     def test_reference_lookup_redirects_to_participant(self):
         self.client.force_login(self.officer)

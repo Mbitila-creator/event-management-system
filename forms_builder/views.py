@@ -14,7 +14,11 @@ from .models import (
     FormSubmission,
     QuestionOption,
 )
-from .services import generate_qr_png, participant_badge_url
+from .services import (
+    generate_qr_png,
+    participant_check_in_url,
+    sync_badge_identity_from_answers,
+)
 
 
 def get_client_ip(request):
@@ -388,6 +392,8 @@ def public_event_form(request, event_slug, form_slug):
                         selected_options
                     )
 
+        sync_badge_identity_from_answers(submission)
+
         success_url = (
             f"/{language_code}/submissions/"
             f"{submission.reference_number}/success/"
@@ -528,13 +534,13 @@ def participant_badge(request, participant_token):
 @require_http_methods(["GET"])
 def participant_badge_qr(request, participant_token):
     submission = get_approved_badge_submission(participant_token)
-    badge_url = participant_badge_url(
+    check_in_url = participant_check_in_url(
         submission,
         request=request,
         language=submission.language,
     )
     response = HttpResponse(
-        generate_qr_png(badge_url),
+        generate_qr_png(check_in_url),
         content_type="image/png",
     )
 

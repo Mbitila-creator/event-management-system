@@ -23,12 +23,24 @@
             </div>
 
             {% if just_checked_in %}
-                <div class="checkin-alert checkin-alert-success" role="status">
-                    ✓ {% translate "Participant checked in successfully." %}
+                <div class="checkin-result-panel checkin-result-success" role="status">
+                    <span class="checkin-result-icon" aria-hidden="true">✓</span>
+                    <h2>{% translate "Check-in successful" %}</h2>
+                    <p>{% translate "Participant checked in successfully." %}</p>
                 </div>
             {% elif check_in %}
-                <div class="checkin-alert checkin-alert-warning" role="status">
-                    {% translate "This participant is already checked in." %}
+                <div class="checkin-result-panel checkin-result-error" role="alert">
+                    <span class="checkin-result-icon" aria-hidden="true">×</span>
+                    <h2>{% translate "Already checked in" %}</h2>
+                    <p>{% translate "This participant is already checked in." %}</p>
+                </div>
+            {% elif not is_eligible %}
+                <div class="checkin-result-panel checkin-result-error" role="alert">
+                    <span class="checkin-result-icon" aria-hidden="true">×</span>
+                    <h2>{% translate "Check-in not allowed" %}</h2>
+                    <p>
+                        {% translate "This registration is not approved or is not eligible for check-in." %}
+                    </p>
                 </div>
             {% endif %}
 
@@ -85,8 +97,12 @@
                         <span>{% translate "Checked in by" %}</span>
                         <strong>{{ check_in.checked_in_by }}</strong>
                     </div>
-                {% else %}
-                    <form method="post" class="checkin-confirm-form">
+                {% elif is_eligible %}
+                    <form
+                        method="post"
+                        class="checkin-confirm-form"
+                        id="automatic-check-in-form"
+                    >
                         {% csrf_token %}
                         <button type="submit" class="primary-button checkin-confirm-button">
                             {% translate "Confirm participant check-in" %}
@@ -96,4 +112,24 @@
             </article>
         </div>
     </section>
+{% endblock %}
+
+{% block extra_js %}
+    {% if auto_check_in and is_eligible and not check_in %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const checkInForm = document.getElementById(
+                    "automatic-check-in-form"
+                );
+
+                if (checkInForm) {
+                    if (typeof checkInForm.requestSubmit === "function") {
+                        checkInForm.requestSubmit();
+                    } else {
+                        checkInForm.submit();
+                    }
+                }
+            });
+        </script>
+    {% endif %}
 {% endblock %}

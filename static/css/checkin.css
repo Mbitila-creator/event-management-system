@@ -90,6 +90,58 @@
     color: #8f1d18;
 }
 
+.checkin-result-panel {
+    margin-bottom: 20px;
+    padding: 24px;
+    border: 2px solid;
+    border-radius: 16px;
+    text-align: center;
+}
+
+.checkin-result-icon {
+    display: grid;
+    width: 108px;
+    height: 108px;
+    margin: 0 auto 15px;
+    place-items: center;
+    border-radius: 50%;
+    color: white;
+    font-size: 76px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.checkin-result-panel h2 {
+    margin: 0 0 8px;
+    font-size: clamp(26px, 7vw, 38px);
+}
+
+.checkin-result-panel p {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.checkin-result-success {
+    border-color: #4caf73;
+    background: #ecfdf3;
+    color: #166534;
+}
+
+.checkin-result-success .checkin-result-icon {
+    background: #16803c;
+}
+
+.checkin-result-error {
+    border-color: #e37b73;
+    background: #fff1f0;
+    color: #991b1b;
+}
+
+.checkin-result-error .checkin-result-icon {
+    background: #c62828;
+}
+
 .verification-status {
     display: flex;
     align-items: center;

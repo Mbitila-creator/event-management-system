@@ -18,13 +18,21 @@ from django.utils import timezone
 from events.models import Event, EventCategory
 
 from .admin import FormSubmissionAdmin
-from .models import EventForm, FormSubmission
+from .models import (
+    EventForm,
+    FormAnswer,
+    FormQuestion,
+    FormSection,
+    FormSubmission,
+)
 
 from .services import (
     generate_qr_png,
+    participant_check_in_url,
     public_form_path,
     public_form_url,
     safe_spreadsheet_value,
+    sync_badge_identity_from_answers,
 )
 
 
@@ -83,6 +91,25 @@ class PublicFormServiceTests(SimpleTestCase):
         image_data = generate_qr_png("https://example.org/register/")
 
         self.assertTrue(image_data.startswith(b"\x89PNG\r\n\x1a\n"))
+
+    @override_settings(PUBLIC_BASE_URL="https://events.example.org")
+    def test_participant_qr_targets_automatic_check_in(self):
+        submission = SimpleNamespace(
+            participant_token="12345678-1234-5678-1234-567812345678"
+        )
+
+        url = participant_check_in_url(
+            submission,
+            language="en",
+        )
+
+        self.assertEqual(
+            url,
+            (
+                "https://events.example.org/en/check-in/"
+                "12345678-1234-5678-1234-567812345678/?auto=1"
+            ),
+        )
 
     def test_spreadsheet_formula_values_are_escaped(self):
         self.assertEqual(
@@ -296,3 +323,40 @@ class SubmissionReviewAdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "image/png")
         self.assertTrue(response.content.startswith(b"\x89PNG\r\n\x1a\n"))
+
+    def test_badge_identity_is_filled_from_registration_answers(self):
+        section = FormSection.objects.create(
+            event_form=self.submission.event_form,
+            title_sw="Taarifa za Mwakilishi",
+            title_en="Representative Information",
+        )
+        name_question = FormQuestion.objects.create(
+            section=section,
+            label_sw="Jina la Mwakilishi",
+            label_en="Representative Name",
+        )
+        organization_question = FormQuestion.objects.create(
+            section=section,
+            label_sw="Jina la Taasisi",
+            label_en="Institution Name",
+        )
+        FormAnswer.objects.create(
+            submission=self.submission,
+            question=name_question,
+            text_value="Amina Ubunifu",
+        )
+        FormAnswer.objects.create(
+            submission=self.submission,
+            question=organization_question,
+            text_value="Taasisi ya Elimu",
+        )
+
+        sync_badge_identity_from_answers(self.submission)
+        self.submission.refresh_from_db()
+
+        self.assertEqual(self.submission.badge_name, "Amina Ubunifu")
+        self.assertEqual(
+            self.submission.badge_organization,
+            "Taasisi ya Elimu",
+        )
+        self.assertEqual(self.submission.badge_title, "Mshiriki")

@@ -56,6 +56,75 @@ def participant_badge_url(submission, request=None, language="sw"):
     return path
 
 
+def participant_check_in_url(submission, request=None, language="sw"):
+    with translation.override(language):
+        path = reverse(
+            "checkin:participant",
+            kwargs={"participant_token": submission.participant_token},
+        )
+    path = f"{path}?auto=1"
+    base_url = settings.PUBLIC_BASE_URL
+
+    if base_url:
+        return urljoin(f"{base_url}/", path.lstrip("/"))
+
+    if request is not None:
+        return request.build_absolute_uri(path)
+
+    return path
+
+
+def sync_badge_identity_from_answers(submission):
+    badge_name = ""
+    badge_organization = ""
+
+    answers = submission.answers.select_related("question").all()
+    for answer in answers:
+        label_en = answer.question.label_en.strip().casefold()
+        label_sw = answer.question.label_sw.strip().casefold()
+        value = answer.text_value.strip()
+
+        if not value:
+            continue
+
+        if label_en in {
+            "representative name",
+            "participant name",
+            "full name",
+        } or label_sw in {
+            "jina la mwakilishi",
+            "jina la mshiriki",
+            "jina kamili",
+        }:
+            badge_name = value
+
+        if label_en in {
+            "institution name",
+            "organization name",
+            "organisation name",
+        } or label_sw in {
+            "jina la taasisi",
+            "jina la shirika",
+        }:
+            badge_organization = value
+
+    submission.badge_name = badge_name or submission.badge_name
+    submission.badge_organization = (
+        badge_organization or submission.badge_organization
+    )
+    submission.badge_title = (
+        "Participant" if submission.language == "en" else "Mshiriki"
+    )
+    submission.save(
+        update_fields=[
+            "badge_name",
+            "badge_organization",
+            "badge_title",
+            "updated_at",
+        ]
+    )
+
+
 def generate_qr_png(value):
     qr_code = qrcode.QRCode(
         error_correction=qrcode.constants.ERROR_CORRECT_M,
