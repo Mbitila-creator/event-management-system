@@ -1,11 +1,21 @@
+import csv
+
 from django.contrib.auth.decorators import user_passes_test
 from django.db import transaction
+from django.db.models import Count, Q
+from django.http import HttpResponse
+from django.utils.translation import gettext as _
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
 from accounts.models import User
+from events.models import Event
 from forms_builder.models import FormSubmission
-from forms_builder.services import participant_certificate_path
+from forms_builder.services import (
+    certificate_number,
+    participant_certificate_path,
+    safe_spreadsheet_value,
+)
 
 from .models import ParticipantCheckIn
 
@@ -35,6 +45,29 @@ check_in_required = user_passes_test(
 )
 
 
+REPORT_ROLES = {
+    User.Role.SYSTEM_ADMIN,
+    User.Role.EVENT_ADMIN,
+    User.Role.REPORT_OFFICER,
+}
+
+
+def can_view_reports(user):
+    return bool(
+        user.is_authenticated
+        and (
+            user.is_superuser
+            or user.role in REPORT_ROLES
+        )
+    )
+
+
+report_required = user_passes_test(
+    can_view_reports,
+    login_url="admin:login",
+)
+
+
 def approved_submission_queryset():
     return FormSubmission.objects.select_related(
         "event_form",
@@ -46,6 +79,191 @@ def approved_submission_queryset():
         is_active=True,
         event_form__event__qr_checkin_enabled=True,
     )
+
+
+def report_submissions(event):
+    return FormSubmission.objects.filter(
+        event_form__event=event,
+        is_active=True,
+        is_complete=True,
+    ).select_related(
+        "event_form__event",
+        "check_in",
+    )
+
+
+@report_required
+@require_http_methods(["GET"])
+def attendance_reports(request):
+    events = Event.objects.annotate(
+        registration_total=Count(
+            "forms__submissions",
+            filter=Q(
+                forms__submissions__is_active=True,
+                forms__submissions__is_complete=True,
+            ),
+            distinct=True,
+        )
+    ).order_by("-starts_at")
+    selected_event = None
+    selected_event_id = request.GET.get("event", "").strip()
+    selected_filter = request.GET.get("filter", "all").strip()
+    available_filters = {
+        "all",
+        "approved",
+        "checked_in",
+        "not_checked_in",
+        "attendance_rate",
+        "certificate_eligible",
+        "pending",
+        "rejected",
+    }
+    if selected_filter not in available_filters:
+        selected_filter = "all"
+
+    if selected_event_id:
+        selected_event = get_object_or_404(events, pk=selected_event_id)
+    else:
+        selected_event = events.first()
+
+    summary = None
+    rows = FormSubmission.objects.none()
+    if selected_event:
+        rows = report_submissions(selected_event)
+        registered = rows.count()
+        approved = rows.filter(
+            review_status=FormSubmission.ReviewStatus.APPROVED
+        ).count()
+        checked_in = rows.filter(check_in__isnull=False).count()
+        approved_checked_in = rows.filter(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            check_in__isnull=False,
+        ).count()
+        approved_not_checked_in = rows.filter(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            check_in__isnull=True,
+        ).count()
+        summary = {
+            "registered": registered,
+            "approved": approved,
+            "pending": rows.filter(
+                review_status=FormSubmission.ReviewStatus.PENDING
+            ).count(),
+            "rejected": rows.filter(
+                review_status=FormSubmission.ReviewStatus.REJECTED
+            ).count(),
+            "checked_in": checked_in,
+            "not_checked_in": approved_not_checked_in,
+            "certificate_eligible": (
+                approved_checked_in
+                if selected_event.certificate_enabled
+                else 0
+            ),
+            "attendance_rate": (
+                round((approved_checked_in / approved) * 100, 1)
+                if approved
+                else 0
+            ),
+        }
+        row_filters = {
+            "approved": Q(
+                review_status=FormSubmission.ReviewStatus.APPROVED
+            ),
+            "checked_in": Q(check_in__isnull=False),
+            "attendance_rate": Q(
+                review_status=FormSubmission.ReviewStatus.APPROVED,
+                check_in__isnull=False,
+            ),
+            "not_checked_in": Q(
+                review_status=FormSubmission.ReviewStatus.APPROVED,
+                check_in__isnull=True,
+            ),
+            "pending": Q(
+                review_status=FormSubmission.ReviewStatus.PENDING
+            ),
+            "rejected": Q(
+                review_status=FormSubmission.ReviewStatus.REJECTED
+            ),
+        }
+        if selected_filter == "certificate_eligible":
+            rows = (
+                rows.filter(
+                    review_status=FormSubmission.ReviewStatus.APPROVED,
+                    check_in__isnull=False,
+                )
+                if selected_event.certificate_enabled
+                else rows.none()
+            )
+        elif selected_filter in row_filters:
+            rows = rows.filter(row_filters[selected_filter])
+
+        rows = rows.order_by("badge_name", "reference_number")
+
+    return render(
+        request,
+        "checkin/reports.html",
+        {
+            "events": events,
+            "selected_event": selected_event,
+            "summary": summary,
+            "rows": rows,
+            "selected_filter": selected_filter,
+            "filtered_total": rows.count() if selected_event else 0,
+        },
+    )
+
+
+@report_required
+@require_http_methods(["GET"])
+def attendance_report_csv(request):
+    event = get_object_or_404(Event, pk=request.GET.get("event"))
+    report_type = request.GET.get("report", "attendance")
+    rows = report_submissions(event).order_by(
+        "badge_name",
+        "reference_number",
+    )
+
+    if report_type == "certificates":
+        rows = rows.filter(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            check_in__isnull=False,
+        )
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response.write("\ufeff")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{event.code}-{report_type}-report.csv"'
+    )
+    writer = csv.writer(response)
+    headers = [
+        _("Reference number"),
+        _("Representative"),
+        _("Organization"),
+        _("Review status"),
+        _("Checked in"),
+        _("Checked in at"),
+        _("Checked in by"),
+    ]
+    if report_type == "certificates":
+        headers.append(_("Certificate number"))
+    writer.writerow(headers)
+
+    for submission in rows:
+        check_in = getattr(submission, "check_in", None)
+        values = [
+            submission.reference_number,
+            submission.badge_display_name,
+            submission.badge_organization,
+            submission.get_review_status_display(),
+            _("Yes") if check_in else _("No"),
+            check_in.checked_in_at.isoformat() if check_in else "",
+            str(check_in.checked_in_by) if check_in else "",
+        ]
+        if report_type == "certificates":
+            values.append(certificate_number(submission))
+        writer.writerow([safe_spreadsheet_value(value) for value in values])
+
+    return response
 
 
 @check_in_required

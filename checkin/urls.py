@@ -7,6 +7,16 @@ app_name = "checkin"
 
 urlpatterns = [
     path(
+        "reports/attendance/",
+        views.attendance_reports,
+        name="reports",
+    ),
+    path(
+        "reports/attendance/export/",
+        views.attendance_report_csv,
+        name="reports_csv",
+    ),
+    path(
         "check-in/",
         views.check_in_lookup,
         name="lookup",

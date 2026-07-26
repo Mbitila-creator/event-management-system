@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-26 10:46+0300\n"
+"POT-Creation-Date: 2026-07-26 13:06+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -120,6 +120,64 @@ msgstr "uthibitishaji wa mahudhurio ya mshiriki"
 #: checkin/models.py:48
 msgid "participant check-ins"
 msgstr "uthibitishaji wa mahudhurio ya washiriki"
+
+#: checkin/views.py:239 templates/checkin/participant_check_in.html:87
+#: templates/checkin/reports.html:76
+#: templates/forms_builder/participant_badge.html:83
+#: templates/forms_builder/registration_status.html:42
+#: templates/forms_builder/registration_status.html:79
+#: templates/forms_builder/submission_success.html:62
+msgid "Reference number"
+msgstr "Namba ya kumbukumbu"
+
+#: checkin/views.py:240 templates/checkin/reports.html:77
+#: templates/forms_builder/certificate_verification.html:21
+msgid "Representative"
+msgstr "Mwakilishi"
+
+#: checkin/views.py:241 templates/checkin/participant_check_in.html:74
+#: templates/checkin/reports.html:78
+#: templates/forms_builder/certificate_verification.html:26
+msgid "Organization"
+msgstr "Taasisi"
+
+#: checkin/views.py:242
+#, fuzzy
+#| msgid "review status"
+msgid "Review status"
+msgstr "hali ya ukaguzi"
+
+#: checkin/views.py:243 templates/checkin/reports.html:46
+#: templates/checkin/reports.html:93
+#, fuzzy
+#| msgid "Checked in at"
+msgid "Checked in"
+msgstr "Mahudhurio yamethibitishwa tarehe"
+
+#: checkin/views.py:244 templates/checkin/participant_check_in.html:105
+#: templates/checkin/reports.html:81
+msgid "Checked in at"
+msgstr "Mahudhurio yamethibitishwa tarehe"
+
+#: checkin/views.py:245 templates/checkin/participant_check_in.html:107
+msgid "Checked in by"
+msgstr "Mahudhurio yamethibitishwa na"
+
+#: checkin/views.py:248 forms_builder/services.py:258
+#: templates/forms_builder/certificate_verification.html:41
+#: templates/forms_builder/participant_certificate.html:70
+msgid "Certificate number"
+msgstr "Namba ya cheti"
+
+#: checkin/views.py:258
+#: templates/forms_builder/partials/question_input.html:188
+msgid "Yes"
+msgstr "Ndiyo"
+
+#: checkin/views.py:258
+#: templates/forms_builder/partials/question_input.html:203
+msgid "No"
+msgstr "Hapana"
 
 #: core/models.py:19
 msgid "is active"
@@ -722,11 +780,11 @@ msgstr "chaguo za swali"
 msgid "Pending review"
 msgstr "Inasubiri ukaguzi"
 
-#: forms_builder/models.py:321
+#: forms_builder/models.py:321 templates/checkin/reports.html:45
 msgid "Approved"
 msgstr "Imepitishwa"
 
-#: forms_builder/models.py:322
+#: forms_builder/models.py:322 templates/checkin/reports.html:51
 msgid "Rejected"
 msgstr "Imekataliwa"
 
@@ -850,19 +908,19 @@ msgstr "jibu la fomu"
 msgid "form answers"
 msgstr "majibu ya fomu"
 
-#: forms_builder/services.py:195
+#: forms_builder/services.py:250
 #: templates/forms_builder/participant_certificate.html:5
 #: templates/forms_builder/participant_certificate.html:32
 #: templates/forms_builder/participant_certificate.html:49
 msgid "Certificate of Participation"
 msgstr "Cheti cha Ushiriki"
 
-#: forms_builder/services.py:196
+#: forms_builder/services.py:251
 #: templates/forms_builder/participant_certificate.html:50
 msgid "This certificate is proudly presented to"
 msgstr "Cheti hiki kinatolewa kwa fahari kwa"
 
-#: forms_builder/services.py:198
+#: forms_builder/services.py:253
 #: templates/forms_builder/participant_certificate.html:56
 #, python-format
 msgid "for participating in %(event_name)s and completing verified attendance."
@@ -870,23 +928,27 @@ msgstr ""
 "kwa kushiriki katika %(event_name)s na kukamilisha mahudhurio "
 "yaliyothibitishwa."
 
-#: forms_builder/services.py:201
-#: templates/forms_builder/certificate_verification.html:41
+#: forms_builder/services.py:256
+#: templates/forms_builder/certificate_verification.html:45
 #: templates/forms_builder/participant_certificate.html:15
 #: templates/forms_builder/participant_certificate.html:66
 msgid "Attendance verified"
 msgstr "Mahudhurio yamethibitishwa"
 
-#: forms_builder/services.py:202
+#: forms_builder/services.py:257
 #: templates/forms_builder/certificate_verification.html:37
-#: templates/forms_builder/participant_certificate.html:70
-msgid "Certificate number"
-msgstr "Namba ya cheti"
+#: templates/forms_builder/participant_certificate.html:62
+msgid "Event date"
+msgstr "Tarehe ya tukio"
 
-#: forms_builder/services.py:203
+#: forms_builder/services.py:259
 #: templates/forms_builder/participant_certificate.html:78
 msgid "Scan to verify this certificate"
 msgstr "Changanua ili kuthibitisha cheti hiki"
+
+#: templates/admin/checkin/participantcheckin/change_list.html:6
+msgid "Attendance reports"
+msgstr "Ripoti za mahudhurio"
 
 #: templates/checkin/lookup.html:5 templates/checkin/lookup.html:15
 #: templates/checkin/participant_check_in.html:5
@@ -969,22 +1031,9 @@ msgstr "Kitambulisho kimethibitishwa"
 msgid "Participant name"
 msgstr "Jina la mshiriki"
 
-#: templates/checkin/participant_check_in.html:74
-#: templates/forms_builder/certificate_verification.html:26
-msgid "Organization"
-msgstr "Taasisi"
-
 #: templates/checkin/participant_check_in.html:81
 msgid "Role or title"
 msgstr "Jukumu au cheo"
-
-#: templates/checkin/participant_check_in.html:87
-#: templates/forms_builder/participant_badge.html:83
-#: templates/forms_builder/registration_status.html:42
-#: templates/forms_builder/registration_status.html:79
-#: templates/forms_builder/submission_success.html:62
-msgid "Reference number"
-msgstr "Namba ya kumbukumbu"
 
 #: templates/checkin/participant_check_in.html:92
 #: templates/forms_builder/certificate_verification.html:31
@@ -993,17 +1042,91 @@ msgstr "Namba ya kumbukumbu"
 msgid "Event"
 msgstr "Tukio"
 
-#: templates/checkin/participant_check_in.html:105
-msgid "Checked in at"
-msgstr "Mahudhurio yamethibitishwa tarehe"
-
-#: templates/checkin/participant_check_in.html:107
-msgid "Checked in by"
-msgstr "Mahudhurio yamethibitishwa na"
-
 #: templates/checkin/participant_check_in.html:118
 msgid "Confirm participant check-in"
 msgstr "Thibitisha mahudhurio ya mshiriki"
+
+#: templates/checkin/reports.html:5 templates/checkin/reports.html:17
+msgid "Attendance and certificate reports"
+msgstr "Ripoti za mahudhurio na vyeti"
+
+#: templates/checkin/reports.html:16
+msgid "Event reporting"
+msgstr "Ripoti za tukio"
+
+#: templates/checkin/reports.html:18
+msgid "Review event participation and download spreadsheet-ready reports."
+msgstr "Kagua ushiriki wa tukio na pakua ripoti zilizo tayari kwa lahajedwali."
+
+#: templates/checkin/reports.html:21
+msgid "Return to administration"
+msgstr "Rudi kwenye usimamizi"
+
+#: templates/checkin/reports.html:26
+msgid "Select event"
+msgstr "Chagua tukio"
+
+#: templates/checkin/reports.html:34
+msgid "View report"
+msgstr "Tazama ripoti"
+
+#: templates/checkin/reports.html:44
+msgid "Registrations"
+msgstr "Usajili wote"
+
+#: templates/checkin/reports.html:47 templates/checkin/reports.html:95
+msgid "Not checked in"
+msgstr "Hajahudhuria"
+
+#: templates/checkin/reports.html:48
+msgid "Attendance rate"
+msgstr "Kiwango cha mahudhurio"
+
+#: templates/checkin/reports.html:49
+msgid "Certificate eligible"
+msgstr "Wanaostahili cheti"
+
+#: templates/checkin/reports.html:50
+#, fuzzy
+#| msgid "Pending review"
+msgid "Pending"
+msgstr "Inasubiri ukaguzi"
+
+#: templates/checkin/reports.html:56
+msgid "Download attendance CSV"
+msgstr "Pakua CSV ya mahudhurio"
+
+#: templates/checkin/reports.html:60
+msgid "Download certificate CSV"
+msgstr "Pakua CSV ya vyeti"
+
+#: templates/checkin/reports.html:67
+msgid "Filtered participants"
+msgstr "Washiriki waliochujwa"
+
+#: templates/checkin/reports.html:69
+msgid "Clear filter"
+msgstr "Ondoa kichujio"
+
+#: templates/checkin/reports.html:79
+#, fuzzy
+#| msgid "status"
+msgid "Status"
+msgstr "hali"
+
+#: templates/checkin/reports.html:80
+#, fuzzy
+#| msgid "Attendance Officer"
+msgid "Attendance"
+msgstr "Afisa Mahudhurio"
+
+#: templates/checkin/reports.html:101
+msgid "No registrations are available for this event."
+msgstr "Hakuna usajili unaopatikana kwa tukio hili."
+
+#: templates/checkin/reports.html:108
+msgid "No events are available for reporting."
+msgstr "Hakuna matukio yanayopatikana kwa ajili ya ripoti."
 
 #: templates/events/base_public.html:16 templates/events/base_public.html:21
 #: templates/events/base_public.html:49 templates/events/base_public.html:117
@@ -1166,10 +1289,6 @@ msgstr ""
 "Cheti hiki ni halali na kimetolewa kwa mshiriki ambaye mahudhurio yake "
 "yamethibitishwa."
 
-#: templates/forms_builder/certificate_verification.html:21
-msgid "Representative"
-msgstr "Mwakilishi"
-
 #: templates/forms_builder/partials/question_input.html:80
 msgid "Select an option"
 msgstr "Chagua"
@@ -1182,14 +1301,6 @@ msgstr "Chagua"
 #: templates/forms_builder/partials/question_input.html:165
 msgid "No options have been configured for this question."
 msgstr "Hakuna chaguo zilizowekwa kwa swali hili."
-
-#: templates/forms_builder/partials/question_input.html:188
-msgid "Yes"
-msgstr "Ndiyo"
-
-#: templates/forms_builder/partials/question_input.html:203
-msgid "No"
-msgstr "Hapana"
 
 #: templates/forms_builder/participant_badge.html:6
 #: templates/forms_builder/participant_badge.html:21
@@ -1236,10 +1347,6 @@ msgstr "Pakua cheti cha PDF"
 #: templates/forms_builder/participant_certificate.html:27
 msgid "Print certificate"
 msgstr "Chapisha cheti"
-
-#: templates/forms_builder/participant_certificate.html:62
-msgid "Event date"
-msgstr "Tarehe ya tukio"
 
 #: templates/forms_builder/participant_certificate.html:76
 msgid "Certificate verification QR code"

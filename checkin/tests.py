@@ -25,6 +25,13 @@ class ParticipantCheckInTests(TestCase):
             password="test-password",
             role=User.Role.PARTICIPANT,
         )
+        self.report_officer = get_user_model().objects.create_user(
+            username="report-officer",
+            email="reports@example.org",
+            password="test-password",
+            role=User.Role.REPORT_OFFICER,
+            is_staff=True,
+        )
         category = EventCategory.objects.create(
             name_sw="Maonesho",
             name_en="Exhibition",
@@ -39,7 +46,9 @@ class ParticipantCheckInTests(TestCase):
             starts_at=starts_at,
             ends_at=starts_at + timedelta(days=1),
             qr_checkin_enabled=True,
+            certificate_enabled=True,
         )
+        self.event = event
         event_form = EventForm.objects.create(
             event=event,
             name_sw="Fomu ya Usajili",
@@ -128,3 +137,89 @@ class ParticipantCheckInTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], self.url)
+
+    def test_report_officer_can_view_attendance_report(self):
+        ParticipantCheckIn.objects.create(
+            submission=self.submission,
+            checked_in_by=self.officer,
+        )
+        self.client.force_login(self.report_officer)
+
+        response = self.client.get(
+            "/en/reports/attendance/",
+            {"event": self.event.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Attendance and certificate reports")
+        self.assertContains(response, "Neema Maarifa")
+        self.assertContains(response, "100.0%")
+        self.assertContains(response, "Download certificate CSV")
+
+    def test_attendance_officer_cannot_view_management_reports(self):
+        self.client.force_login(self.officer)
+
+        response = self.client.get(
+            "/en/reports/attendance/",
+            {"event": self.event.pk},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login/", response["Location"])
+
+    def test_certificate_report_csv_is_downloadable_and_safe(self):
+        self.submission.badge_name = "=Unsafe Name"
+        self.submission.save(update_fields=["badge_name"])
+        ParticipantCheckIn.objects.create(
+            submission=self.submission,
+            checked_in_by=self.officer,
+        )
+        self.client.force_login(self.report_officer)
+
+        response = self.client.get(
+            "/en/reports/attendance/export/",
+            {"event": self.event.pk, "report": "certificates"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/csv", response["Content-Type"])
+        content = response.content.decode("utf-8-sig")
+        self.assertIn("Certificate number", content)
+        self.assertIn("'=Unsafe Name", content)
+        self.assertIn("CERT-", content)
+
+    def test_report_cards_filter_participant_rows(self):
+        pending_submission = FormSubmission.objects.create(
+            event_form=self.submission.event_form,
+            submitter_email="pending@example.org",
+            badge_name="Pending Person",
+            review_status=FormSubmission.ReviewStatus.PENDING,
+        )
+        ParticipantCheckIn.objects.create(
+            submission=self.submission,
+            checked_in_by=self.officer,
+        )
+        self.client.force_login(self.report_officer)
+
+        checked_response = self.client.get(
+            "/en/reports/attendance/",
+            {"event": self.event.pk, "filter": "checked_in"},
+        )
+        self.assertEqual(checked_response.status_code, 200)
+        self.assertContains(checked_response, "Neema Maarifa")
+        self.assertNotContains(checked_response, "Pending Person")
+        self.assertContains(checked_response, "Filtered participants: 1")
+
+        pending_response = self.client.get(
+            "/en/reports/attendance/",
+            {"event": self.event.pk, "filter": "pending"},
+        )
+        self.assertContains(pending_response, pending_submission.badge_name)
+        self.assertNotContains(pending_response, "Neema Maarifa")
+
+        all_response = self.client.get(
+            "/en/reports/attendance/",
+            {"event": self.event.pk, "filter": "all"},
+        )
+        self.assertContains(all_response, "Neema Maarifa")
+        self.assertContains(all_response, "Pending Person")

@@ -5,6 +5,7 @@ from .models import ParticipantCheckIn
 
 @admin.register(ParticipantCheckIn)
 class ParticipantCheckInAdmin(admin.ModelAdmin):
+    change_list_template = "admin/checkin/participantcheckin/change_list.html"
     list_display = (
         "reference_number",
         "participant_name",
