@@ -15,7 +15,9 @@ from .models import (
     QuestionOption,
 )
 from .services import (
+    certificate_number,
     certificate_verification_url,
+    event_date_range,
     generate_certificate_pdf,
     generate_qr_png,
     participant_check_in_url,
@@ -561,9 +563,10 @@ def participant_certificate(request, participant_token):
                 if request.LANGUAGE_CODE == "en"
                 else submission.event_form.event.title_sw
             ),
-            "certificate_number": (
-                f"CERT-{submission.event_form.event.code}-"
-                f"{submission.reference_number}"
+            "certificate_number": certificate_number(submission),
+            "event_date_range": event_date_range(
+                submission.event_form.event,
+                language=request.LANGUAGE_CODE,
             ),
             "verification_url": certificate_verification_url(
                 submission,
@@ -640,8 +643,10 @@ def certificate_verification(request, participant_token):
         {
             "submission": submission,
             "event": event,
-            "certificate_number": (
-                f"CERT-{event.code}-{submission.reference_number}"
+            "certificate_number": certificate_number(submission),
+            "event_date_range": event_date_range(
+                event,
+                language=request.LANGUAGE_CODE,
             ),
         },
     )

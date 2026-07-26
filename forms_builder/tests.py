@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 # Create your tests here.
-from datetime import timedelta
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -28,6 +28,8 @@ from .models import (
 )
 
 from .services import (
+    certificate_number,
+    event_date_range,
     generate_qr_png,
     participant_check_in_url,
     public_form_path,
@@ -111,6 +113,27 @@ class PublicFormServiceTests(SimpleTestCase):
                 "12345678-1234-5678-1234-567812345678/?auto=1"
             ),
         )
+
+    def test_certificate_number_is_short_and_stable(self):
+        submission = SimpleNamespace(
+            participant_token="12345678-1234-5678-1234-567812345678",
+            event_form=SimpleNamespace(
+                event=SimpleNamespace(
+                    starts_at=timezone.now().replace(year=2026),
+                )
+            ),
+        )
+
+        self.assertEqual(certificate_number(submission), "CERT-2026-1234567812")
+
+    def test_same_month_event_date_uses_compact_range(self):
+        event = SimpleNamespace(
+            starts_at=timezone.make_aware(datetime(2026, 8, 15, 8)),
+            ends_at=timezone.make_aware(datetime(2026, 8, 24, 17)),
+        )
+
+        self.assertEqual(event_date_range(event, "en"), "15–24 August 2026")
+        self.assertEqual(event_date_range(event, "sw"), "15–24 Agosti 2026")
 
     def test_spreadsheet_formula_values_are_escaped(self):
         self.assertEqual(
@@ -349,7 +372,8 @@ class SubmissionReviewAdminTests(TestCase):
         self.assertContains(response, "Certificate of Participation")
         self.assertContains(response, "Asha Mwangaza")
         self.assertContains(response, "Innovation Institute")
-        self.assertContains(response, f"CERT-{event.code}-")
+        expected_certificate_number = certificate_number(self.submission)
+        self.assertContains(response, expected_certificate_number)
         self.assertContains(response, "Download PDF certificate")
         self.assertContains(response, "Certificate verification QR code")
 
@@ -374,7 +398,10 @@ class SubmissionReviewAdminTests(TestCase):
         self.assertEqual(verification_response.status_code, 200)
         self.assertContains(verification_response, "Certificate verified")
         self.assertContains(verification_response, "Asha Mwangaza")
-        self.assertContains(verification_response, f"CERT-{event.code}-")
+        self.assertContains(
+            verification_response,
+            expected_certificate_number,
+        )
 
     def test_certificate_requires_participant_check_in(self):
         event = self.submission.event_form.event

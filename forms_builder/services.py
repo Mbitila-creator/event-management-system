@@ -8,6 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone, translation
+from django.utils.formats import date_format
 from django.utils.translation import gettext as _
 
 from .models import FormQuestion
@@ -50,6 +51,59 @@ def participant_certificate_path(submission, language="sw"):
         return reverse(
             "forms_builder:participant_certificate",
             kwargs={"participant_token": submission.participant_token},
+        )
+
+
+def certificate_number(submission):
+    event_year = timezone.localtime(
+        submission.event_form.event.starts_at
+    ).year
+    short_token = str(submission.participant_token).replace("-", "")[:10].upper()
+    return f"CERT-{event_year}-{short_token}"
+
+
+def event_date_range(event, language="sw"):
+    starts_at = timezone.localtime(event.starts_at)
+    ends_at = timezone.localtime(event.ends_at)
+    swahili_months = (
+        "Januari",
+        "Februari",
+        "Machi",
+        "Aprili",
+        "Mei",
+        "Juni",
+        "Julai",
+        "Agosti",
+        "Septemba",
+        "Oktoba",
+        "Novemba",
+        "Desemba",
+    )
+
+    def month_name(value):
+        if language == "sw":
+            return swahili_months[value.month - 1]
+        return date_format(value, "F")
+
+    with translation.override(language):
+        if starts_at.date() == ends_at.date():
+            return f"{starts_at.day} {month_name(starts_at)} {starts_at.year}"
+
+        if starts_at.year == ends_at.year and starts_at.month == ends_at.month:
+            return (
+                f"{starts_at.day}–{ends_at.day} "
+                f"{month_name(ends_at)} {ends_at.year}"
+            )
+
+        if starts_at.year == ends_at.year:
+            return (
+                f"{starts_at.day} {month_name(starts_at)}–"
+                f"{ends_at.day} {month_name(ends_at)} {ends_at.year}"
+            )
+
+        return (
+            f"{starts_at.day} {month_name(starts_at)} {starts_at.year}–"
+            f"{ends_at.day} {month_name(ends_at)} {ends_at.year}"
         )
 
 
@@ -187,7 +241,8 @@ def _certificate_font(size, bold=False):
 
 def generate_certificate_pdf(submission, verification_url, language="sw"):
     event = submission.event_form.event
-    certificate_number = f"CERT-{event.code}-{submission.reference_number}"
+    short_certificate_number = certificate_number(submission)
+    formatted_event_dates = event_date_range(event, language=language)
     event_name = event.title_en if language == "en" else event.title_sw
 
     with translation.override(language):
@@ -199,6 +254,7 @@ def generate_certificate_pdf(submission, verification_url, language="sw"):
                 "verified attendance."
             ) % {"event_name": event_name},
             "verified": _("Attendance verified"),
+            "event_date": _("Event date"),
             "number": _("Certificate number"),
             "scan": _("Scan to verify this certificate"),
         }
@@ -242,13 +298,13 @@ def generate_certificate_pdf(submission, verification_url, language="sw"):
     checked_at = timezone.localtime(submission.check_in.checked_in_at)
     draw.text(
         (135, 870),
-        labels["verified"],
+        labels["event_date"],
         font=_certificate_font(20),
         fill="#607284",
     )
     draw.text(
         (135, 905),
-        checked_at.strftime("%d %b %Y, %H:%M"),
+        formatted_event_dates,
         font=_certificate_font(25, bold=True),
         fill=navy,
     )
@@ -260,7 +316,7 @@ def generate_certificate_pdf(submission, verification_url, language="sw"):
     )
     draw.text(
         (135, 1020),
-        certificate_number,
+        short_certificate_number,
         font=_certificate_font(23, bold=True),
         fill=navy,
     )
