@@ -4,9 +4,11 @@ from io import StringIO
 from urllib.parse import urljoin
 
 import qrcode
+from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone, translation
+from django.utils.translation import gettext as _
 
 from .models import FormQuestion
 
@@ -49,6 +51,23 @@ def participant_certificate_path(submission, language="sw"):
             "forms_builder:participant_certificate",
             kwargs={"participant_token": submission.participant_token},
         )
+
+
+def certificate_verification_url(submission, request=None, language="sw"):
+    with translation.override(language):
+        path = reverse(
+            "forms_builder:certificate_verification",
+            kwargs={"participant_token": submission.participant_token},
+        )
+    base_url = settings.PUBLIC_BASE_URL
+
+    if base_url:
+        return urljoin(f"{base_url}/", path.lstrip("/"))
+
+    if request is not None:
+        return request.build_absolute_uri(path)
+
+    return path
 
 
 def participant_badge_url(submission, request=None, language="sw"):
@@ -149,6 +168,117 @@ def generate_qr_png(value):
 
     output = BytesIO()
     image.save(output, format="PNG")
+    return output.getvalue()
+
+
+def _certificate_font(size, bold=False):
+    font_names = (
+        ("DejaVuSans-Bold.ttf", "Arial Bold.ttf")
+        if bold
+        else ("DejaVuSans.ttf", "Arial.ttf")
+    )
+    for font_name in font_names:
+        try:
+            return ImageFont.truetype(font_name, size=size)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
+def generate_certificate_pdf(submission, verification_url, language="sw"):
+    event = submission.event_form.event
+    certificate_number = f"CERT-{event.code}-{submission.reference_number}"
+    event_name = event.title_en if language == "en" else event.title_sw
+
+    with translation.override(language):
+        labels = {
+            "title": _("Certificate of Participation"),
+            "presented": _("This certificate is proudly presented to"),
+            "statement": _(
+                "for participating in %(event_name)s and completing "
+                "verified attendance."
+            ) % {"event_name": event_name},
+            "verified": _("Attendance verified"),
+            "number": _("Certificate number"),
+            "scan": _("Scan to verify this certificate"),
+        }
+
+    width, height = 1684, 1191
+    image = Image.new("RGB", (width, height), "#fbfaf4")
+    draw = ImageDraw.Draw(image)
+    navy = "#173c59"
+    gold = "#aa7c24"
+    teal = "#1b7085"
+
+    draw.rectangle((32, 32, width - 32, height - 32), outline=gold, width=8)
+    draw.rectangle((50, 50, width - 50, height - 50), outline=navy, width=3)
+    draw.line((75, 75, 220, 75), fill=teal, width=12)
+    draw.line((75, 75, 75, 220), fill=teal, width=12)
+    draw.line((width - 75, height - 75, width - 220, height - 75), fill=teal, width=12)
+    draw.line((width - 75, height - 75, width - 75, height - 220), fill=teal, width=12)
+
+    def centered(text, y, font, fill=navy):
+        box = draw.textbbox((0, 0), text, font=font)
+        x = (width - (box[2] - box[0])) / 2
+        draw.text((x, y), text, font=font, fill=fill)
+
+    centered(event.code, 105, _certificate_font(28, bold=True), gold)
+    centered(event_name, 155, _certificate_font(42, bold=True))
+    centered(labels["title"], 265, _certificate_font(56, bold=True), gold)
+    centered(labels["presented"], 370, _certificate_font(28), navy)
+    centered(submission.badge_display_name, 430, _certificate_font(68, bold=True), navy)
+    draw.line((350, 525, width - 350, 525), fill=gold, width=3)
+
+    if submission.badge_organization:
+        centered(
+            submission.badge_organization,
+            550,
+            _certificate_font(30, bold=True),
+            teal,
+        )
+
+    centered(labels["statement"], 630, _certificate_font(27), navy)
+
+    checked_at = timezone.localtime(submission.check_in.checked_in_at)
+    draw.text(
+        (135, 870),
+        labels["verified"],
+        font=_certificate_font(20),
+        fill="#607284",
+    )
+    draw.text(
+        (135, 905),
+        checked_at.strftime("%d %b %Y, %H:%M"),
+        font=_certificate_font(25, bold=True),
+        fill=navy,
+    )
+    draw.text(
+        (135, 985),
+        labels["number"],
+        font=_certificate_font(20),
+        fill="#607284",
+    )
+    draw.text(
+        (135, 1020),
+        certificate_number,
+        font=_certificate_font(23, bold=True),
+        fill=navy,
+    )
+
+    qr_image = Image.open(BytesIO(generate_qr_png(verification_url))).convert("RGB")
+    qr_image = qr_image.resize((210, 210))
+    image.paste(qr_image, (width - 355, 830))
+    qr_label = labels["scan"]
+    box = draw.textbbox((0, 0), qr_label, font=_certificate_font(18))
+    draw.text(
+        (width - 250 - (box[2] - box[0]) / 2, 1050),
+        qr_label,
+        font=_certificate_font(18),
+        fill=navy,
+    )
+
+    output = BytesIO()
+    image.save(output, format="PDF", resolution=150)
     return output.getvalue()
 
 

@@ -16,9 +16,17 @@
                 <h1>{% translate "Participant certificate" %}</h1>
                 <p>{% translate "Print the certificate or save it as a PDF from your browser." %}</p>
             </div>
-            <button type="button" class="primary-button" id="print-certificate">
-                {% translate "Print or save certificate" %}
-            </button>
+            <div class="certificate-action-buttons">
+                <a
+                    href="{% url 'forms_builder:participant_certificate_pdf' submission.participant_token %}"
+                    class="primary-button"
+                >
+                    {% translate "Download PDF certificate" %}
+                </a>
+                <button type="button" class="secondary-button" id="print-certificate">
+                    {% translate "Print certificate" %}
+                </button>
+            </div>
         </div>
 
         <article class="participant-certificate" aria-label="{% translate 'Certificate of Participation' %}">
@@ -61,6 +69,13 @@
                     <div>
                         <span>{% translate "Certificate number" %}</span>
                         <strong>{{ certificate_number }}</strong>
+                    </div>
+                    <div class="certificate-verification-qr">
+                        <img
+                            src="{% url 'forms_builder:participant_certificate_qr' submission.participant_token %}"
+                            alt="{% translate 'Certificate verification QR code' %}"
+                        >
+                        <span>{% translate "Scan to verify this certificate" %}</span>
                     </div>
                 </footer>
             </div>

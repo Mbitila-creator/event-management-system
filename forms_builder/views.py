@@ -15,6 +15,8 @@ from .models import (
     QuestionOption,
 )
 from .services import (
+    certificate_verification_url,
+    generate_certificate_pdf,
     generate_qr_png,
     participant_check_in_url,
     sync_badge_identity_from_answers,
@@ -562,6 +564,84 @@ def participant_certificate(request, participant_token):
             "certificate_number": (
                 f"CERT-{submission.event_form.event.code}-"
                 f"{submission.reference_number}"
+            ),
+            "verification_url": certificate_verification_url(
+                submission,
+                request=request,
+                language=request.LANGUAGE_CODE,
+            ),
+        },
+    )
+
+
+def get_certificate_submission(participant_token):
+    return get_object_or_404(
+        FormSubmission.objects.select_related(
+            "event_form",
+            "event_form__event",
+            "event_form__event__venue",
+            "check_in",
+        ),
+        participant_token=participant_token,
+        review_status=FormSubmission.ReviewStatus.APPROVED,
+        is_complete=True,
+        is_active=True,
+        event_form__event__certificate_enabled=True,
+        check_in__isnull=False,
+    )
+
+
+@require_http_methods(["GET"])
+def participant_certificate_qr(request, participant_token):
+    submission = get_certificate_submission(participant_token)
+    verification_url = certificate_verification_url(
+        submission,
+        request=request,
+        language=submission.language,
+    )
+    response = HttpResponse(
+        generate_qr_png(verification_url),
+        content_type="image/png",
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@require_http_methods(["GET"])
+def participant_certificate_pdf(request, participant_token):
+    submission = get_certificate_submission(participant_token)
+    verification_url = certificate_verification_url(
+        submission,
+        request=request,
+        language=request.LANGUAGE_CODE,
+    )
+    response = HttpResponse(
+        generate_certificate_pdf(
+            submission,
+            verification_url,
+            language=request.LANGUAGE_CODE,
+        ),
+        content_type="application/pdf",
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="{submission.reference_number}-certificate.pdf"'
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@require_http_methods(["GET"])
+def certificate_verification(request, participant_token):
+    submission = get_certificate_submission(participant_token)
+    event = submission.event_form.event
+    return render(
+        request,
+        "forms_builder/certificate_verification.html",
+        {
+            "submission": submission,
+            "event": event,
+            "certificate_number": (
+                f"CERT-{event.code}-{submission.reference_number}"
             ),
         },
     )

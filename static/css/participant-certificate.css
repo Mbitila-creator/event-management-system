@@ -19,6 +19,12 @@
     margin: 0;
 }
 
+.certificate-action-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .participant-certificate {
     aspect-ratio: 1.414 / 1;
     padding: 18px;
@@ -108,10 +114,76 @@
 
 .certificate-footer {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, 1fr) 180px;
     gap: 20px;
     padding-top: 20px;
     border-top: 1px solid #d7c38d;
+}
+
+.certificate-verification-qr img {
+    display: block;
+    width: 105px;
+    height: 105px;
+    margin: 0 auto 5px;
+}
+
+.certificate-verification-qr span {
+    font-size: 10px;
+}
+
+.certificate-verification-page {
+    width: min(760px, calc(100% - 32px));
+    margin: 64px auto;
+}
+
+.certificate-verification-card {
+    padding: clamp(28px, 6vw, 64px);
+    text-align: center;
+    background: #fff;
+    border: 1px solid #cde7d5;
+    border-radius: 24px;
+    box-shadow: 0 24px 60px rgba(23, 50, 77, 0.14);
+}
+
+.certificate-verified-icon {
+    display: grid;
+    width: 112px;
+    height: 112px;
+    margin: 0 auto 22px;
+    place-items: center;
+    color: #fff;
+    background: #168447;
+    border-radius: 50%;
+    font-size: 72px;
+    font-weight: 900;
+}
+
+.certificate-verification-card h1 {
+    margin: 7px 0 12px;
+    color: #166534;
+}
+
+.certificate-verification-details {
+    margin: 32px 0 0;
+    text-align: left;
+    border-top: 1px solid #dbe5ec;
+}
+
+.certificate-verification-details div {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 18px;
+    padding: 14px 0;
+    border-bottom: 1px solid #dbe5ec;
+}
+
+.certificate-verification-details dt {
+    color: #607284;
+}
+
+.certificate-verification-details dd {
+    margin: 0;
+    font-weight: 800;
 }
 
 .certificate-footer span,
@@ -134,6 +206,11 @@
     .certificate-actions {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .certificate-verification-details div {
+        grid-template-columns: 1fr;
+        gap: 4px;
     }
 
     .participant-certificate {

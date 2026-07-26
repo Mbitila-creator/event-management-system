@@ -412,10 +412,16 @@ class FormSubmissionAdmin(admin.ModelAdmin):
             obj,
             language=obj.language,
         )
+        certificate_pdf_url = reverse(
+            "forms_builder:participant_certificate_pdf",
+            kwargs={"participant_token": obj.participant_token},
+        )
         return format_html(
             '<a href="{}" target="_blank" rel="noopener">'
-            "Open certificate</a>",
+            "Open certificate</a> &nbsp;|&nbsp; "
+            '<a href="{}">Download PDF</a>',
             certificate_url,
+            certificate_pdf_url,
         )
 
     def save_model(self, request, obj, form, change):

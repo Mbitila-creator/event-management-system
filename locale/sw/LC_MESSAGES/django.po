@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-26 10:19+0300\n"
+"POT-Creation-Date: 2026-07-26 10:46+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -850,6 +850,44 @@ msgstr "jibu la fomu"
 msgid "form answers"
 msgstr "majibu ya fomu"
 
+#: forms_builder/services.py:195
+#: templates/forms_builder/participant_certificate.html:5
+#: templates/forms_builder/participant_certificate.html:32
+#: templates/forms_builder/participant_certificate.html:49
+msgid "Certificate of Participation"
+msgstr "Cheti cha Ushiriki"
+
+#: forms_builder/services.py:196
+#: templates/forms_builder/participant_certificate.html:50
+msgid "This certificate is proudly presented to"
+msgstr "Cheti hiki kinatolewa kwa fahari kwa"
+
+#: forms_builder/services.py:198
+#: templates/forms_builder/participant_certificate.html:56
+#, python-format
+msgid "for participating in %(event_name)s and completing verified attendance."
+msgstr ""
+"kwa kushiriki katika %(event_name)s na kukamilisha mahudhurio "
+"yaliyothibitishwa."
+
+#: forms_builder/services.py:201
+#: templates/forms_builder/certificate_verification.html:41
+#: templates/forms_builder/participant_certificate.html:15
+#: templates/forms_builder/participant_certificate.html:66
+msgid "Attendance verified"
+msgstr "Mahudhurio yamethibitishwa"
+
+#: forms_builder/services.py:202
+#: templates/forms_builder/certificate_verification.html:37
+#: templates/forms_builder/participant_certificate.html:70
+msgid "Certificate number"
+msgstr "Namba ya cheti"
+
+#: forms_builder/services.py:203
+#: templates/forms_builder/participant_certificate.html:78
+msgid "Scan to verify this certificate"
+msgstr "Changanua ili kuthibitisha cheti hiki"
+
 #: templates/checkin/lookup.html:5 templates/checkin/lookup.html:15
 #: templates/checkin/participant_check_in.html:5
 #: templates/checkin/participant_check_in.html:17
@@ -932,6 +970,7 @@ msgid "Participant name"
 msgstr "Jina la mshiriki"
 
 #: templates/checkin/participant_check_in.html:74
+#: templates/forms_builder/certificate_verification.html:26
 msgid "Organization"
 msgstr "Taasisi"
 
@@ -948,6 +987,7 @@ msgid "Reference number"
 msgstr "Namba ya kumbukumbu"
 
 #: templates/checkin/participant_check_in.html:92
+#: templates/forms_builder/certificate_verification.html:31
 #: templates/forms_builder/registration_status.html:90
 #: templates/forms_builder/submission_success.html:72
 msgid "Event"
@@ -1106,6 +1146,30 @@ msgstr "Hakuna matukio yaliyopatikana"
 msgid "Try changing the search term or event category."
 msgstr "Jaribu kubadilisha neno la utafutaji au aina ya tukio."
 
+#: templates/forms_builder/certificate_verification.html:5
+msgid "Certificate verification"
+msgstr "Uthibitishaji wa cheti"
+
+#: templates/forms_builder/certificate_verification.html:15
+msgid "Authentic certificate"
+msgstr "Cheti halisi"
+
+#: templates/forms_builder/certificate_verification.html:16
+msgid "Certificate verified"
+msgstr "Cheti kimethibitishwa"
+
+#: templates/forms_builder/certificate_verification.html:17
+msgid ""
+"This certificate is valid and was issued to a participant with verified "
+"attendance."
+msgstr ""
+"Cheti hiki ni halali na kimetolewa kwa mshiriki ambaye mahudhurio yake "
+"yamethibitishwa."
+
+#: templates/forms_builder/certificate_verification.html:21
+msgid "Representative"
+msgstr "Mwakilishi"
+
 #: templates/forms_builder/partials/question_input.html:80
 msgid "Select an option"
 msgstr "Chagua"
@@ -1157,17 +1221,6 @@ msgstr "Msimbo wa QR wa kuthibitisha mshiriki"
 msgid "Approved and verified"
 msgstr "Ameidhinishwa na kuthibitishwa"
 
-#: templates/forms_builder/participant_certificate.html:5
-#: templates/forms_builder/participant_certificate.html:24
-#: templates/forms_builder/participant_certificate.html:41
-msgid "Certificate of Participation"
-msgstr "Cheti cha Ushiriki"
-
-#: templates/forms_builder/participant_certificate.html:15
-#: templates/forms_builder/participant_certificate.html:58
-msgid "Attendance verified"
-msgstr "Mahudhurio yamethibitishwa"
-
 #: templates/forms_builder/participant_certificate.html:16
 msgid "Participant certificate"
 msgstr "Cheti cha mshiriki"
@@ -1176,28 +1229,21 @@ msgstr "Cheti cha mshiriki"
 msgid "Print the certificate or save it as a PDF from your browser."
 msgstr "Chapisha cheti au kihifadhi kama PDF kupitia kivinjari chako."
 
-#: templates/forms_builder/participant_certificate.html:20
-msgid "Print or save certificate"
-msgstr "Chapisha au hifadhi cheti"
+#: templates/forms_builder/participant_certificate.html:24
+msgid "Download PDF certificate"
+msgstr "Pakua cheti cha PDF"
 
-#: templates/forms_builder/participant_certificate.html:42
-msgid "This certificate is proudly presented to"
-msgstr "Cheti hiki kinatolewa kwa fahari kwa"
+#: templates/forms_builder/participant_certificate.html:27
+msgid "Print certificate"
+msgstr "Chapisha cheti"
 
-#: templates/forms_builder/participant_certificate.html:48
-#, python-format
-msgid "for participating in %(event_name)s and completing verified attendance."
-msgstr ""
-"kwa kushiriki katika %(event_name)s na kukamilisha mahudhurio "
-"yaliyothibitishwa."
-
-#: templates/forms_builder/participant_certificate.html:54
+#: templates/forms_builder/participant_certificate.html:62
 msgid "Event date"
 msgstr "Tarehe ya tukio"
 
-#: templates/forms_builder/participant_certificate.html:62
-msgid "Certificate number"
-msgstr "Namba ya cheti"
+#: templates/forms_builder/participant_certificate.html:76
+msgid "Certificate verification QR code"
+msgstr "Msimbo wa QR wa kuthibitisha cheti"
 
 #: templates/forms_builder/public_event_form.html:16
 msgid "Complete and submit the event form."

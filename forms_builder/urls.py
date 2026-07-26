@@ -7,9 +7,24 @@ app_name = "forms_builder"
 
 urlpatterns = [
     path(
+        "certificates/verify/<uuid:participant_token>/",
+        views.certificate_verification,
+        name="certificate_verification",
+    ),
+    path(
         "participants/<uuid:participant_token>/certificate/",
         views.participant_certificate,
         name="participant_certificate",
+    ),
+    path(
+        "participants/<uuid:participant_token>/certificate/pdf/",
+        views.participant_certificate_pdf,
+        name="participant_certificate_pdf",
+    ),
+    path(
+        "participants/<uuid:participant_token>/certificate/qr/",
+        views.participant_certificate_qr,
+        name="participant_certificate_qr",
     ),
     path(
         "participants/<uuid:participant_token>/badge/",

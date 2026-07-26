@@ -350,6 +350,31 @@ class SubmissionReviewAdminTests(TestCase):
         self.assertContains(response, "Asha Mwangaza")
         self.assertContains(response, "Innovation Institute")
         self.assertContains(response, f"CERT-{event.code}-")
+        self.assertContains(response, "Download PDF certificate")
+        self.assertContains(response, "Certificate verification QR code")
+
+        pdf_response = self.client.get(
+            f"/en/participants/{self.submission.participant_token}/certificate/pdf/"
+        )
+        self.assertEqual(pdf_response.status_code, 200)
+        self.assertEqual(pdf_response["Content-Type"], "application/pdf")
+        self.assertTrue(pdf_response.content.startswith(b"%PDF"))
+        self.assertIn("attachment;", pdf_response["Content-Disposition"])
+
+        qr_response = self.client.get(
+            f"/en/participants/{self.submission.participant_token}/certificate/qr/"
+        )
+        self.assertEqual(qr_response.status_code, 200)
+        self.assertEqual(qr_response["Content-Type"], "image/png")
+        self.assertTrue(qr_response.content.startswith(b"\x89PNG"))
+
+        verification_response = self.client.get(
+            f"/en/certificates/verify/{self.submission.participant_token}/"
+        )
+        self.assertEqual(verification_response.status_code, 200)
+        self.assertContains(verification_response, "Certificate verified")
+        self.assertContains(verification_response, "Asha Mwangaza")
+        self.assertContains(verification_response, f"CERT-{event.code}-")
 
     def test_certificate_requires_participant_check_in(self):
         event = self.submission.event_form.event
