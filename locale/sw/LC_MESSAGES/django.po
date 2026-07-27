@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-26 13:57+0300\n"
+"POT-Creation-Date: 2026-07-27 09:16+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -121,7 +121,7 @@ msgstr "uthibitishaji wa mahudhurio ya mshiriki"
 msgid "participant check-ins"
 msgstr "uthibitishaji wa mahudhurio ya washiriki"
 
-#: checkin/views.py:249 templates/checkin/participant_check_in.html:87
+#: checkin/views.py:250 templates/checkin/participant_check_in.html:97
 #: templates/checkin/reports.html:76
 #: templates/forms_builder/participant_badge.html:83
 #: templates/forms_builder/registration_status.html:42
@@ -130,51 +130,51 @@ msgstr "uthibitishaji wa mahudhurio ya washiriki"
 msgid "Reference number"
 msgstr "Namba ya kumbukumbu"
 
-#: checkin/views.py:250 templates/checkin/reports.html:77
+#: checkin/views.py:251 templates/checkin/reports.html:77
 #: templates/forms_builder/certificate_verification.html:21
 msgid "Representative"
 msgstr "Mwakilishi"
 
-#: checkin/views.py:251 templates/checkin/participant_check_in.html:74
+#: checkin/views.py:252 templates/checkin/participant_check_in.html:84
 #: templates/checkin/reports.html:78
 #: templates/forms_builder/certificate_verification.html:26
 msgid "Organization"
 msgstr "Taasisi"
 
-#: checkin/views.py:252
+#: checkin/views.py:253
 #, fuzzy
 #| msgid "review status"
 msgid "Review status"
 msgstr "hali ya ukaguzi"
 
-#: checkin/views.py:253 templates/checkin/reports.html:46
+#: checkin/views.py:254 templates/checkin/reports.html:46
 #: templates/checkin/reports.html:93
 #, fuzzy
 #| msgid "Checked in at"
 msgid "Checked in"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: checkin/views.py:254 templates/checkin/participant_check_in.html:105
+#: checkin/views.py:255 templates/checkin/participant_check_in.html:115
 #: templates/checkin/reports.html:81
 msgid "Checked in at"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: checkin/views.py:255 templates/checkin/participant_check_in.html:107
+#: checkin/views.py:256 templates/checkin/participant_check_in.html:117
 msgid "Checked in by"
 msgstr "Mahudhurio yamethibitishwa na"
 
-#: checkin/views.py:258 forms_builder/services.py:258
+#: checkin/views.py:259 forms_builder/services.py:258
 #: templates/forms_builder/certificate_verification.html:41
 #: templates/forms_builder/participant_certificate.html:70
 msgid "Certificate number"
 msgstr "Namba ya cheti"
 
-#: checkin/views.py:268
+#: checkin/views.py:269
 #: templates/forms_builder/partials/question_input.html:188
 msgid "Yes"
 msgstr "Ndiyo"
 
-#: checkin/views.py:268
+#: checkin/views.py:269
 #: templates/forms_builder/partials/question_input.html:203
 msgid "No"
 msgstr "Hapana"
@@ -946,6 +946,10 @@ msgstr "Tarehe ya tukio"
 msgid "Scan to verify this certificate"
 msgstr "Changanua ili kuthibitisha cheti hiki"
 
+#: forms_builder/views.py:320
+msgid "You have already submitted this evaluation."
+msgstr "Tayari umewasilisha tathmini hii."
+
 #: templates/admin/checkin/participantcheckin/change_list.html:6
 msgid "Attendance reports"
 msgstr "Ripoti za mahudhurio"
@@ -997,52 +1001,57 @@ msgid "Participant checked in successfully."
 msgstr "Mahudhurio ya mshiriki yamethibitishwa kwa mafanikio."
 
 #: templates/checkin/participant_check_in.html:32
-#: templates/checkin/participant_check_in.html:43
+#: templates/checkin/participant_check_in.html:48
 #: templates/forms_builder/registration_status.html:126
 msgid "View certificate"
 msgstr "Tazama cheti"
 
-#: templates/checkin/participant_check_in.html:39
+#: templates/checkin/participant_check_in.html:37
+#: templates/checkin/participant_check_in.html:53
+msgid "Submit event evaluation"
+msgstr "Wasilisha tathmini ya tukio"
+
+#: templates/checkin/participant_check_in.html:44
 msgid "Already checked in"
 msgstr "Mahudhurio tayari yamethibitishwa"
 
-#: templates/checkin/participant_check_in.html:40
+#: templates/checkin/participant_check_in.html:45
 msgid "This participant is already checked in."
 msgstr "Mahudhurio ya mshiriki huyu tayari yamethibitishwa."
 
-#: templates/checkin/participant_check_in.html:50
+#: templates/checkin/participant_check_in.html:60
 msgid "Check-in not allowed"
 msgstr "Uthibitishaji wa mahudhurio hauruhusiwi"
 
-#: templates/checkin/participant_check_in.html:52
+#: templates/checkin/participant_check_in.html:62
 msgid "This registration is not approved or is not eligible for check-in."
 msgstr "Usajili huu haujaidhinishwa au haustahili kuthibitishwa mahudhurio."
 
-#: templates/checkin/participant_check_in.html:61
+#: templates/checkin/participant_check_in.html:71
 #: templates/forms_builder/participant_badge.html:20
 msgid "Approved participant"
 msgstr "Mshiriki aliyeidhinishwa"
 
-#: templates/checkin/participant_check_in.html:62
+#: templates/checkin/participant_check_in.html:72
 msgid "Identity token verified"
 msgstr "Kitambulisho kimethibitishwa"
 
-#: templates/checkin/participant_check_in.html:68
+#: templates/checkin/participant_check_in.html:78
 msgid "Participant name"
 msgstr "Jina la mshiriki"
 
-#: templates/checkin/participant_check_in.html:81
+#: templates/checkin/participant_check_in.html:91
 msgid "Role or title"
 msgstr "Jukumu au cheo"
 
-#: templates/checkin/participant_check_in.html:92
+#: templates/checkin/participant_check_in.html:102
 #: templates/forms_builder/certificate_verification.html:31
 #: templates/forms_builder/registration_status.html:90
 #: templates/forms_builder/submission_success.html:72
 msgid "Event"
 msgstr "Tukio"
 
-#: templates/checkin/participant_check_in.html:118
+#: templates/checkin/participant_check_in.html:128
 msgid "Confirm participant check-in"
 msgstr "Thibitisha mahudhurio ya mshiriki"
 

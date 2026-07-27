@@ -32,6 +32,11 @@
                             {% translate "View certificate" %}
                         </a>
                     {% endif %}
+                    {% if evaluation_path %}
+                        <a href="{{ evaluation_path }}" class="secondary-button">
+                            {% translate "Submit event evaluation" %}
+                        </a>
+                    {% endif %}
                 </div>
             {% elif check_in %}
                 <div class="checkin-result-panel checkin-result-error" role="alert">
@@ -41,6 +46,11 @@
                     {% if certificate_path %}
                         <a href="{{ certificate_path }}" class="primary-button">
                             {% translate "View certificate" %}
+                        </a>
+                    {% endif %}
+                    {% if evaluation_path %}
+                        <a href="{{ evaluation_path }}" class="secondary-button">
+                            {% translate "Submit event evaluation" %}
                         </a>
                     {% endif %}
                 </div>

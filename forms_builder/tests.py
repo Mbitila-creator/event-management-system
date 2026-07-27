@@ -229,6 +229,50 @@ class PublicEvaluationTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_anonymous_browser_cannot_submit_duplicate_evaluation(self):
+        answer = {f"question_{self.question.pk}": "Excellent exhibits."}
+
+        first_response = self.client.post(
+            self.url,
+            answer,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        second_response = self.client.post(
+            self.url,
+            answer,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(second_response.status_code, 409)
+        self.assertTrue(second_response.json()["duplicate"])
+        self.assertEqual(
+            FormSubmission.objects.filter(event_form=self.event_form).count(),
+            1,
+        )
+
+    def test_repeat_evaluations_can_be_enabled_for_shared_devices(self):
+        self.event_form.allow_multiple_submissions = True
+        self.event_form.save(update_fields=["allow_multiple_submissions"])
+        answer = {f"question_{self.question.pk}": "Useful technology."}
+
+        self.client.post(
+            self.url,
+            answer,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        second_response = self.client.post(
+            self.url,
+            answer,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(
+            FormSubmission.objects.filter(event_form=self.event_form).count(),
+            2,
+        )
+
 
 class SubmissionReviewAdminTests(TestCase):
     def setUp(self):

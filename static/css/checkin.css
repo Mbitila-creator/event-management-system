@@ -300,6 +300,12 @@
     font-weight: 700;
 }
 
+.checkin-result-panel .primary-button,
+.checkin-result-panel .secondary-button {
+    display: inline-flex;
+    margin: 15px 5px 0;
+}
+
 .checkin-result-success {
     border-color: #4caf73;
     background: #ecfdf3;

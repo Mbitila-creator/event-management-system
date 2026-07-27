@@ -6,6 +6,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 
 from .models import (
@@ -265,6 +266,7 @@ def public_event_form(request, event_slug, form_slug):
     )
 
     language_code = request.LANGUAGE_CODE
+    is_evaluation = event_form.form_type == EventForm.FormType.EVALUATION
 
     if request.method == "POST":
         if form_not_open:
@@ -288,6 +290,42 @@ def public_event_form(request, event_slug, form_slug):
                 },
                 status=400,
             )
+
+        if is_evaluation and not event_form.allow_multiple_submissions:
+            previous_submission = None
+            if request.user.is_authenticated:
+                previous_submission = FormSubmission.objects.filter(
+                    event_form=event_form,
+                    submitted_by=request.user,
+                    is_complete=True,
+                ).first()
+            else:
+                previous_reference = request.session.get(
+                    "evaluation_submissions",
+                    {},
+                ).get(str(event_form.pk))
+                if previous_reference:
+                    previous_submission = FormSubmission.objects.filter(
+                        event_form=event_form,
+                        reference_number=previous_reference,
+                        is_complete=True,
+                    ).first()
+
+            if previous_submission:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "duplicate": True,
+                        "message": _(
+                            "You have already submitted this evaluation."
+                        ),
+                        "redirect_url": (
+                            f"/{language_code}/submissions/"
+                            f"{previous_submission.reference_number}/success/"
+                        ),
+                    },
+                    status=409,
+                )
 
         questions = list(
             FormQuestion.objects.filter(
@@ -408,6 +446,17 @@ def public_event_form(request, event_slug, form_slug):
 
         if event_form.form_type != EventForm.FormType.EVALUATION:
             sync_badge_identity_from_answers(submission)
+        elif not event_form.allow_multiple_submissions:
+            evaluation_submissions = request.session.get(
+                "evaluation_submissions",
+                {},
+            )
+            evaluation_submissions[str(event_form.pk)] = (
+                submission.reference_number
+            )
+            request.session["evaluation_submissions"] = (
+                evaluation_submissions
+            )
 
         success_url = (
             f"/{language_code}/submissions/"
@@ -434,9 +483,7 @@ def public_event_form(request, event_slug, form_slug):
         "language_code": language_code,
         "form_not_open": form_not_open,
         "form_closed": form_closed,
-        "is_evaluation": (
-            event_form.form_type == EventForm.FormType.EVALUATION
-        ),
+        "is_evaluation": is_evaluation,
     }
 
     return render(

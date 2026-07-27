@@ -14,6 +14,7 @@ from forms_builder.models import EventForm, FormSubmission
 from forms_builder.services import (
     certificate_number,
     participant_certificate_path,
+    public_form_path,
     safe_spreadsheet_value,
 )
 
@@ -365,6 +366,18 @@ def participant_check_in(request, participant_token):
                 )
             )
 
+    evaluation_form = None
+    if submission.event_form.event.evaluation_enabled:
+        evaluation_form = (
+            submission.event_form.event.forms.filter(
+                form_type=EventForm.FormType.EVALUATION,
+                is_active=True,
+                is_published=True,
+            )
+            .order_by("id")
+            .first()
+        )
+
     return render(
         request,
         "checkin/participant_check_in.html",
@@ -380,6 +393,14 @@ def participant_check_in(request, participant_token):
                     language=request.LANGUAGE_CODE,
                 )
                 if check_in and submission.event_form.event.certificate_enabled
+                else ""
+            ),
+            "evaluation_path": (
+                public_form_path(
+                    evaluation_form,
+                    language=request.LANGUAGE_CODE,
+                )
+                if check_in and evaluation_form
                 else ""
             ),
         },

@@ -246,3 +246,24 @@ class ParticipantCheckInTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["summary"]["registered"], 1)
         self.assertNotContains(response, "Visitor Feedback")
+
+    def test_checked_in_participant_receives_evaluation_link(self):
+        self.event.evaluation_enabled = True
+        self.event.save(update_fields=["evaluation_enabled"])
+        evaluation_form = EventForm.objects.create(
+            event=self.event,
+            name_sw="Tathmini ya Tukio",
+            name_en="Event Evaluation",
+            form_type=EventForm.FormType.EVALUATION,
+            is_published=True,
+        )
+        self.client.force_login(self.officer)
+
+        response = self.client.get(f"{self.url}?auto=1")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Submit event evaluation")
+        self.assertContains(
+            response,
+            f"/en/events/{self.event.slug}/forms/{evaluation_form.slug}/",
+        )

@@ -375,6 +375,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await response.json();
 
             if (!response.ok || !data.success) {
+                if (data.duplicate && data.redirect_url) {
+                    window.location.assign(data.redirect_url);
+                    return;
+                }
+
                 showGeneralMessage(
                     data.message ||
                         (
