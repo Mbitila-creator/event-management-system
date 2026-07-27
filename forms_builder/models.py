@@ -3,6 +3,7 @@ import uuid
 from django.db import models
 from django.utils.text import slugify
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from core.models import BaseModel
@@ -485,6 +486,116 @@ class FormSubmission(BaseModel):
             or self.submitter_phone
             or self.reference_number
         )
+
+
+class Booth(BaseModel):
+    class Status(models.TextChoices):
+        UNASSIGNED = "UNASSIGNED", _("Unassigned")
+        ASSIGNED = "ASSIGNED", _("Assigned")
+        READY = "READY", _("Ready")
+        CLOSED = "CLOSED", _("Closed")
+
+    event = models.ForeignKey(
+        Event,
+        verbose_name=_("event"),
+        related_name="booths",
+        on_delete=models.CASCADE,
+    )
+    code = models.CharField(
+        _("booth code"),
+        max_length=30,
+        help_text=_("For example A-01 or HALL-B-12."),
+    )
+    name_sw = models.CharField(
+        _("booth name in Kiswahili"),
+        max_length=200,
+    )
+    name_en = models.CharField(
+        _("booth name in English"),
+        max_length=200,
+    )
+    zone_sw = models.CharField(
+        _("zone or location in Kiswahili"),
+        max_length=150,
+        blank=True,
+    )
+    zone_en = models.CharField(
+        _("zone or location in English"),
+        max_length=150,
+        blank=True,
+    )
+    assigned_submission = models.OneToOneField(
+        FormSubmission,
+        verbose_name=_("assigned exhibitor submission"),
+        related_name="booth_assignment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=_("Only an approved submission from this event may be assigned."),
+    )
+    status = models.CharField(
+        _("booth setup status"),
+        max_length=20,
+        choices=Status.choices,
+        default=Status.UNASSIGNED,
+    )
+    notes = models.TextField(
+        _("internal booth notes"),
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = _("booth")
+        verbose_name_plural = _("booths")
+        ordering = ["event", "zone_en", "code"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["event", "code"],
+                name="unique_booth_code_per_event",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        submission = self.assigned_submission
+
+        if submission:
+            if submission.event_form.event_id != self.event_id:
+                errors["assigned_submission"] = _(
+                    "The assigned exhibitor must belong to the same event."
+                )
+            elif submission.review_status != FormSubmission.ReviewStatus.APPROVED:
+                errors["assigned_submission"] = _(
+                    "Only an approved exhibitor submission may be assigned."
+                )
+            elif not submission.is_active or not submission.is_complete:
+                errors["assigned_submission"] = _(
+                    "The assigned exhibitor submission must be active and complete."
+                )
+            elif submission.event_form.form_type not in {
+                EventForm.FormType.REGISTRATION,
+                EventForm.FormType.EXHIBITOR,
+            }:
+                errors["assigned_submission"] = _(
+                    "This submission type cannot be assigned to a booth."
+                )
+
+            if self.status == self.Status.UNASSIGNED:
+                self.status = self.Status.ASSIGNED
+        elif self.status in {self.Status.ASSIGNED, self.Status.READY}:
+            self.status = self.Status.UNASSIGNED
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.code = self.code.strip().upper()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.event.code} — {self.code} — {self.name_en}"
 
 
 class FormAnswer(BaseModel):

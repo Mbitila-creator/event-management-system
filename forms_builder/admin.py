@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 
 from .models import (
+    Booth,
     EventForm,
     FormAnswer,
     FormQuestion,
@@ -37,6 +38,64 @@ class AuditAdminMixin:
 
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(Booth)
+class BoothAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "code",
+        "name_en",
+        "event",
+        "zone_en",
+        "assigned_exhibitor",
+        "status",
+        "is_active",
+    )
+    list_filter = (
+        "event",
+        "status",
+        "is_active",
+    )
+    search_fields = (
+        "code",
+        "name_sw",
+        "name_en",
+        "zone_sw",
+        "zone_en",
+        "assigned_submission__reference_number",
+        "assigned_submission__badge_name",
+        "assigned_submission__badge_organization",
+    )
+    autocomplete_fields = ("assigned_submission",)
+    readonly_fields = AuditAdminMixin.readonly_fields
+    list_select_related = (
+        "event",
+        "assigned_submission",
+        "assigned_submission__event_form",
+    )
+
+    @admin.display(description="Assigned exhibitor")
+    def assigned_exhibitor(self, obj):
+        if not obj.assigned_submission:
+            return "Unassigned"
+        return format_html(
+            "<strong>{}</strong><br><small>{}</small>",
+            obj.assigned_submission.badge_display_name,
+            obj.assigned_submission.reference_number,
+        )
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "assigned_submission":
+            kwargs["queryset"] = FormSubmission.objects.filter(
+                review_status=FormSubmission.ReviewStatus.APPROVED,
+                is_active=True,
+                is_complete=True,
+                event_form__form_type__in=[
+                    EventForm.FormType.REGISTRATION,
+                    EventForm.FormType.EXHIBITOR,
+                ],
+            ).select_related("event_form__event")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class FormSectionInline(admin.TabularInline):
@@ -294,6 +353,7 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "language",
         "is_complete",
         "review_status_badge",
+        "booth_assignment_display",
         "badge_tools",
         "certificate_tools",
         "submitted_on",
@@ -344,6 +404,7 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "event_form",
         "event_form__event",
         "check_in",
+        "booth_assignment",
     )
     actions = (
         "approve_submissions",
@@ -388,6 +449,18 @@ class FormSubmissionAdmin(admin.ModelAdmin):
             foreground,
             background,
             obj.get_review_status_display(),
+        )
+
+    @admin.display(description="Booth")
+    def booth_assignment_display(self, obj):
+        if obj.event_form.form_type == EventForm.FormType.EVALUATION:
+            return "Not applicable"
+        if not hasattr(obj, "booth_assignment"):
+            return "Unassigned"
+        return format_html(
+            "<strong>{}</strong><br><small>{}</small>",
+            obj.booth_assignment.code,
+            obj.booth_assignment.get_status_display(),
         )
 
     @admin.display(description="Participant badge")

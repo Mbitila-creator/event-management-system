@@ -7,6 +7,7 @@ from unittest.mock import Mock
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import (
     RequestFactory,
     SimpleTestCase,
@@ -20,6 +21,7 @@ from checkin.models import ParticipantCheckIn
 
 from .admin import FormSubmissionAdmin
 from .models import (
+    Booth,
     EventForm,
     FormAnswer,
     FormQuestion,
@@ -357,6 +359,104 @@ class PublicEvaluationTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertIn("/admin/login/", response["Location"])
+
+
+class BoothManagementTests(TestCase):
+    def setUp(self):
+        category = EventCategory.objects.create(
+            name_sw="Maonesho",
+            name_en="Exhibition",
+            code="BOOTH",
+        )
+        starts_at = timezone.now() + timedelta(days=10)
+        self.event = Event.objects.create(
+            category=category,
+            code="BOOTH-2026",
+            title_sw="Maonesho ya Teknolojia",
+            title_en="Technology Exhibition",
+            starts_at=starts_at,
+            ends_at=starts_at + timedelta(days=2),
+            booth_enabled=True,
+        )
+        self.event_form = EventForm.objects.create(
+            event=self.event,
+            name_sw="Usajili wa Waoneshaji",
+            name_en="Exhibitor Registration",
+            form_type=EventForm.FormType.EXHIBITOR,
+            is_published=True,
+        )
+        self.submission = FormSubmission.objects.create(
+            event_form=self.event_form,
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            badge_name="Amina Ubunifu",
+            badge_organization="Innovation Tanzania",
+        )
+
+    def test_approved_exhibitor_can_be_assigned_to_booth(self):
+        booth = Booth.objects.create(
+            event=self.event,
+            code=" a-01 ",
+            name_sw="Banda la Ubunifu",
+            name_en="Innovation Booth",
+            zone_sw="Ukumbi Mkuu",
+            zone_en="Main Hall",
+            assigned_submission=self.submission,
+        )
+
+        self.assertEqual(booth.code, "A-01")
+        self.assertEqual(booth.status, Booth.Status.ASSIGNED)
+        self.assertEqual(self.submission.booth_assignment, booth)
+
+    def test_pending_exhibitor_cannot_be_assigned(self):
+        self.submission.review_status = FormSubmission.ReviewStatus.PENDING
+        self.submission.save(update_fields=["review_status"])
+
+        with self.assertRaises(ValidationError):
+            Booth.objects.create(
+                event=self.event,
+                code="A-02",
+                name_sw="Banda la Pili",
+                name_en="Second Booth",
+                assigned_submission=self.submission,
+            )
+
+    def test_exhibitor_cannot_be_assigned_to_two_booths(self):
+        Booth.objects.create(
+            event=self.event,
+            code="A-03",
+            name_sw="Banda la Tatu",
+            name_en="Third Booth",
+            assigned_submission=self.submission,
+        )
+
+        with self.assertRaises(ValidationError):
+            Booth.objects.create(
+                event=self.event,
+                code="A-04",
+                name_sw="Banda la Nne",
+                name_en="Fourth Booth",
+                assigned_submission=self.submission,
+            )
+
+    def test_cross_event_assignment_is_rejected(self):
+        second_event = Event.objects.create(
+            category=self.event.category,
+            code="OTHER-2026",
+            title_sw="Tukio Jingine",
+            title_en="Other Event",
+            starts_at=self.event.starts_at,
+            ends_at=self.event.ends_at,
+            booth_enabled=True,
+        )
+
+        with self.assertRaises(ValidationError):
+            Booth.objects.create(
+                event=second_event,
+                code="B-01",
+                name_sw="Banda la Tukio Jingine",
+                name_en="Other Event Booth",
+                assigned_submission=self.submission,
+            )
 
 
 class SubmissionReviewAdminTests(TestCase):
