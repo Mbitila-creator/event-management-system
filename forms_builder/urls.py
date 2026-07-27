@@ -7,6 +7,16 @@ app_name = "forms_builder"
 
 urlpatterns = [
     path(
+        "reports/evaluations/",
+        views.evaluation_reports,
+        name="evaluation_reports",
+    ),
+    path(
+        "reports/evaluations/export/",
+        views.evaluation_report_csv,
+        name="evaluation_reports_csv",
+    ),
+    path(
         "certificates/verify/<uuid:participant_token>/",
         views.certificate_verification,
         name="certificate_verification",

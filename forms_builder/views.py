@@ -1,5 +1,7 @@
+import csv
 from decimal import Decimal, InvalidOperation
 
+from django.contrib.auth.decorators import user_passes_test
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.http import Http404
@@ -9,6 +11,7 @@ from django.utils.dateparse import parse_date, parse_datetime
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 
+from accounts.models import User
 from .models import (
     EventForm,
     FormAnswer,
@@ -24,7 +27,67 @@ from .services import (
     generate_qr_png,
     participant_check_in_url,
     sync_badge_identity_from_answers,
+    safe_spreadsheet_value,
 )
+
+
+EVALUATION_REPORT_ROLES = {
+    User.Role.SYSTEM_ADMIN,
+    User.Role.EVENT_ADMIN,
+    User.Role.REPORT_OFFICER,
+}
+
+
+def can_view_evaluation_reports(user):
+    return bool(
+        user.is_authenticated
+        and (
+            user.is_superuser
+            or user.role in EVALUATION_REPORT_ROLES
+        )
+    )
+
+
+evaluation_report_required = user_passes_test(
+    can_view_evaluation_reports,
+    login_url="admin:login",
+)
+
+
+def localized_answer_value(answer, language):
+    selected_options = list(answer.selected_options.all())
+    if selected_options:
+        return ", ".join(
+            option.label_en if language == "en" else option.label_sw
+            for option in selected_options
+        )
+    if answer.uploaded_file:
+        return answer.uploaded_file.url
+    if answer.text_value:
+        return answer.text_value
+    if answer.number_value is not None:
+        return str(answer.number_value)
+    if answer.date_value:
+        return answer.date_value.isoformat()
+    if answer.datetime_value:
+        return answer.datetime_value.isoformat()
+    if answer.boolean_value is not None:
+        return _("Yes") if answer.boolean_value else _("No")
+    return ""
+
+
+def numeric_rating_value(answer):
+    value = answer.number_value
+    if value is None:
+        selected_options = list(answer.selected_options.all())
+        if len(selected_options) == 1:
+            try:
+                value = Decimal(selected_options[0].value)
+            except (InvalidOperation, TypeError, ValueError):
+                value = None
+    if value is not None and Decimal("1") <= value <= Decimal("5"):
+        return value
+    return None
 
 
 def get_client_ip(request):
@@ -34,6 +97,187 @@ def get_client_ip(request):
         return forwarded_for.split(",")[0].strip()
 
     return request.META.get("REMOTE_ADDR")
+
+
+def evaluation_forms_queryset():
+    return EventForm.objects.filter(
+        form_type=EventForm.FormType.EVALUATION,
+        is_active=True,
+    ).select_related("event").order_by("-event__starts_at", "name_en")
+
+
+@evaluation_report_required
+@require_http_methods(["GET"])
+def evaluation_reports(request):
+    evaluation_forms = evaluation_forms_queryset()
+    selected_form_id = request.GET.get("form", "").strip()
+    selected_form = (
+        get_object_or_404(evaluation_forms, pk=selected_form_id)
+        if selected_form_id
+        else evaluation_forms.first()
+    )
+    questions = []
+    response_rows = []
+    rating_statistics = []
+    total_responses = 0
+    overall_average = None
+
+    if selected_form:
+        questions = list(
+            FormQuestion.objects.filter(
+                section__event_form=selected_form,
+                section__is_active=True,
+                is_active=True,
+            ).select_related("section").order_by(
+                "section__display_order",
+                "display_order",
+                "id",
+            )
+        )
+        submissions = list(
+            FormSubmission.objects.filter(
+                event_form=selected_form,
+                is_active=True,
+                is_complete=True,
+            ).prefetch_related(
+                "answers__question",
+                "answers__selected_options",
+            ).order_by("-created_at")
+        )
+        total_responses = len(submissions)
+        rating_values = {question.pk: [] for question in questions}
+
+        for submission in submissions:
+            answers_by_question = {
+                answer.question_id: answer
+                for answer in submission.answers.all()
+            }
+            row_answers = []
+            for question in questions:
+                answer = answers_by_question.get(question.pk)
+                row_answers.append(
+                    localized_answer_value(answer, request.LANGUAGE_CODE)
+                    if answer
+                    else ""
+                )
+                if answer:
+                    rating_value = numeric_rating_value(answer)
+                    if rating_value is not None:
+                        rating_values[question.pk].append(rating_value)
+            response_rows.append(
+                {"submission": submission, "answers": row_answers}
+            )
+
+        all_ratings = []
+        for question in questions:
+            values = rating_values[question.pk]
+            if values:
+                average = sum(values) / len(values)
+                all_ratings.extend(values)
+                rating_statistics.append(
+                    {
+                        "label": (
+                            question.label_en
+                            if request.LANGUAGE_CODE == "en"
+                            else question.label_sw
+                        ),
+                        "average": round(average, 2),
+                        "count": len(values),
+                    }
+                )
+        if all_ratings:
+            overall_average = round(
+                sum(all_ratings) / len(all_ratings),
+                2,
+            )
+
+    return render(
+        request,
+        "forms_builder/evaluation_reports.html",
+        {
+            "evaluation_forms": evaluation_forms,
+            "selected_form": selected_form,
+            "questions": questions,
+            "response_rows": response_rows,
+            "rating_statistics": rating_statistics,
+            "total_responses": total_responses,
+            "overall_average": overall_average,
+        },
+    )
+
+
+@evaluation_report_required
+@require_http_methods(["GET"])
+def evaluation_report_csv(request):
+    selected_form = get_object_or_404(
+        evaluation_forms_queryset(),
+        pk=request.GET.get("form"),
+    )
+    questions = list(
+        FormQuestion.objects.filter(
+            section__event_form=selected_form,
+            section__is_active=True,
+            is_active=True,
+        ).order_by(
+            "section__display_order",
+            "display_order",
+            "id",
+        )
+    )
+    submissions = FormSubmission.objects.filter(
+        event_form=selected_form,
+        is_active=True,
+        is_complete=True,
+    ).prefetch_related(
+        "answers__question",
+        "answers__selected_options",
+    ).order_by("created_at")
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response.write("\ufeff")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{selected_form.event.code}-evaluation.csv"'
+    )
+    writer = csv.writer(response)
+    question_labels = [
+        question.label_en
+        if request.LANGUAGE_CODE == "en"
+        else question.label_sw
+        for question in questions
+    ]
+    writer.writerow(
+        [
+            _("Evaluation reference"),
+            _("Submitted on"),
+            _("Language"),
+            _("Email address"),
+            _("Phone number"),
+            *question_labels,
+        ]
+    )
+    for submission in submissions:
+        answers_by_question = {
+            answer.question_id: answer
+            for answer in submission.answers.all()
+        }
+        values = [
+            submission.reference_number,
+            submission.created_at.isoformat(),
+            submission.language,
+            submission.submitter_email,
+            submission.submitter_phone,
+        ]
+        values.extend(
+            localized_answer_value(
+                answers_by_question.get(question.pk),
+                request.LANGUAGE_CODE,
+            )
+            if answers_by_question.get(question.pk)
+            else ""
+            for question in questions
+        )
+        writer.writerow([safe_spreadsheet_value(value) for value in values])
+    return response
 
 
 def get_public_event_form(event_slug, form_slug):

@@ -70,6 +70,7 @@ class EventFormAdmin(AuditAdminMixin, admin.ModelAdmin):
         "form_type",
         "is_published",
         "registration_tools",
+        "evaluation_report_tools",
         "requires_login",
         "is_active",
     )
@@ -123,6 +124,17 @@ class EventFormAdmin(AuditAdminMixin, admin.ModelAdmin):
             public_url,
             qr_url,
             download_url,
+        )
+
+    @admin.display(description="Evaluation report")
+    def evaluation_report_tools(self, obj):
+        if obj.form_type != EventForm.FormType.EVALUATION:
+            return "Not applicable"
+        report_url = reverse("forms_builder:evaluation_reports")
+        return format_html(
+            '<a href="{}?form={}">View responses</a>',
+            report_url,
+            obj.pk,
         )
 
     def get_urls(self):

@@ -25,6 +25,7 @@ from .models import (
     FormQuestion,
     FormSection,
     FormSubmission,
+    QuestionOption,
 )
 
 from .services import (
@@ -272,6 +273,90 @@ class PublicEvaluationTests(TestCase):
             FormSubmission.objects.filter(event_form=self.event_form).count(),
             2,
         )
+
+    def test_report_officer_can_view_ratings_and_download_csv(self):
+        rating_question = FormQuestion.objects.create(
+            section=self.question.section,
+            label_sw="Tathmini ya jumla",
+            label_en="Overall rating",
+            question_type=FormQuestion.QuestionType.DROPDOWN,
+            is_required=True,
+            display_order=2,
+        )
+        rating_five = QuestionOption.objects.create(
+            question=rating_question,
+            value="5",
+            label_sw="Bora sana",
+            label_en="Excellent",
+            display_order=1,
+        )
+        rating_three = QuestionOption.objects.create(
+            question=rating_question,
+            value="3",
+            label_sw="Nzuri",
+            label_en="Good",
+            display_order=2,
+        )
+        for index, option in enumerate((rating_five, rating_three), start=1):
+            submission = FormSubmission.objects.create(
+                event_form=self.event_form,
+                language="en",
+            )
+            FormAnswer.objects.create(
+                submission=submission,
+                question=self.question,
+                text_value=f"Feedback {index}",
+            )
+            rating_answer = FormAnswer.objects.create(
+                submission=submission,
+                question=rating_question,
+            )
+            rating_answer.selected_options.set([option])
+
+        report_officer = get_user_model().objects.create_user(
+            username="evaluation-reporter",
+            email="evaluation-reporter@example.org",
+            password="test-password",
+            role="REPORT_OFFICER",
+            is_staff=True,
+        )
+        self.client.force_login(report_officer)
+
+        response = self.client.get(
+            "/en/reports/evaluations/",
+            {"form": self.event_form.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Total responses")
+        self.assertContains(response, "Overall rating")
+        self.assertContains(response, "4.00/5")
+        self.assertContains(response, "Feedback 1")
+
+        csv_response = self.client.get(
+            "/en/reports/evaluations/export/",
+            {"form": self.event_form.pk},
+        )
+        self.assertEqual(csv_response.status_code, 200)
+        self.assertIn("text/csv", csv_response["Content-Type"])
+        csv_content = csv_response.content.decode("utf-8-sig")
+        self.assertIn("Overall rating", csv_content)
+        self.assertIn("Excellent", csv_content)
+        self.assertIn("Good", csv_content)
+
+    def test_participant_cannot_access_evaluation_reports(self):
+        participant = get_user_model().objects.create_user(
+            username="evaluation-participant",
+            email="evaluation-participant@example.org",
+            password="test-password",
+            role="PARTICIPANT",
+        )
+        self.client.force_login(participant)
+
+        response = self.client.get("/en/reports/evaluations/")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login/", response["Location"])
 
 
 class SubmissionReviewAdminTests(TestCase):

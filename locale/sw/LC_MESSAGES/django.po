@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-27 09:16+0300\n"
+"POT-Creation-Date: 2026-07-27 10:53+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -169,12 +169,12 @@ msgstr "Mahudhurio yamethibitishwa na"
 msgid "Certificate number"
 msgstr "Namba ya cheti"
 
-#: checkin/views.py:269
+#: checkin/views.py:269 forms_builder/views.py:75
 #: templates/forms_builder/partials/question_input.html:188
 msgid "Yes"
 msgstr "Ndiyo"
 
-#: checkin/views.py:269
+#: checkin/views.py:269 forms_builder/views.py:75
 #: templates/forms_builder/partials/question_input.html:203
 msgid "No"
 msgstr "Hapana"
@@ -652,11 +652,11 @@ msgstr "Maandishi mafupi"
 msgid "Long text"
 msgstr "Maandishi marefu"
 
-#: forms_builder/models.py:168
+#: forms_builder/models.py:168 forms_builder/views.py:253
 msgid "Email address"
 msgstr "Anwani ya baruapepe"
 
-#: forms_builder/models.py:169
+#: forms_builder/models.py:169 forms_builder/views.py:254
 msgid "Phone number"
 msgstr "Namba ya simu"
 
@@ -946,7 +946,26 @@ msgstr "Tarehe ya tukio"
 msgid "Scan to verify this certificate"
 msgstr "Changanua ili kuthibitisha cheti hiki"
 
-#: forms_builder/views.py:320
+#: forms_builder/views.py:250
+#: templates/forms_builder/submission_success.html:62
+msgid "Evaluation reference"
+msgstr "Kumbukumbu ya tathmini"
+
+#: forms_builder/views.py:251
+#: templates/forms_builder/evaluation_reports.html:58
+#: templates/forms_builder/registration_status.html:101
+#: templates/forms_builder/submission_success.html:84
+msgid "Submitted on"
+msgstr "Iliwasilishwa tarehe"
+
+#: forms_builder/views.py:252 templates/events/base_public.html:73
+#: templates/events/base_public.html:79
+#: templates/forms_builder/public_event_form.html:63
+#: templates/forms_builder/public_event_form.html:66
+msgid "Language"
+msgstr "Lugha"
+
+#: forms_builder/views.py:564
 msgid "You have already submitted this evaluation."
 msgstr "Tayari umewasilisha tathmini hii."
 
@@ -1068,6 +1087,7 @@ msgid "Review event participation and download spreadsheet-ready reports."
 msgstr "Kagua ushiriki wa tukio na pakua ripoti zilizo tayari kwa lahajedwali."
 
 #: templates/checkin/reports.html:21
+#: templates/forms_builder/evaluation_reports.html:20
 msgid "Return to administration"
 msgstr "Rudi kwenye usimamizi"
 
@@ -1076,6 +1096,7 @@ msgid "Select event"
 msgstr "Chagua tukio"
 
 #: templates/checkin/reports.html:34
+#: templates/forms_builder/evaluation_reports.html:30
 msgid "View report"
 msgstr "Tazama ripoti"
 
@@ -1144,12 +1165,6 @@ msgstr "Hakuna matukio yanayopatikana kwa ajili ya ripoti."
 #: templates/forms_builder/submission_success.html:37
 msgid "Event Management System"
 msgstr "Mfumo wa Usimamizi wa Matukio"
-
-#: templates/events/base_public.html:73 templates/events/base_public.html:79
-#: templates/forms_builder/public_event_form.html:63
-#: templates/forms_builder/public_event_form.html:66
-msgid "Language"
-msgstr "Lugha"
 
 #: templates/events/base_public.html:102
 msgid "Administration"
@@ -1297,6 +1312,50 @@ msgid ""
 msgstr ""
 "Cheti hiki ni halali na kimetolewa kwa mshiriki ambaye mahudhurio yake "
 "yamethibitishwa."
+
+#: templates/forms_builder/evaluation_reports.html:5
+#: templates/forms_builder/evaluation_reports.html:17
+msgid "Evaluation reports"
+msgstr "Ripoti za tathmini"
+
+#: templates/forms_builder/evaluation_reports.html:16
+msgid "Visitor feedback"
+msgstr "Maoni ya wageni"
+
+#: templates/forms_builder/evaluation_reports.html:18
+msgid "Review visitor ratings and written feedback."
+msgstr "Kagua alama na maoni yaliyoandikwa na wageni."
+
+#: templates/forms_builder/evaluation_reports.html:24
+msgid "Select evaluation form"
+msgstr "Chagua fomu ya tathmini"
+
+#: templates/forms_builder/evaluation_reports.html:35
+msgid "Total responses"
+msgstr "Jumla ya majibu"
+
+#: templates/forms_builder/evaluation_reports.html:36
+msgid "Overall average rating"
+msgstr "Wastani wa jumla wa alama"
+
+#: templates/forms_builder/evaluation_reports.html:45
+#, python-format
+msgid "%(counter)s response"
+msgid_plural "%(counter)s responses"
+msgstr[0] "Jibu %(counter)s"
+msgstr[1] "Majibu %(counter)s"
+
+#: templates/forms_builder/evaluation_reports.html:52
+msgid "Download evaluation CSV"
+msgstr "Pakua CSV ya tathmini"
+
+#: templates/forms_builder/evaluation_reports.html:63
+msgid "No evaluation responses are available yet."
+msgstr "Bado hakuna majibu ya tathmini yanayopatikana."
+
+#: templates/forms_builder/evaluation_reports.html:70
+msgid "No evaluation forms are available for reporting."
+msgstr "Hakuna fomu za tathmini zinazopatikana kwa ajili ya ripoti."
 
 #: templates/forms_builder/partials/question_input.html:80
 msgid "Select an option"
@@ -1476,11 +1535,6 @@ msgstr "Baruapepe au namba ya simu iliyotumika kusajili"
 msgid "Check status"
 msgstr "Angalia hali"
 
-#: templates/forms_builder/registration_status.html:101
-#: templates/forms_builder/submission_success.html:84
-msgid "Submitted on"
-msgstr "Iliwasilishwa tarehe"
-
 #: templates/forms_builder/registration_status.html:108
 msgid "Registration approved"
 msgstr "Usajili umeidhinishwa"
@@ -1530,10 +1584,6 @@ msgstr "Usajili umefanikiwa"
 #: templates/forms_builder/submission_success.html:49
 msgid "Thank you for your feedback"
 msgstr "Asante kwa maoni yako"
-
-#: templates/forms_builder/submission_success.html:62
-msgid "Evaluation reference"
-msgstr "Kumbukumbu ya tathmini"
 
 #: templates/forms_builder/submission_success.html:106
 msgid "Return to event"
