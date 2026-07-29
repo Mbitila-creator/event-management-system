@@ -16,10 +16,27 @@
 .booth-detail-code { width: max-content; margin: 0 auto 22px; }
 .booth-detail-card h1 { margin: 7px 0; color: var(--primary); }
 .booth-detail-card h2 { margin: 5px 0 28px; color: #2f6fac; }
+.booth-public-description { max-width: 650px; margin: 20px auto; color: var(--muted); line-height: 1.65; }
 .booth-detail-list { margin: 28px 0; text-align: left; border-top: 1px solid var(--border); }
 .booth-detail-list div { display: grid; grid-template-columns: 180px 1fr; gap: 18px; padding: 14px 0; border-bottom: 1px solid var(--border); }
 .booth-detail-list dt { color: var(--muted); }
 .booth-detail-list dd { margin: 0; font-weight: 800; }
 .booth-qr-preview { width: 180px; height: 180px; }
+.booth-contact-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 24px 0; }
+.booth-offerings-section, .booth-interest-section { margin-top: 38px; padding-top: 30px; border-top: 1px solid var(--border); text-align: left; }
+.booth-offerings-section > h2, .booth-interest-section > h2 { margin: 0 0 8px; color: var(--primary); }
+.booth-offerings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+.booth-offerings-grid article { padding: 18px; border-radius: 14px; background: #f6f9fc; }
+.booth-offerings-grid span { color: #2f6fac; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+.booth-offerings-grid h3 { margin: 6px 0; }
+.booth-offerings-grid p { margin: 0; color: var(--muted); line-height: 1.55; }
+.booth-interest-form { display: grid; gap: 15px; margin-top: 20px; }
+.booth-interest-form label { display: grid; gap: 7px; font-weight: 800; }
+.booth-interest-form input, .booth-interest-form select, .booth-interest-form textarea { width: 100%; padding: 11px 12px; border: 1px solid #b9c5d4; border-radius: 9px; font: inherit; }
+.booth-interest-form small, .booth-interest-error { color: #991b1b; }
+.booth-interest-contact-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.booth-interest-success, .booth-interest-error { margin-top: 16px; padding: 14px; border-radius: 10px; font-weight: 800; }
+.booth-interest-success { color: #166534; background: #dcfce7; }
+.booth-interest-error { background: #fff1f0; }
 @media (max-width: 880px) { .booth-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 580px) { .booth-grid { grid-template-columns: 1fr; } .booth-detail-list div { grid-template-columns: 1fr; gap: 4px; } }
+@media (max-width: 580px) { .booth-grid, .booth-offerings-grid, .booth-interest-contact-grid { grid-template-columns: 1fr; } .booth-detail-list div { grid-template-columns: 1fr; gap: 4px; } }

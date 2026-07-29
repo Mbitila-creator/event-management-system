@@ -1,12 +1,17 @@
+import csv
+
 from django.contrib import admin, messages
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 
 from .models import (
     Booth,
+    BoothInterest,
+    BoothOffering,
     EventForm,
     FormAnswer,
     FormQuestion,
@@ -22,6 +27,7 @@ from .services import (
     participant_badge_path,
     participant_certificate_path,
     submissions_csv,
+    safe_spreadsheet_value,
 )
 
 
@@ -41,6 +47,20 @@ class AuditAdminMixin:
         super().save_model(request, obj, form, change)
 
 
+class BoothOfferingInline(admin.StackedInline):
+    model = BoothOffering
+    extra = 0
+    fields = (
+        "offering_type",
+        "name_sw",
+        "name_en",
+        "description_sw",
+        "description_en",
+        "display_order",
+        "is_active",
+    )
+
+
 @admin.register(Booth)
 class BoothAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_display = (
@@ -51,6 +71,7 @@ class BoothAdmin(AuditAdminMixin, admin.ModelAdmin):
         "assigned_exhibitor",
         "status",
         "public_tools",
+        "interest_count",
         "is_active",
     )
     list_filter = (
@@ -78,6 +99,7 @@ class BoothAdmin(AuditAdminMixin, admin.ModelAdmin):
         "assigned_submission",
         "assigned_submission__event_form",
     )
+    inlines = [BoothOfferingInline]
 
     @admin.display(description="Assigned exhibitor")
     def assigned_exhibitor(self, obj):
@@ -88,6 +110,10 @@ class BoothAdmin(AuditAdminMixin, admin.ModelAdmin):
             obj.assigned_submission.badge_display_name,
             obj.assigned_submission.reference_number,
         )
+
+    @admin.display(description="Visitor interests")
+    def interest_count(self, obj):
+        return obj.interests.count()
 
     @admin.display(description="Public page and QR")
     def public_tools(self, obj):
@@ -128,6 +154,117 @@ class BoothAdmin(AuditAdminMixin, admin.ModelAdmin):
                 ],
             ).select_related("event_form__event")
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(BoothOffering)
+class BoothOfferingAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "name_en",
+        "booth",
+        "offering_type",
+        "display_order",
+        "is_active",
+    )
+    list_filter = (
+        "booth__event",
+        "offering_type",
+        "is_active",
+    )
+    search_fields = (
+        "name_sw",
+        "name_en",
+        "description_sw",
+        "description_en",
+        "booth__code",
+        "booth__name_en",
+    )
+    list_select_related = ("booth", "booth__event")
+
+
+@admin.register(BoothInterest)
+class BoothInterestAdmin(admin.ModelAdmin):
+    list_display = (
+        "visitor_name",
+        "booth",
+        "offering",
+        "email",
+        "phone",
+        "created_at",
+    )
+    list_filter = (
+        "booth__event",
+        "booth",
+        "offering__offering_type",
+        "language",
+        "created_at",
+    )
+    search_fields = (
+        "visitor_name",
+        "email",
+        "phone",
+        "message",
+        "booth__code",
+        "booth__name_en",
+        "offering__name_en",
+    )
+    readonly_fields = (
+        "booth",
+        "offering",
+        "visitor_name",
+        "email",
+        "phone",
+        "message",
+        "language",
+        "created_by",
+        "updated_by",
+        "created_at",
+        "updated_at",
+    )
+    list_select_related = ("booth", "booth__event", "offering")
+    actions = ("export_interests_csv",)
+
+    def has_add_permission(self, request):
+        return False
+
+    @admin.action(description=_("Export selected visitor interests to CSV"))
+    def export_interests_csv(self, request, queryset):
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response.write("\ufeff")
+        response["Content-Disposition"] = (
+            'attachment; filename="booth-visitor-interests.csv"'
+        )
+        writer = csv.writer(response)
+        writer.writerow(
+            [
+                _("Event"),
+                _("Booth"),
+                _("Offering"),
+                _("Visitor name"),
+                _("Email"),
+                _("Phone"),
+                _("Message"),
+                _("Submitted on"),
+            ]
+        )
+        for interest in queryset.select_related(
+            "booth__event",
+            "offering",
+        ):
+            writer.writerow(
+                [
+                    safe_spreadsheet_value(interest.booth.event.code),
+                    safe_spreadsheet_value(interest.booth.code),
+                    safe_spreadsheet_value(
+                        interest.offering.name_en if interest.offering else ""
+                    ),
+                    safe_spreadsheet_value(interest.visitor_name),
+                    safe_spreadsheet_value(interest.email),
+                    safe_spreadsheet_value(interest.phone),
+                    safe_spreadsheet_value(interest.message),
+                    safe_spreadsheet_value(interest.created_at.isoformat()),
+                ]
+            )
+        return response
 
 
 class FormSectionInline(admin.TabularInline):

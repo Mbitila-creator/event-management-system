@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.http import Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 from django.utils.translation import gettext as _
@@ -15,6 +15,7 @@ from accounts.models import User
 from events.models import Event
 from .models import (
     Booth,
+    BoothInterest,
     EventForm,
     FormAnswer,
     FormQuestion,
@@ -137,12 +138,63 @@ def booth_directory(request, event_slug):
     )
 
 
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "POST"])
 def booth_detail(request, public_token):
     booth = get_object_or_404(
         public_booths_queryset(),
         public_token=public_token,
     )
+    offerings = list(
+        booth.offerings.filter(is_active=True).order_by(
+            "display_order",
+            "name_en",
+        )
+    )
+    interest_errors = {}
+    interest_values = {}
+
+    if request.method == "POST":
+        interest_values = {
+            "visitor_name": request.POST.get("visitor_name", "").strip(),
+            "email": request.POST.get("email", "").strip(),
+            "phone": request.POST.get("phone", "").strip(),
+            "message": request.POST.get("message", "").strip(),
+            "offering": request.POST.get("offering", "").strip(),
+        }
+        if not interest_values["email"] and not interest_values["phone"]:
+            interest_errors["contact"] = _(
+                "Enter an email address or phone number."
+            )
+        if interest_values["email"] and "@" not in interest_values["email"]:
+            interest_errors["email"] = _("Enter a valid email address.")
+
+        selected_offering = None
+        if interest_values["offering"]:
+            selected_offering = next(
+                (
+                    offering
+                    for offering in offerings
+                    if str(offering.pk) == interest_values["offering"]
+                ),
+                None,
+            )
+            if selected_offering is None:
+                interest_errors["offering"] = _("Select a valid option.")
+
+        if not interest_errors:
+            BoothInterest.objects.create(
+                booth=booth,
+                offering=selected_offering,
+                visitor_name=interest_values["visitor_name"],
+                email=interest_values["email"],
+                phone=interest_values["phone"],
+                message=interest_values["message"],
+                language=request.LANGUAGE_CODE,
+            )
+            return redirect(
+                f"{request.path}?interest=success#visitor-interest"
+            )
+
     return render(
         request,
         "forms_builder/booth_detail.html",
@@ -150,6 +202,10 @@ def booth_detail(request, public_token):
             "booth": booth,
             "event": booth.event,
             "submission": booth.assigned_submission,
+            "offerings": offerings,
+            "interest_errors": interest_errors,
+            "interest_values": interest_values,
+            "interest_success": request.GET.get("interest") == "success",
         },
     )
 

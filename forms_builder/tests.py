@@ -22,6 +22,8 @@ from checkin.models import ParticipantCheckIn
 from .admin import FormSubmissionAdmin
 from .models import (
     Booth,
+    BoothInterest,
+    BoothOffering,
     EventForm,
     FormAnswer,
     FormQuestion,
@@ -510,6 +512,105 @@ class BoothManagementTests(TestCase):
             f"/en/booths/{booth.public_token}/"
         )
         self.assertEqual(detail_response.status_code, 404)
+
+    def test_booth_offerings_contacts_and_visitor_interest(self):
+        booth = Booth.objects.create(
+            event=self.event,
+            code="T-03",
+            name_sw="Banda la Kilimo",
+            name_en="Agriculture Booth",
+            zone_sw="Eneo la Nje",
+            zone_en="Outdoor Zone",
+            assigned_submission=self.submission,
+            status=Booth.Status.READY,
+            description_sw="Teknolojia za kisasa za kilimo.",
+            description_en="Modern agricultural technologies.",
+            public_email="booth@example.org",
+            public_phone="+255700000001",
+            public_website="https://example.org",
+        )
+        offering = BoothOffering.objects.create(
+            booth=booth,
+            offering_type=BoothOffering.OfferingType.TECHNOLOGY,
+            name_sw="Umwagiliaji Mahiri",
+            name_en="Smart Irrigation",
+            description_sw="Mfumo wa kuokoa maji.",
+            description_en="A water-saving system.",
+        )
+        url = f"/en/booths/{booth.public_token}/"
+
+        page_response = self.client.get(url)
+        self.assertEqual(page_response.status_code, 200)
+        self.assertContains(page_response, "Smart Irrigation")
+        self.assertContains(page_response, "Call exhibitor")
+        self.assertContains(page_response, "Visit website")
+
+        missing_contact_response = self.client.post(
+            url,
+            {"visitor_name": "Interested Visitor"},
+        )
+        self.assertEqual(missing_contact_response.status_code, 200)
+        self.assertContains(
+            missing_contact_response,
+            "Enter an email address or phone number.",
+        )
+        self.assertFalse(BoothInterest.objects.exists())
+
+        response = self.client.post(
+            url,
+            {
+                "visitor_name": "Interested Visitor",
+                "email": "visitor@example.org",
+                "phone": "",
+                "offering": str(offering.pk),
+                "message": "Please contact me about pricing.",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("?interest=success", response["Location"])
+        interest = BoothInterest.objects.get()
+        self.assertEqual(interest.booth, booth)
+        self.assertEqual(interest.offering, offering)
+        self.assertEqual(interest.email, "visitor@example.org")
+
+        success_response = self.client.get(response["Location"])
+        self.assertContains(
+            success_response,
+            "Your interest has been sent to the exhibitor.",
+        )
+
+    def test_interest_cannot_select_offering_from_another_booth(self):
+        first_booth = Booth.objects.create(
+            event=self.event,
+            code="T-04",
+            name_sw="Banda la Kwanza",
+            name_en="First Booth",
+            assigned_submission=self.submission,
+        )
+        second_submission = FormSubmission.objects.create(
+            event_form=self.event_form,
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            badge_name="Second Exhibitor",
+        )
+        second_booth = Booth.objects.create(
+            event=self.event,
+            code="T-05",
+            name_sw="Banda la Pili",
+            name_en="Second Booth",
+            assigned_submission=second_submission,
+        )
+        other_offering = BoothOffering.objects.create(
+            booth=second_booth,
+            name_sw="Bidhaa Nyingine",
+            name_en="Other Product",
+        )
+
+        with self.assertRaises(ValidationError):
+            BoothInterest.objects.create(
+                booth=first_booth,
+                offering=other_offering,
+                email="visitor@example.org",
+            )
 
 
 class SubmissionReviewAdminTests(TestCase):

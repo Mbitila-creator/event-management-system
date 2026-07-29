@@ -549,6 +549,27 @@ class Booth(BaseModel):
         _("internal booth notes"),
         blank=True,
     )
+    description_sw = models.TextField(
+        _("public booth description in Kiswahili"),
+        blank=True,
+    )
+    description_en = models.TextField(
+        _("public booth description in English"),
+        blank=True,
+    )
+    public_email = models.EmailField(
+        _("public booth email"),
+        blank=True,
+    )
+    public_phone = models.CharField(
+        _("public booth phone"),
+        max_length=30,
+        blank=True,
+    )
+    public_website = models.URLField(
+        _("public booth website"),
+        blank=True,
+    )
 
     class Meta:
         verbose_name = _("booth")
@@ -602,6 +623,121 @@ class Booth(BaseModel):
 
     def __str__(self):
         return f"{self.event.code} — {self.code} — {self.name_en}"
+
+
+class BoothOffering(BaseModel):
+    class OfferingType(models.TextChoices):
+        PRODUCT = "PRODUCT", _("Product")
+        TECHNOLOGY = "TECHNOLOGY", _("Technology")
+        SERVICE = "SERVICE", _("Service")
+        OTHER = "OTHER", _("Other")
+
+    booth = models.ForeignKey(
+        Booth,
+        verbose_name=_("booth"),
+        related_name="offerings",
+        on_delete=models.CASCADE,
+    )
+    offering_type = models.CharField(
+        _("offering type"),
+        max_length=20,
+        choices=OfferingType.choices,
+        default=OfferingType.PRODUCT,
+    )
+    name_sw = models.CharField(
+        _("offering name in Kiswahili"),
+        max_length=200,
+    )
+    name_en = models.CharField(
+        _("offering name in English"),
+        max_length=200,
+    )
+    description_sw = models.TextField(
+        _("offering description in Kiswahili"),
+        blank=True,
+    )
+    description_en = models.TextField(
+        _("offering description in English"),
+        blank=True,
+    )
+    display_order = models.PositiveIntegerField(
+        _("display order"),
+        default=0,
+    )
+
+    class Meta:
+        verbose_name = _("booth offering")
+        verbose_name_plural = _("booth offerings")
+        ordering = ["booth", "display_order", "name_en"]
+
+    def __str__(self):
+        return f"{self.booth.code} — {self.name_en}"
+
+
+class BoothInterest(BaseModel):
+    booth = models.ForeignKey(
+        Booth,
+        verbose_name=_("booth"),
+        related_name="interests",
+        on_delete=models.CASCADE,
+    )
+    offering = models.ForeignKey(
+        BoothOffering,
+        verbose_name=_("offering of interest"),
+        related_name="interests",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    visitor_name = models.CharField(
+        _("visitor name"),
+        max_length=200,
+        blank=True,
+    )
+    email = models.EmailField(
+        _("visitor email"),
+        blank=True,
+    )
+    phone = models.CharField(
+        _("visitor phone"),
+        max_length=30,
+        blank=True,
+    )
+    message = models.TextField(
+        _("visitor message"),
+        blank=True,
+    )
+    language = models.CharField(
+        _("language"),
+        max_length=5,
+        choices=FormSubmission._meta.get_field("language").choices,
+        default="sw",
+    )
+
+    class Meta:
+        verbose_name = _("booth visitor interest")
+        verbose_name_plural = _("booth visitor interests")
+        ordering = ["-created_at"]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if not self.email and not self.phone:
+            errors["email"] = _("Enter an email address or phone number.")
+            errors["phone"] = _("Enter an email address or phone number.")
+        if self.offering and self.offering.booth_id != self.booth_id:
+            errors["offering"] = _(
+                "The selected offering must belong to this booth."
+            )
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.booth.code} — {self.visitor_name or self.email or self.phone}"
 
 
 class FormAnswer(BaseModel):
