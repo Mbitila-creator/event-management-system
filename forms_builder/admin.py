@@ -13,6 +13,7 @@ from .models import (
     BoothInterest,
     BoothOffering,
     EventForm,
+    EventReminder,
     FormAnswer,
     FormQuestion,
     FormSection,
@@ -20,7 +21,11 @@ from .models import (
     NotificationLog,
     QuestionOption,
 )
-from .notifications import send_submission_notification
+from .notifications import (
+    process_event_reminder,
+    resend_notification,
+    send_submission_notification,
+)
 from .services import (
     booth_detail_url,
     generate_qr_png,
@@ -819,18 +824,73 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         return response
 
 
+@admin.register(EventReminder)
+class EventReminderAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "event",
+        "subject_en",
+        "scheduled_for",
+        "status",
+        "sent_count",
+        "skipped_count",
+        "failed_count",
+        "processed_at",
+    )
+    list_filter = (
+        "status",
+        "event",
+        "scheduled_for",
+    )
+    search_fields = (
+        "event__code",
+        "event__title_sw",
+        "event__title_en",
+        "subject_sw",
+        "subject_en",
+        "message_sw",
+        "message_en",
+    )
+    readonly_fields = AuditAdminMixin.readonly_fields + (
+        "sent_count",
+        "skipped_count",
+        "failed_count",
+        "processed_at",
+    )
+    actions = ("send_reminders_now",)
+    date_hierarchy = "scheduled_for"
+
+    @admin.action(description=_("Send selected reminders now"))
+    def send_reminders_now(self, request, queryset):
+        completed = 0
+        already_completed = 0
+        for reminder in queryset.select_related("event"):
+            if reminder.status == EventReminder.Status.COMPLETED:
+                already_completed += 1
+                continue
+            process_event_reminder(reminder, request=request)
+            completed += 1
+        self.message_user(
+            request,
+            _("%(completed)s reminder(s) sent; %(skipped)s already completed.")
+            % {"completed": completed, "skipped": already_completed},
+            messages.SUCCESS,
+        )
+
+
 @admin.register(NotificationLog)
 class NotificationLogAdmin(admin.ModelAdmin):
     list_display = (
         "created_at",
         "submission",
         "notification_type",
+        "event_reminder",
         "recipient",
         "delivery_status",
         "sent_at",
     )
     list_filter = (
         "notification_type",
+        "event_reminder",
         "delivery_status",
         "submission__event_form__event",
         "created_at",
@@ -843,6 +903,7 @@ class NotificationLogAdmin(admin.ModelAdmin):
     )
     readonly_fields = (
         "submission",
+        "event_reminder",
         "notification_type",
         "recipient",
         "subject",
@@ -857,13 +918,30 @@ class NotificationLogAdmin(admin.ModelAdmin):
     list_select_related = (
         "submission",
         "submission__event_form__event",
+        "event_reminder",
     )
+    actions = ("resend_selected_notifications",)
 
     def has_add_permission(self, request):
         return False
 
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
+
+    @admin.action(description=_("Resend selected notifications"))
+    def resend_selected_notifications(self, request, queryset):
+        resent = 0
+        for log in queryset.select_related(
+            "submission__event_form__event",
+            "event_reminder__event",
+        ):
+            resend_notification(log, request=request)
+            resent += 1
+        self.message_user(
+            request,
+            _("%(count)s notification(s) resent.") % {"count": resent},
+            messages.SUCCESS,
+        )
 
 
 @admin.register(FormAnswer)

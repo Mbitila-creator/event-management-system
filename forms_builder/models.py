@@ -740,12 +740,82 @@ class BoothInterest(BaseModel):
         return f"{self.booth.code} — {self.visitor_name or self.email or self.phone}"
 
 
+class EventReminder(BaseModel):
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", _("Draft")
+        SCHEDULED = "SCHEDULED", _("Scheduled")
+        PROCESSING = "PROCESSING", _("Processing")
+        COMPLETED = "COMPLETED", _("Completed")
+
+    event = models.ForeignKey(
+        Event,
+        verbose_name=_("event"),
+        related_name="email_reminders",
+        on_delete=models.CASCADE,
+    )
+    subject_sw = models.CharField(
+        _("reminder subject in Kiswahili"),
+        max_length=250,
+    )
+    subject_en = models.CharField(
+        _("reminder subject in English"),
+        max_length=250,
+    )
+    message_sw = models.TextField(
+        _("reminder message in Kiswahili"),
+    )
+    message_en = models.TextField(
+        _("reminder message in English"),
+    )
+    scheduled_for = models.DateTimeField(
+        _("scheduled sending time"),
+        db_index=True,
+    )
+    status = models.CharField(
+        _("reminder status"),
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        db_index=True,
+    )
+    sent_count = models.PositiveIntegerField(
+        _("sent count"),
+        default=0,
+        editable=False,
+    )
+    skipped_count = models.PositiveIntegerField(
+        _("skipped count"),
+        default=0,
+        editable=False,
+    )
+    failed_count = models.PositiveIntegerField(
+        _("failed count"),
+        default=0,
+        editable=False,
+    )
+    processed_at = models.DateTimeField(
+        _("processed at"),
+        null=True,
+        blank=True,
+        editable=False,
+    )
+
+    class Meta:
+        verbose_name = _("event reminder")
+        verbose_name_plural = _("event reminders")
+        ordering = ["-scheduled_for"]
+
+    def __str__(self):
+        return f"{self.event.code} — {self.subject_en}"
+
+
 class NotificationLog(BaseModel):
     class NotificationType(models.TextChoices):
         REGISTRATION_RECEIVED = "REGISTRATION_RECEIVED", _("Registration received")
         REGISTRATION_APPROVED = "REGISTRATION_APPROVED", _("Registration approved")
         REGISTRATION_REJECTED = "REGISTRATION_REJECTED", _("Registration rejected")
         CHECK_IN_CONFIRMED = "CHECK_IN_CONFIRMED", _("Check-in confirmed")
+        EVENT_REMINDER = "EVENT_REMINDER", _("Event reminder")
 
     class DeliveryStatus(models.TextChoices):
         SENT = "SENT", _("Sent")
@@ -757,6 +827,14 @@ class NotificationLog(BaseModel):
         verbose_name=_("form submission"),
         related_name="notification_logs",
         on_delete=models.CASCADE,
+    )
+    event_reminder = models.ForeignKey(
+        EventReminder,
+        verbose_name=_("event reminder"),
+        related_name="notification_logs",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
     )
     notification_type = models.CharField(
         _("notification type"),

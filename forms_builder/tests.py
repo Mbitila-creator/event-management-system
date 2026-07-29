@@ -2,6 +2,7 @@ from django.test import TestCase
 
 # Create your tests here.
 from datetime import datetime, timedelta
+from io import StringIO
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
@@ -9,6 +10,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core import mail
+from django.core.management import call_command
 from django.test import (
     RequestFactory,
     SimpleTestCase,
@@ -26,6 +28,7 @@ from .models import (
     BoothInterest,
     BoothOffering,
     EventForm,
+    EventReminder,
     FormAnswer,
     FormQuestion,
     FormSection,
@@ -33,7 +36,11 @@ from .models import (
     NotificationLog,
     QuestionOption,
 )
-from .notifications import send_submission_notification
+from .notifications import (
+    process_event_reminder,
+    resend_notification,
+    send_submission_notification,
+)
 
 from .services import (
     certificate_number,
@@ -716,7 +723,7 @@ class SubmissionNotificationTests(TestCase):
             log.delivery_status,
             NotificationLog.DeliveryStatus.SKIPPED,
         )
-        self.assertIn("No participant email", log.error_message)
+        self.assertTrue(log.error_message)
 
     def test_kiswahili_notification_uses_kiswahili_content(self):
         self.submission.language = "sw"
@@ -746,6 +753,104 @@ class SubmissionNotificationTests(TestCase):
             NotificationLog.DeliveryStatus.FAILED,
         )
         self.assertIn("SMTP unavailable", log.error_message)
+
+    def test_reminder_sends_only_to_approved_participants(self):
+        self.submission.review_status = FormSubmission.ReviewStatus.APPROVED
+        self.submission.save(update_fields=["review_status"])
+        missing_email = FormSubmission.objects.create(
+            event_form=self.submission.event_form,
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            language="sw",
+        )
+        FormSubmission.objects.create(
+            event_form=self.submission.event_form,
+            submitter_email="pending@example.org",
+            review_status=FormSubmission.ReviewStatus.PENDING,
+        )
+        reminder = EventReminder.objects.create(
+            event=self.submission.event_form.event,
+            subject_sw="Kumbusho la tukio",
+            subject_en="Event reminder",
+            message_sw="Tafadhali fika kwa wakati.",
+            message_en="Please arrive on time.",
+            scheduled_for=timezone.now(),
+            status=EventReminder.Status.SCHEDULED,
+        )
+
+        processed = process_event_reminder(reminder)
+
+        self.assertEqual(processed.status, EventReminder.Status.COMPLETED)
+        self.assertEqual(processed.sent_count, 1)
+        self.assertEqual(processed.skipped_count, 1)
+        self.assertEqual(processed.failed_count, 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Please arrive on time.", mail.outbox[0].body)
+        self.assertEqual(
+            NotificationLog.objects.filter(event_reminder=reminder).count(),
+            2,
+        )
+        self.assertFalse(
+            NotificationLog.objects.filter(
+                event_reminder=reminder,
+                submission__submitter_email="pending@example.org",
+            ).exists()
+        )
+        self.assertTrue(
+            NotificationLog.objects.filter(
+                event_reminder=reminder,
+                submission=missing_email,
+                delivery_status=NotificationLog.DeliveryStatus.SKIPPED,
+            ).exists()
+        )
+
+        process_event_reminder(reminder)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_due_reminder_management_command(self):
+        self.submission.review_status = FormSubmission.ReviewStatus.APPROVED
+        self.submission.save(update_fields=["review_status"])
+        due = EventReminder.objects.create(
+            event=self.submission.event_form.event,
+            subject_sw="Kumbusho",
+            subject_en="Reminder",
+            message_sw="Tukio ni leo.",
+            message_en="The event is today.",
+            scheduled_for=timezone.now() - timedelta(minutes=1),
+            status=EventReminder.Status.SCHEDULED,
+        )
+        future = EventReminder.objects.create(
+            event=self.submission.event_form.event,
+            subject_sw="Kumbusho la baadaye",
+            subject_en="Future reminder",
+            message_sw="Ujumbe wa baadaye.",
+            message_en="A future message.",
+            scheduled_for=timezone.now() + timedelta(days=1),
+            status=EventReminder.Status.SCHEDULED,
+        )
+        output = StringIO()
+
+        call_command("send_due_reminders", stdout=output)
+
+        due.refresh_from_db()
+        future.refresh_from_db()
+        self.assertEqual(due.status, EventReminder.Status.COMPLETED)
+        self.assertEqual(future.status, EventReminder.Status.SCHEDULED)
+        self.assertIn("Processed 1 due reminder", output.getvalue())
+
+    def test_notification_can_be_resent(self):
+        original_log = send_submission_notification(
+            self.submission,
+            NotificationLog.NotificationType.REGISTRATION_RECEIVED,
+        )
+
+        resent_log = resend_notification(original_log)
+
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertNotEqual(original_log.pk, resent_log.pk)
+        self.assertEqual(
+            resent_log.delivery_status,
+            NotificationLog.DeliveryStatus.SENT,
+        )
 
 
 @override_settings(
