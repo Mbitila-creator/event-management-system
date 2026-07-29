@@ -458,6 +458,59 @@ class BoothManagementTests(TestCase):
                 assigned_submission=self.submission,
             )
 
+    def test_public_directory_detail_and_qr_are_available(self):
+        booth = Booth.objects.create(
+            event=self.event,
+            code="T-01",
+            name_sw="Banda la Teknolojia",
+            name_en="Technology Booth",
+            zone_sw="Ukumbi Mkuu",
+            zone_en="Main Hall",
+            assigned_submission=self.submission,
+            status=Booth.Status.READY,
+        )
+
+        directory_response = self.client.get(
+            f"/en/events/{self.event.slug}/booths/"
+        )
+        self.assertEqual(directory_response.status_code, 200)
+        self.assertContains(directory_response, "Technology Booth")
+        self.assertContains(directory_response, "Innovation Tanzania")
+
+        detail_response = self.client.get(
+            f"/en/booths/{booth.public_token}/"
+        )
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertContains(detail_response, "T-01")
+        self.assertContains(detail_response, "Amina Ubunifu")
+        self.assertContains(detail_response, "Main Hall")
+
+        qr_response = self.client.get(
+            f"/en/booths/{booth.public_token}/qr/"
+        )
+        self.assertEqual(qr_response.status_code, 200)
+        self.assertEqual(qr_response["Content-Type"], "image/png")
+        self.assertTrue(qr_response.content.startswith(b"\x89PNG"))
+
+    def test_unassigned_or_closed_booth_is_not_public(self):
+        booth = Booth.objects.create(
+            event=self.event,
+            code="T-02",
+            name_sw="Banda Lililofungwa",
+            name_en="Closed Booth",
+            assigned_submission=self.submission,
+            status=Booth.Status.CLOSED,
+        )
+
+        directory_response = self.client.get(
+            f"/en/events/{self.event.slug}/booths/"
+        )
+        self.assertNotContains(directory_response, "Closed Booth")
+        detail_response = self.client.get(
+            f"/en/booths/{booth.public_token}/"
+        )
+        self.assertEqual(detail_response.status_code, 404)
+
 
 class SubmissionReviewAdminTests(TestCase):
     def setUp(self):

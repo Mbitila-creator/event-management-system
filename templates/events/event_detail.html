@@ -231,6 +231,15 @@
                             {% translate "Submit an evaluation" %}
                         </a>
                     {% endif %}
+
+                    {% if event.booth_enabled %}
+                        <a
+                            href="{% url 'forms_builder:booth_directory' event.slug %}"
+                            class="secondary-button full-width-button"
+                        >
+                            {% translate "Explore exhibition booths" %}
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </aside>

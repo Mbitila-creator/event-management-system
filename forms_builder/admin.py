@@ -15,6 +15,7 @@ from .models import (
     QuestionOption,
 )
 from .services import (
+    booth_detail_url,
     generate_qr_png,
     public_form_path,
     public_form_url,
@@ -49,6 +50,7 @@ class BoothAdmin(AuditAdminMixin, admin.ModelAdmin):
         "zone_en",
         "assigned_exhibitor",
         "status",
+        "public_tools",
         "is_active",
     )
     list_filter = (
@@ -67,7 +69,10 @@ class BoothAdmin(AuditAdminMixin, admin.ModelAdmin):
         "assigned_submission__badge_organization",
     )
     autocomplete_fields = ("assigned_submission",)
-    readonly_fields = AuditAdminMixin.readonly_fields
+    readonly_fields = AuditAdminMixin.readonly_fields + (
+        "public_token",
+        "public_tools",
+    )
     list_select_related = (
         "event",
         "assigned_submission",
@@ -82,6 +87,33 @@ class BoothAdmin(AuditAdminMixin, admin.ModelAdmin):
             "<strong>{}</strong><br><small>{}</small>",
             obj.assigned_submission.badge_display_name,
             obj.assigned_submission.reference_number,
+        )
+
+    @admin.display(description="Public page and QR")
+    def public_tools(self, obj):
+        if not obj or not obj.pk:
+            return "Save the booth first."
+        if (
+            not obj.is_active
+            or not obj.assigned_submission
+            or obj.status not in {Booth.Status.ASSIGNED, Booth.Status.READY}
+            or not obj.event.booth_enabled
+        ):
+            return "Available after an active booth is assigned."
+        detail_url = booth_detail_url(obj, language="sw")
+        qr_url = reverse(
+            "forms_builder:booth_qr",
+            kwargs={"public_token": obj.public_token},
+        )
+        return format_html(
+            '<a href="{}" target="_blank" rel="noopener">Open page</a>'
+            ' &nbsp;|&nbsp; '
+            '<a href="{}" target="_blank" rel="noopener">View QR</a>'
+            ' &nbsp;|&nbsp; '
+            '<a href="{}?download=1">Download QR</a>',
+            detail_url,
+            qr_url,
+            qr_url,
         )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):

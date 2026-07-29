@@ -7,6 +7,21 @@ app_name = "forms_builder"
 
 urlpatterns = [
     path(
+        "events/<slug:event_slug>/booths/",
+        views.booth_directory,
+        name="booth_directory",
+    ),
+    path(
+        "booths/<uuid:public_token>/",
+        views.booth_detail,
+        name="booth_detail",
+    ),
+    path(
+        "booths/<uuid:public_token>/qr/",
+        views.booth_qr,
+        name="booth_qr",
+    ),
+    path(
         "reports/evaluations/",
         views.evaluation_reports,
         name="evaluation_reports",

@@ -12,7 +12,9 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 
 from accounts.models import User
+from events.models import Event
 from .models import (
+    Booth,
     EventForm,
     FormAnswer,
     FormQuestion,
@@ -20,6 +22,7 @@ from .models import (
     QuestionOption,
 )
 from .services import (
+    booth_detail_url,
     certificate_number,
     certificate_verification_url,
     event_date_range,
@@ -97,6 +100,80 @@ def get_client_ip(request):
         return forwarded_for.split(",")[0].strip()
 
     return request.META.get("REMOTE_ADDR")
+
+
+def public_booths_queryset():
+    return Booth.objects.select_related(
+        "event",
+        "event__venue",
+        "assigned_submission",
+    ).filter(
+        is_active=True,
+        event__is_active=True,
+        event__is_public=True,
+        event__booth_enabled=True,
+        assigned_submission__isnull=False,
+        status__in=[Booth.Status.ASSIGNED, Booth.Status.READY],
+    )
+
+
+@require_http_methods(["GET"])
+def booth_directory(request, event_slug):
+    event = get_object_or_404(
+        Event.objects.select_related("venue"),
+        slug=event_slug,
+        is_active=True,
+        is_public=True,
+        booth_enabled=True,
+    )
+    booths = public_booths_queryset().filter(event=event).order_by(
+        "zone_en",
+        "code",
+    )
+    return render(
+        request,
+        "forms_builder/booth_directory.html",
+        {"event": event, "booths": booths},
+    )
+
+
+@require_http_methods(["GET"])
+def booth_detail(request, public_token):
+    booth = get_object_or_404(
+        public_booths_queryset(),
+        public_token=public_token,
+    )
+    return render(
+        request,
+        "forms_builder/booth_detail.html",
+        {
+            "booth": booth,
+            "event": booth.event,
+            "submission": booth.assigned_submission,
+        },
+    )
+
+
+@require_http_methods(["GET"])
+def booth_qr(request, public_token):
+    booth = get_object_or_404(
+        public_booths_queryset(),
+        public_token=public_token,
+    )
+    image_data = generate_qr_png(
+        booth_detail_url(
+            booth,
+            request=request,
+            language=request.LANGUAGE_CODE,
+        )
+    )
+    response = HttpResponse(image_data, content_type="image/png")
+    if request.GET.get("download") == "1":
+        response["Content-Disposition"] = (
+            f'attachment; filename="{booth.event.code}-{booth.code}-qr.png"'
+        )
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 def evaluation_forms_queryset():

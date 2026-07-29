@@ -1,0 +1,27 @@
+{% extends "events/base_public.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ booth.code }} — {% if request.LANGUAGE_CODE == "en" %}{{ booth.name_en }}{% else %}{{ booth.name_sw }}{% endif %}{% endblock %}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/booth-directory.css' %}">{% endblock %}
+
+{% block content %}
+    <section class="booth-directory-page">
+        <div class="booth-public-container booth-detail-container">
+            <a href="{% url 'forms_builder:booth_directory' event.slug %}" class="booth-back-link">← {% translate "All exhibition booths" %}</a>
+            <article class="booth-detail-card">
+                <div class="booth-detail-code">{{ booth.code }}</div>
+                <span class="section-kicker">{% translate "Exhibition booth" %}</span>
+                <h1>{% if request.LANGUAGE_CODE == "en" %}{{ booth.name_en }}{% else %}{{ booth.name_sw }}{% endif %}</h1>
+                {% if submission.badge_organization %}<h2>{{ submission.badge_organization }}</h2>{% endif %}
+                <dl class="booth-detail-list">
+                    <div><dt>{% translate "Representative" %}</dt><dd>{{ submission.badge_display_name }}</dd></div>
+                    <div><dt>{% translate "Booth location" %}</dt><dd>{% if request.LANGUAGE_CODE == "en" %}{{ booth.zone_en|default:"—" }}{% else %}{{ booth.zone_sw|default:"—" }}{% endif %}</dd></div>
+                    <div><dt>{% translate "Event" %}</dt><dd>{% if request.LANGUAGE_CODE == "en" %}{{ event.title_en }}{% else %}{{ event.title_sw }}{% endif %}</dd></div>
+                </dl>
+                <img class="booth-qr-preview" src="{% url 'forms_builder:booth_qr' booth.public_token %}" alt="{% translate 'Booth QR code' %}">
+            </article>
+        </div>
+    </section>
+{% endblock %}

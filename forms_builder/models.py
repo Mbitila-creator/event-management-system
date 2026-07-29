@@ -501,6 +501,12 @@ class Booth(BaseModel):
         related_name="booths",
         on_delete=models.CASCADE,
     )
+    public_token = models.UUIDField(
+        _("booth public token"),
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
     code = models.CharField(
         _("booth code"),
         max_length=30,

@@ -38,6 +38,23 @@ def public_form_url(event_form, request=None, language="sw"):
     return path
 
 
+def booth_detail_url(booth, request=None, language="sw"):
+    with translation.override(language):
+        path = reverse(
+            "forms_builder:booth_detail",
+            kwargs={"public_token": booth.public_token},
+        )
+    base_url = settings.PUBLIC_BASE_URL
+
+    if base_url:
+        return urljoin(f"{base_url}/", path.lstrip("/"))
+
+    if request is not None:
+        return request.build_absolute_uri(path)
+
+    return path
+
+
 def participant_badge_path(submission, language="sw"):
     with translation.override(language):
         return reverse(
