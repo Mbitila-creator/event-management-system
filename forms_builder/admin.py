@@ -17,8 +17,10 @@ from .models import (
     FormQuestion,
     FormSection,
     FormSubmission,
+    NotificationLog,
     QuestionOption,
 )
+from .notifications import send_submission_notification
 from .services import (
     booth_detail_url,
     generate_qr_png,
@@ -705,9 +707,29 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
 
+        if obj.review_status != old_status:
+            notification_types = {
+                FormSubmission.ReviewStatus.APPROVED: (
+                    NotificationLog.NotificationType.REGISTRATION_APPROVED
+                ),
+                FormSubmission.ReviewStatus.REJECTED: (
+                    NotificationLog.NotificationType.REGISTRATION_REJECTED
+                ),
+            }
+            notification_type = notification_types.get(obj.review_status)
+            if notification_type:
+                send_submission_notification(
+                    obj,
+                    notification_type,
+                    request=request,
+                )
+
     def _set_review_status(self, request, queryset, status):
         queryset = queryset.exclude(
             event_form__form_type=EventForm.FormType.EVALUATION
+        ).exclude(review_status=status)
+        submissions = list(
+            queryset.select_related("event_form__event")
         )
         current_time = timezone.now()
         reviewer = (
@@ -732,6 +754,23 @@ class FormSubmissionAdmin(admin.ModelAdmin):
             f"{updated} submission(s) updated.",
             messages.SUCCESS,
         )
+        notification_types = {
+            FormSubmission.ReviewStatus.APPROVED: (
+                NotificationLog.NotificationType.REGISTRATION_APPROVED
+            ),
+            FormSubmission.ReviewStatus.REJECTED: (
+                NotificationLog.NotificationType.REGISTRATION_REJECTED
+            ),
+        }
+        notification_type = notification_types.get(status)
+        if notification_type:
+            for submission in submissions:
+                submission.review_status = status
+                send_submission_notification(
+                    submission,
+                    notification_type,
+                    request=request,
+                )
 
     @admin.action(description="Approve selected submissions")
     def approve_submissions(self, request, queryset):
@@ -778,6 +817,53 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         )
         response["X-Content-Type-Options"] = "nosniff"
         return response
+
+
+@admin.register(NotificationLog)
+class NotificationLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "created_at",
+        "submission",
+        "notification_type",
+        "recipient",
+        "delivery_status",
+        "sent_at",
+    )
+    list_filter = (
+        "notification_type",
+        "delivery_status",
+        "submission__event_form__event",
+        "created_at",
+    )
+    search_fields = (
+        "submission__reference_number",
+        "recipient",
+        "subject",
+        "error_message",
+    )
+    readonly_fields = (
+        "submission",
+        "notification_type",
+        "recipient",
+        "subject",
+        "delivery_status",
+        "error_message",
+        "sent_at",
+        "created_by",
+        "updated_by",
+        "created_at",
+        "updated_at",
+    )
+    list_select_related = (
+        "submission",
+        "submission__event_form__event",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
 
 
 @admin.register(FormAnswer)

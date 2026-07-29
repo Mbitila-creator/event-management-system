@@ -20,8 +20,10 @@ from .models import (
     FormAnswer,
     FormQuestion,
     FormSubmission,
+    NotificationLog,
     QuestionOption,
 )
+from .notifications import send_submission_notification
 from .services import (
     booth_detail_url,
     certificate_number,
@@ -833,6 +835,13 @@ def public_event_form(request, event_slug, form_slug):
             )
             request.session["evaluation_submissions"] = (
                 evaluation_submissions
+            )
+
+        if event_form.form_type != EventForm.FormType.EVALUATION:
+            send_submission_notification(
+                submission,
+                NotificationLog.NotificationType.REGISTRATION_RECEIVED,
+                request=request,
             )
 
         success_url = (

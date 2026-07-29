@@ -11,6 +11,8 @@ from django.views.decorators.http import require_http_methods
 from accounts.models import User
 from events.models import Event
 from forms_builder.models import EventForm, FormSubmission
+from forms_builder.models import NotificationLog
+from forms_builder.notifications import send_submission_notification
 from forms_builder.services import (
     certificate_number,
     participant_certificate_path,
@@ -365,6 +367,13 @@ def participant_check_in(request, participant_token):
                     },
                 )
             )
+
+    if just_checked_in:
+        send_submission_notification(
+            submission,
+            NotificationLog.NotificationType.CHECK_IN_CONFIRMED,
+            request=request,
+        )
 
     evaluation_form = None
     if submission.event_form.event.evaluation_enabled:

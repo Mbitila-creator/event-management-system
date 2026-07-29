@@ -740,6 +740,67 @@ class BoothInterest(BaseModel):
         return f"{self.booth.code} — {self.visitor_name or self.email or self.phone}"
 
 
+class NotificationLog(BaseModel):
+    class NotificationType(models.TextChoices):
+        REGISTRATION_RECEIVED = "REGISTRATION_RECEIVED", _("Registration received")
+        REGISTRATION_APPROVED = "REGISTRATION_APPROVED", _("Registration approved")
+        REGISTRATION_REJECTED = "REGISTRATION_REJECTED", _("Registration rejected")
+        CHECK_IN_CONFIRMED = "CHECK_IN_CONFIRMED", _("Check-in confirmed")
+
+    class DeliveryStatus(models.TextChoices):
+        SENT = "SENT", _("Sent")
+        FAILED = "FAILED", _("Failed")
+        SKIPPED = "SKIPPED", _("Skipped")
+
+    submission = models.ForeignKey(
+        FormSubmission,
+        verbose_name=_("form submission"),
+        related_name="notification_logs",
+        on_delete=models.CASCADE,
+    )
+    notification_type = models.CharField(
+        _("notification type"),
+        max_length=40,
+        choices=NotificationType.choices,
+    )
+    recipient = models.EmailField(
+        _("recipient email"),
+        blank=True,
+    )
+    subject = models.CharField(
+        _("email subject"),
+        max_length=250,
+        blank=True,
+    )
+    delivery_status = models.CharField(
+        _("delivery status"),
+        max_length=20,
+        choices=DeliveryStatus.choices,
+        default=DeliveryStatus.SKIPPED,
+    )
+    error_message = models.TextField(
+        _("delivery error"),
+        blank=True,
+    )
+    sent_at = models.DateTimeField(
+        _("sent at"),
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = _("notification log")
+        verbose_name_plural = _("notification logs")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return (
+            f"{self.submission.reference_number} — "
+            f"{self.get_notification_type_display()} — "
+            f"{self.get_delivery_status_display()}"
+        )
+
+
 class FormAnswer(BaseModel):
     submission = models.ForeignKey(
         FormSubmission,

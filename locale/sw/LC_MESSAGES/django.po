@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-29 15:59+0300\n"
+"POT-Creation-Date: 2026-07-29 17:20+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -121,7 +121,7 @@ msgstr "uthibitishaji wa mahudhurio ya mshiriki"
 msgid "participant check-ins"
 msgstr "uthibitishaji wa mahudhurio ya washiriki"
 
-#: checkin/views.py:250 templates/checkin/participant_check_in.html:97
+#: checkin/views.py:252 templates/checkin/participant_check_in.html:97
 #: templates/checkin/reports.html:76
 #: templates/forms_builder/participant_badge.html:83
 #: templates/forms_builder/registration_status.html:42
@@ -130,52 +130,52 @@ msgstr "uthibitishaji wa mahudhurio ya washiriki"
 msgid "Reference number"
 msgstr "Namba ya kumbukumbu"
 
-#: checkin/views.py:251 templates/checkin/reports.html:77
+#: checkin/views.py:253 templates/checkin/reports.html:77
 #: templates/forms_builder/booth_detail.html:24
 #: templates/forms_builder/certificate_verification.html:21
 msgid "Representative"
 msgstr "Mwakilishi"
 
-#: checkin/views.py:252 templates/checkin/participant_check_in.html:84
+#: checkin/views.py:254 templates/checkin/participant_check_in.html:84
 #: templates/checkin/reports.html:78
 #: templates/forms_builder/certificate_verification.html:26
 msgid "Organization"
 msgstr "Taasisi"
 
-#: checkin/views.py:253
+#: checkin/views.py:255
 #, fuzzy
 #| msgid "review status"
 msgid "Review status"
 msgstr "hali ya ukaguzi"
 
-#: checkin/views.py:254 templates/checkin/reports.html:46
+#: checkin/views.py:256 templates/checkin/reports.html:46
 #: templates/checkin/reports.html:93
 #, fuzzy
 #| msgid "Checked in at"
 msgid "Checked in"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: checkin/views.py:255 templates/checkin/participant_check_in.html:115
+#: checkin/views.py:257 templates/checkin/participant_check_in.html:115
 #: templates/checkin/reports.html:81
 msgid "Checked in at"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: checkin/views.py:256 templates/checkin/participant_check_in.html:117
+#: checkin/views.py:258 templates/checkin/participant_check_in.html:117
 msgid "Checked in by"
 msgstr "Mahudhurio yamethibitishwa na"
 
-#: checkin/views.py:259 forms_builder/services.py:275
+#: checkin/views.py:261 forms_builder/services.py:275
 #: templates/forms_builder/certificate_verification.html:41
 #: templates/forms_builder/participant_certificate.html:70
 msgid "Certificate number"
 msgstr "Namba ya cheti"
 
-#: checkin/views.py:269 forms_builder/views.py:79
+#: checkin/views.py:271 forms_builder/views.py:81
 #: templates/forms_builder/partials/question_input.html:188
 msgid "Yes"
 msgstr "Ndiyo"
 
-#: checkin/views.py:269 forms_builder/views.py:79
+#: checkin/views.py:271 forms_builder/views.py:81
 #: templates/forms_builder/partials/question_input.html:203
 msgid "No"
 msgstr "Hapana"
@@ -540,11 +540,11 @@ msgstr "Usajili lazima ufungwe baada ya kufunguliwa."
 msgid "Registration cannot close after the event has started."
 msgstr "Usajili hauwezi kufungwa baada ya tukio kuanza."
 
-#: forms_builder/admin.py:229
+#: forms_builder/admin.py:231
 msgid "Export selected visitor interests to CSV"
 msgstr "Hamisha nia za wageni zilizochaguliwa kwenda CSV"
 
-#: forms_builder/admin.py:239 templates/checkin/participant_check_in.html:102
+#: forms_builder/admin.py:241 templates/checkin/participant_check_in.html:102
 #: templates/forms_builder/booth_detail.html:26
 #: templates/forms_builder/certificate_verification.html:31
 #: templates/forms_builder/registration_status.html:90
@@ -552,31 +552,31 @@ msgstr "Hamisha nia za wageni zilizochaguliwa kwenda CSV"
 msgid "Event"
 msgstr "Tukio"
 
-#: forms_builder/admin.py:240
+#: forms_builder/admin.py:242
 msgid "Booth"
 msgstr "Banda"
 
-#: forms_builder/admin.py:241
+#: forms_builder/admin.py:243
 msgid "Offering"
 msgstr "Kinachotolewa"
 
-#: forms_builder/admin.py:242
+#: forms_builder/admin.py:244
 msgid "Visitor name"
 msgstr "Jina la mgeni"
 
-#: forms_builder/admin.py:243 templates/events/event_detail.html:191
+#: forms_builder/admin.py:245 templates/events/event_detail.html:191
 msgid "Email"
 msgstr "Baruapepe"
 
-#: forms_builder/admin.py:244 templates/events/event_detail.html:180
+#: forms_builder/admin.py:246 templates/events/event_detail.html:180
 msgid "Phone"
 msgstr "Simu"
 
-#: forms_builder/admin.py:245
+#: forms_builder/admin.py:247
 msgid "Message"
 msgstr "Ujumbe"
 
-#: forms_builder/admin.py:246 forms_builder/views.py:384
+#: forms_builder/admin.py:248 forms_builder/views.py:386
 #: templates/forms_builder/evaluation_reports.html:58
 #: templates/forms_builder/registration_status.html:101
 #: templates/forms_builder/submission_success.html:84
@@ -696,12 +696,12 @@ msgstr "Maandishi mafupi"
 msgid "Long text"
 msgstr "Maandishi marefu"
 
-#: forms_builder/models.py:169 forms_builder/views.py:386
+#: forms_builder/models.py:169 forms_builder/views.py:388
 #: templates/forms_builder/booth_detail.html:73
 msgid "Email address"
 msgstr "Anwani ya baruapepe"
 
-#: forms_builder/models.py:170 forms_builder/views.py:387
+#: forms_builder/models.py:170 forms_builder/views.py:389
 #: templates/forms_builder/booth_detail.html:74
 msgid "Phone number"
 msgstr "Namba ya simu"
@@ -798,7 +798,7 @@ msgstr "swali la fomu"
 msgid "form questions"
 msgstr "maswali ya fomu"
 
-#: forms_builder/models.py:279 forms_builder/models.py:753
+#: forms_builder/models.py:279 forms_builder/models.py:814
 msgid "question"
 msgstr "swali"
 
@@ -906,7 +906,7 @@ msgstr "taasisi kwenye beji"
 msgid "badge title or role"
 msgstr "cheo au jukumu kwenye beji"
 
-#: forms_builder/models.py:443
+#: forms_builder/models.py:443 forms_builder/models.py:757
 msgid "form submission"
 msgstr "uwasilishaji wa fomu"
 
@@ -1094,7 +1094,7 @@ msgid "booth visitor interests"
 msgstr "nia za wageni wa banda"
 
 #: forms_builder/models.py:726 forms_builder/models.py:727
-#: forms_builder/views.py:166
+#: forms_builder/views.py:168
 msgid "Enter an email address or phone number."
 msgstr "Weka anwani ya baruapepe au namba ya simu."
 
@@ -1102,45 +1102,200 @@ msgstr "Weka anwani ya baruapepe au namba ya simu."
 msgid "The selected offering must belong to this booth."
 msgstr "Kinachochaguliwa lazima kiwe cha banda hili."
 
+#: forms_builder/models.py:745
+msgid "Registration received"
+msgstr "Usajili umepokelewa"
+
 #: forms_builder/models.py:746
+#: templates/forms_builder/registration_status.html:108
+msgid "Registration approved"
+msgstr "Usajili umeidhinishwa"
+
+#: forms_builder/models.py:747
+msgid "Registration rejected"
+msgstr "Usajili umekataliwa"
+
+#: forms_builder/models.py:748
+msgid "Check-in confirmed"
+msgstr "Mahudhurio yamethibitishwa"
+
+#: forms_builder/models.py:751
+msgid "Sent"
+msgstr "Imetumwa"
+
+#: forms_builder/models.py:752
+msgid "Failed"
+msgstr "Imeshindikana"
+
+#: forms_builder/models.py:753
+msgid "Skipped"
+msgstr "Imerukwa"
+
+#: forms_builder/models.py:762
+msgid "notification type"
+msgstr "aina ya taarifa"
+
+#: forms_builder/models.py:767
+msgid "recipient email"
+msgstr "baruapepe ya mpokeaji"
+
+#: forms_builder/models.py:771
+msgid "email subject"
+msgstr "kichwa cha baruapepe"
+
+#: forms_builder/models.py:776
+msgid "delivery status"
+msgstr "hali ya utumaji"
+
+#: forms_builder/models.py:782
+msgid "delivery error"
+msgstr "kosa la utumaji"
+
+#: forms_builder/models.py:786
+msgid "sent at"
+msgstr "imetumwa tarehe"
+
+#: forms_builder/models.py:792
+msgid "notification log"
+msgstr "kumbukumbu ya taarifa"
+
+#: forms_builder/models.py:793
+msgid "notification logs"
+msgstr "kumbukumbu za taarifa"
+
+#: forms_builder/models.py:807
 msgid "submission"
 msgstr "uwasilishaji"
 
-#: forms_builder/models.py:759
+#: forms_builder/models.py:820
 msgid "text value"
 msgstr "thamani ya maandishi"
 
-#: forms_builder/models.py:764
+#: forms_builder/models.py:825
 msgid "number value"
 msgstr "thamani ya namba"
 
-#: forms_builder/models.py:772
+#: forms_builder/models.py:833
 msgid "date value"
 msgstr "thamani ya tarehe"
 
-#: forms_builder/models.py:778
+#: forms_builder/models.py:839
 msgid "date and time value"
 msgstr "thamani ya tarehe na muda"
 
-#: forms_builder/models.py:784
+#: forms_builder/models.py:845
 msgid "boolean value"
 msgstr "thamani ya ndiyo/hapana"
 
-#: forms_builder/models.py:791
+#: forms_builder/models.py:852
 msgid "selected options"
 msgstr "chaguo zilizochaguliwa"
 
-#: forms_builder/models.py:797
+#: forms_builder/models.py:858
 msgid "uploaded file"
 msgstr "faili lililopakiwa"
 
-#: forms_builder/models.py:804
+#: forms_builder/models.py:865
 msgid "form answer"
 msgstr "jibu la fomu"
 
-#: forms_builder/models.py:805
+#: forms_builder/models.py:866
 msgid "form answers"
 msgstr "majibu ya fomu"
+
+#: forms_builder/notifications.py:31
+#, python-format
+msgid "Registration received — %(event)s"
+msgstr "Usajili umepokelewa — %(event)s"
+
+#: forms_builder/notifications.py:33
+#, python-format
+msgid ""
+"We have received your registration for %(event)s.\n"
+"\n"
+"Reference number: %(reference)s\n"
+"Check status: %(status_url)s"
+msgstr ""
+"Tumepokea usajili wako kwa %(event)s.\n"
+"\n"
+"Namba ya kumbukumbu: %(reference)s\n"
+"Angalia hali: %(status_url)s"
+
+#: forms_builder/notifications.py:42
+#, python-format
+msgid "Registration approved — %(event)s"
+msgstr "Usajili umeidhinishwa — %(event)s"
+
+#: forms_builder/notifications.py:45
+#, python-format
+msgid ""
+"\n"
+"Participant badge: %(badge_url)s"
+msgstr "\nBeji ya mshiriki: %(badge_url)s"
+
+#: forms_builder/notifications.py:53
+#, python-format
+msgid ""
+"Your registration for %(event)s has been approved.\n"
+"\n"
+"Reference number: %(reference)s\n"
+"Check status: %(status_url)s"
+msgstr ""
+"Usajili wako kwa %(event)s umeidhinishwa.\n"
+"\n"
+"Namba ya kumbukumbu: %(reference)s\n"
+"Angalia hali: %(status_url)s"
+
+#: forms_builder/notifications.py:63
+#, python-format
+msgid "Registration update — %(event)s"
+msgstr "Taarifa ya usajili — %(event)s"
+
+#: forms_builder/notifications.py:65
+#, python-format
+msgid ""
+"Your registration for %(event)s was not approved. Please contact the event "
+"organizer if you need assistance.\n"
+"\n"
+"Reference number: %(reference)s\n"
+"Check status: %(status_url)s"
+msgstr ""
+"Usajili wako kwa %(event)s haujaidhinishwa. Tafadhali wasiliana na mratibu "
+"wa tukio ikiwa unahitaji msaada.\n"
+"\n"
+"Namba ya kumbukumbu: %(reference)s\n"
+"Angalia hali: %(status_url)s"
+
+#: forms_builder/notifications.py:75
+#, python-format
+msgid "Check-in confirmed — %(event)s"
+msgstr "Mahudhurio yamethibitishwa — %(event)s"
+
+#: forms_builder/notifications.py:82
+#, python-format
+msgid ""
+"\n"
+"Certificate: %(certificate_url)s"
+msgstr "\nCheti: %(certificate_url)s"
+
+#: forms_builder/notifications.py:86
+#, python-format
+msgid ""
+"Your attendance at %(event)s has been confirmed.\n"
+"\n"
+"Reference number: %(reference)s"
+msgstr ""
+"Mahudhurio yako katika %(event)s yamethibitishwa.\n"
+"\n"
+"Namba ya kumbukumbu: %(reference)s"
+
+#: forms_builder/notifications.py:116
+msgid "No participant email address was provided."
+msgstr "Hakuna anwani ya baruapepe ya mshiriki iliyotolewa."
+
+#: forms_builder/notifications.py:133
+msgid "The email backend did not confirm delivery."
+msgstr "Mfumo wa baruapepe haukuthibitisha utumaji."
 
 #: forms_builder/services.py:267
 #: templates/forms_builder/participant_certificate.html:5
@@ -1180,31 +1335,31 @@ msgstr "Tarehe ya tukio"
 msgid "Scan to verify this certificate"
 msgstr "Changanua ili kuthibitisha cheti hiki"
 
-#: forms_builder/views.py:169
+#: forms_builder/views.py:171
 #, fuzzy
 #| msgid "email address"
 msgid "Enter a valid email address."
 msgstr "anwani ya baruapepe"
 
-#: forms_builder/views.py:182
+#: forms_builder/views.py:184
 #, fuzzy
 #| msgid "Select an option"
 msgid "Select a valid option."
 msgstr "Chagua"
 
-#: forms_builder/views.py:383
+#: forms_builder/views.py:385
 #: templates/forms_builder/submission_success.html:62
 msgid "Evaluation reference"
 msgstr "Kumbukumbu ya tathmini"
 
-#: forms_builder/views.py:385 templates/events/base_public.html:73
+#: forms_builder/views.py:387 templates/events/base_public.html:73
 #: templates/events/base_public.html:79
 #: templates/forms_builder/public_event_form.html:63
 #: templates/forms_builder/public_event_form.html:66
 msgid "Language"
 msgstr "Lugha"
 
-#: forms_builder/views.py:697
+#: forms_builder/views.py:699
 msgid "You have already submitted this evaluation."
 msgstr "Tayari umewasilisha tathmini hii."
 
@@ -1852,10 +2007,6 @@ msgstr "Baruapepe au namba ya simu iliyotumika kusajili"
 #: templates/forms_builder/registration_status.html:71
 msgid "Check status"
 msgstr "Angalia hali"
-
-#: templates/forms_builder/registration_status.html:108
-msgid "Registration approved"
-msgstr "Usajili umeidhinishwa"
 
 #: templates/forms_builder/registration_status.html:110
 msgid ""

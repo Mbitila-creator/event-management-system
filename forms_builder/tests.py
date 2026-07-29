@@ -3,11 +3,12 @@ from django.test import TestCase
 # Create your tests here.
 from datetime import datetime, timedelta
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core import mail
 from django.test import (
     RequestFactory,
     SimpleTestCase,
@@ -29,8 +30,10 @@ from .models import (
     FormQuestion,
     FormSection,
     FormSubmission,
+    NotificationLog,
     QuestionOption,
 )
+from .notifications import send_submission_notification
 
 from .services import (
     certificate_number,
@@ -613,6 +616,141 @@ class BoothManagementTests(TestCase):
             )
 
 
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    PUBLIC_BASE_URL="https://events.example.org",
+)
+class SubmissionNotificationTests(TestCase):
+    def setUp(self):
+        category = EventCategory.objects.create(
+            name_sw="Mkutano",
+            name_en="Conference",
+            code="MAIL",
+        )
+        starts_at = timezone.now() + timedelta(days=20)
+        event = Event.objects.create(
+            category=category,
+            code="MAIL-2026",
+            title_sw="Tukio la Mawasiliano",
+            title_en="Communication Event",
+            starts_at=starts_at,
+            ends_at=starts_at + timedelta(days=1),
+            badge_enabled=True,
+        )
+        event_form = EventForm.objects.create(
+            event=event,
+            name_sw="Usajili",
+            name_en="Registration",
+            is_published=True,
+        )
+        self.submission = FormSubmission.objects.create(
+            event_form=event_form,
+            submitter_email="participant@example.org",
+            language="en",
+        )
+
+    def test_registration_received_email_is_sent_and_logged(self):
+        log = send_submission_notification(
+            self.submission,
+            NotificationLog.NotificationType.REGISTRATION_RECEIVED,
+        )
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Registration received", mail.outbox[0].subject)
+        self.assertIn(self.submission.reference_number, mail.outbox[0].body)
+        self.assertIn("https://events.example.org", mail.outbox[0].body)
+        self.assertEqual(log.delivery_status, NotificationLog.DeliveryStatus.SENT)
+        self.assertIsNotNone(log.sent_at)
+
+    def test_public_registration_automatically_sends_receipt(self):
+        section = FormSection.objects.create(
+            event_form=self.submission.event_form,
+            title_sw="Mawasiliano",
+            title_en="Contact",
+        )
+        email_question = FormQuestion.objects.create(
+            section=section,
+            label_sw="Baruapepe",
+            label_en="Email",
+            question_type=FormQuestion.QuestionType.EMAIL,
+            is_required=True,
+        )
+        event = self.submission.event_form.event
+        url = (
+            f"/en/events/{event.slug}/forms/"
+            f"{self.submission.event_form.slug}/"
+        )
+
+        response = self.client.post(
+            url,
+            {f"question_{email_question.pk}": "new@example.org"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        created_submission = FormSubmission.objects.get(
+            submitter_email="new@example.org"
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(
+            NotificationLog.objects.filter(
+                submission=created_submission,
+                notification_type=(
+                    NotificationLog.NotificationType.REGISTRATION_RECEIVED
+                ),
+                delivery_status=NotificationLog.DeliveryStatus.SENT,
+            ).exists()
+        )
+
+    def test_missing_email_is_logged_as_skipped(self):
+        self.submission.submitter_email = ""
+        self.submission.save(update_fields=["submitter_email"])
+
+        log = send_submission_notification(
+            self.submission,
+            NotificationLog.NotificationType.REGISTRATION_APPROVED,
+        )
+
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(
+            log.delivery_status,
+            NotificationLog.DeliveryStatus.SKIPPED,
+        )
+        self.assertIn("No participant email", log.error_message)
+
+    def test_kiswahili_notification_uses_kiswahili_content(self):
+        self.submission.language = "sw"
+        self.submission.save(update_fields=["language"])
+
+        send_submission_notification(
+            self.submission,
+            NotificationLog.NotificationType.REGISTRATION_APPROVED,
+        )
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Usajili umeidhinishwa", mail.outbox[0].subject)
+        self.assertIn("Namba ya kumbukumbu", mail.outbox[0].body)
+
+    def test_email_backend_failure_is_logged_without_raising(self):
+        with patch(
+            "forms_builder.notifications.send_mail",
+            side_effect=RuntimeError("SMTP unavailable"),
+        ):
+            log = send_submission_notification(
+                self.submission,
+                NotificationLog.NotificationType.REGISTRATION_REJECTED,
+            )
+
+        self.assertEqual(
+            log.delivery_status,
+            NotificationLog.DeliveryStatus.FAILED,
+        )
+        self.assertIn("SMTP unavailable", log.error_message)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"
+)
 class SubmissionReviewAdminTests(TestCase):
     def setUp(self):
         self.reviewer = get_user_model().objects.create_user(
@@ -666,6 +804,20 @@ class SubmissionReviewAdminTests(TestCase):
         )
         self.assertEqual(self.submission.reviewed_by, self.reviewer)
         self.assertIsNotNone(self.submission.reviewed_at)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(
+            "approved" in mail.outbox[0].subject.lower()
+            or "umeidhinishwa" in mail.outbox[0].subject.lower()
+        )
+        self.assertTrue(
+            NotificationLog.objects.filter(
+                submission=self.submission,
+                notification_type=(
+                    NotificationLog.NotificationType.REGISTRATION_APPROVED
+                ),
+                delivery_status=NotificationLog.DeliveryStatus.SENT,
+            ).exists()
+        )
 
     def test_reject_action_records_reviewer_and_time(self):
         self.model_admin.reject_submissions(

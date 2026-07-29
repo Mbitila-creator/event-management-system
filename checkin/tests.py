@@ -1,16 +1,19 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from accounts.models import User
 from events.models import Event, EventCategory
-from forms_builder.models import EventForm, FormSubmission
+from forms_builder.models import EventForm, FormSubmission, NotificationLog
 
 from .models import ParticipantCheckIn
 
 
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"
+)
 class ParticipantCheckInTests(TestCase):
     def setUp(self):
         self.officer = get_user_model().objects.create_user(
@@ -100,6 +103,15 @@ class ParticipantCheckInTests(TestCase):
             "This participant is already checked in.",
         )
         self.assertEqual(ParticipantCheckIn.objects.count(), 1)
+        self.assertEqual(
+            NotificationLog.objects.filter(
+                submission=self.submission,
+                notification_type=(
+                    NotificationLog.NotificationType.CHECK_IN_CONFIRMED
+                ),
+            ).count(),
+            1,
+        )
 
     def test_pending_participant_cannot_be_checked_in(self):
         self.client.force_login(self.officer)
