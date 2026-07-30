@@ -858,7 +858,7 @@ class SubmissionNotificationTests(TestCase):
         )
         first = self.client.post(
             "/automation/reminders/run/",
-            HTTP_AUTHORIZATION="Bearer scheduler-secret",
+            HTTP_X_REMINDER_TOKEN="scheduler-secret",
         )
         second = self.client.post(
             "/automation/reminders/run/",

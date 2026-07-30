@@ -59,8 +59,12 @@ def run_due_reminders(request):
 
     authorization = request.headers.get("Authorization", "")
     scheme, separator, supplied_token = authorization.partition(" ")
+    dedicated_token = request.headers.get("X-Reminder-Token", "")
     authorized = (
-        separator
+        bool(dedicated_token)
+        and secrets.compare_digest(dedicated_token, configured_token)
+    ) or (
+        bool(separator)
         and scheme.lower() == "bearer"
         and secrets.compare_digest(supplied_token, configured_token)
     )
