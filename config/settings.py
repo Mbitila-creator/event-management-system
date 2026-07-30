@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,13 +22,42 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=2f3=^e3+8qt8@s^6!tsz)&zxnuu*$fg6jz4rc)$)!jx&)c$es'
+def env_bool(name, default=False):
+    """Read a boolean environment variable using common true values."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+def env_list(name, default=None):
+    """Read a comma-separated environment variable as a clean list."""
+    value = os.getenv(name)
+    if value is None:
+        return list(default or [])
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+# Local development remains simple. Production must provide its own secret key
+# and explicitly set DEBUG=False in the hosting environment.
+DEBUG = env_bool("DEBUG", True)
+
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "django-insecure-local-development-only-change-in-production"
+    else:
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY must be set when DEBUG is False."
+        )
+
+# A wildcard is convenient for phones on changing local networks. In
+# production, ALLOWED_HOSTS must contain the hostname supplied by the host.
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", ["*"] if DEBUG else [])
+if not DEBUG and not ALLOWED_HOSTS:
+    raise ImproperlyConfigured("ALLOWED_HOSTS must be set when DEBUG is False.")
+
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
 # Optional permanent address used inside generated QR codes.
 # Leave empty during local development to use the current request address.
@@ -53,6 +84,13 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() in {
     "yes",
 }
 EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "15"))
+
+# Safe production defaults. SECURE_SSL_REDIRECT is enabled after the hosting
+# service has issued HTTPS and can be overridden explicitly if necessary.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)
+CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", not DEBUG)
+SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)
 
 
 
