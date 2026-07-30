@@ -1,6 +1,8 @@
 import csv
+import secrets
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
@@ -10,6 +12,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 
 from accounts.models import User
 from events.models import Event
@@ -23,7 +26,7 @@ from .models import (
     NotificationLog,
     QuestionOption,
 )
-from .notifications import send_submission_notification
+from .notifications import process_due_reminders, send_submission_notification
 from .services import (
     booth_detail_url,
     certificate_number,
@@ -42,6 +45,32 @@ EVALUATION_REPORT_ROLES = {
     User.Role.EVENT_ADMIN,
     User.Role.REPORT_OFFICER,
 }
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def run_due_reminders(request):
+    configured_token = settings.REMINDER_SCHEDULER_TOKEN
+    if not configured_token:
+        return JsonResponse(
+            {"detail": "Reminder scheduler is not configured."},
+            status=503,
+        )
+
+    authorization = request.headers.get("Authorization", "")
+    scheme, separator, supplied_token = authorization.partition(" ")
+    authorized = (
+        separator
+        and scheme.lower() == "bearer"
+        and secrets.compare_digest(supplied_token, configured_token)
+    )
+    if not authorized:
+        return JsonResponse({"detail": "Forbidden."}, status=403)
+
+    processed = process_due_reminders(request=request)
+    response = JsonResponse({"processed": len(processed)})
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 def can_view_evaluation_reports(user):

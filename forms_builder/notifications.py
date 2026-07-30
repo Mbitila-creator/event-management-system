@@ -208,12 +208,17 @@ def send_event_reminder_notification(submission, reminder, request=None):
     return log
 
 
-def process_event_reminder(reminder, request=None):
+def process_event_reminder(reminder, request=None, force=False):
     with transaction.atomic():
         locked_reminder = EventReminder.objects.select_for_update().get(
             pk=reminder.pk
         )
-        if locked_reminder.status == EventReminder.Status.COMPLETED:
+        if locked_reminder.status in {
+            EventReminder.Status.PROCESSING,
+            EventReminder.Status.COMPLETED,
+        }:
+            return locked_reminder
+        if not force and locked_reminder.status != EventReminder.Status.SCHEDULED:
             return locked_reminder
         locked_reminder.status = EventReminder.Status.PROCESSING
         locked_reminder.save(update_fields=["status", "updated_at"])
@@ -260,6 +265,19 @@ def process_event_reminder(reminder, request=None):
         ]
     )
     return locked_reminder
+
+
+def process_due_reminders(request=None):
+    due_reminders = EventReminder.objects.filter(
+        status=EventReminder.Status.SCHEDULED,
+        scheduled_for__lte=timezone.now(),
+    ).select_related("event").order_by("scheduled_for")
+    processed = []
+    for reminder in due_reminders:
+        result = process_event_reminder(reminder, request=request)
+        if result.status == EventReminder.Status.COMPLETED:
+            processed.append(result)
+    return processed
 
 
 def resend_notification(log, request=None):

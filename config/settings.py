@@ -90,6 +90,7 @@ BREVO_API_URL = os.getenv(
     "https://api.brevo.com/v3/smtp/email",
 )
 BREVO_TIMEOUT = int(os.getenv("BREVO_TIMEOUT", str(EMAIL_TIMEOUT)))
+REMINDER_SCHEDULER_TOKEN = os.getenv("REMINDER_SCHEDULER_TOKEN", "")
 
 # Safe production defaults. SECURE_SSL_REDIRECT is enabled after the hosting
 # service has issued HTTPS and can be overridden explicitly if necessary.

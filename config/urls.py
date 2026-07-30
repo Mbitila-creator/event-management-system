@@ -4,9 +4,16 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from forms_builder.views import run_due_reminders
+
 
 urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),
+    path(
+        "automation/reminders/run/",
+        run_due_reminders,
+        name="run_due_reminders",
+    ),
 ]
 
 

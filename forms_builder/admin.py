@@ -867,7 +867,7 @@ class EventReminderAdmin(AuditAdminMixin, admin.ModelAdmin):
             if reminder.status == EventReminder.Status.COMPLETED:
                 already_completed += 1
                 continue
-            process_event_reminder(reminder, request=request)
+            process_event_reminder(reminder, request=request, force=True)
             completed += 1
         self.message_user(
             request,

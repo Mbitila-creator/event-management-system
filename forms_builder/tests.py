@@ -37,6 +37,7 @@ from .models import (
     QuestionOption,
 )
 from .notifications import (
+    process_due_reminders,
     process_event_reminder,
     resend_notification,
     send_submission_notification,
@@ -836,6 +837,47 @@ class SubmissionNotificationTests(TestCase):
         self.assertEqual(due.status, EventReminder.Status.COMPLETED)
         self.assertEqual(future.status, EventReminder.Status.SCHEDULED)
         self.assertIn("Processed 1 due reminder", output.getvalue())
+
+    @override_settings(REMINDER_SCHEDULER_TOKEN="scheduler-secret")
+    def test_secure_scheduler_endpoint_processes_due_reminders_once(self):
+        self.submission.review_status = FormSubmission.ReviewStatus.APPROVED
+        self.submission.save(update_fields=["review_status"])
+        reminder = EventReminder.objects.create(
+            event=self.submission.event_form.event,
+            subject_sw="Kumbusho",
+            subject_en="Reminder",
+            message_sw="Tukio ni leo.",
+            message_en="The event is today.",
+            scheduled_for=timezone.now() - timedelta(minutes=1),
+            status=EventReminder.Status.SCHEDULED,
+        )
+
+        forbidden = self.client.post(
+            "/automation/reminders/run/",
+            HTTP_AUTHORIZATION="Bearer incorrect",
+        )
+        first = self.client.post(
+            "/automation/reminders/run/",
+            HTTP_AUTHORIZATION="Bearer scheduler-secret",
+        )
+        second = self.client.post(
+            "/automation/reminders/run/",
+            HTTP_AUTHORIZATION="Bearer scheduler-secret",
+        )
+
+        reminder.refresh_from_db()
+        self.assertEqual(forbidden.status_code, 403)
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(first.json(), {"processed": 1})
+        self.assertEqual(second.json(), {"processed": 0})
+        self.assertEqual(reminder.status, EventReminder.Status.COMPLETED)
+        self.assertEqual(len(mail.outbox), 1)
+
+    @override_settings(REMINDER_SCHEDULER_TOKEN="")
+    def test_scheduler_endpoint_requires_server_configuration(self):
+        response = self.client.post("/automation/reminders/run/")
+
+        self.assertEqual(response.status_code, 503)
 
     def test_notification_can_be_resent(self):
         original_log = send_submission_notification(
