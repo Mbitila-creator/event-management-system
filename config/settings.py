@@ -84,6 +84,12 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() in {
     "yes",
 }
 EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "15"))
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
+BREVO_API_URL = os.getenv(
+    "BREVO_API_URL",
+    "https://api.brevo.com/v3/smtp/email",
+)
+BREVO_TIMEOUT = int(os.getenv("BREVO_TIMEOUT", str(EMAIL_TIMEOUT)))
 
 # Safe production defaults. SECURE_SSL_REDIRECT is enabled after the hosting
 # service has issued HTTPS and can be overridden explicitly if necessary.
