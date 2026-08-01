@@ -1993,6 +1993,10 @@ msgstr "Msimbo wa QR wa kuthibitisha cheti"
 msgid "Complete and submit the event form."
 msgstr "Jaza na uwasilishe fomu ya tukio."
 
+#: templates/forms_builder/public_event_form.html
+msgid "Introduction"
+msgstr "Utangulizi"
+
 #: templates/forms_builder/public_event_form.html:50
 msgid "Back"
 msgstr "Rudi"
