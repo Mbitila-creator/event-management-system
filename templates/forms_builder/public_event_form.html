@@ -1,5 +1,6 @@
 {% load static %}
 {% load i18n %}
+{% load form_text %}
 
 <!DOCTYPE html>
 <html lang="{{ request.LANGUAGE_CODE }}">
@@ -231,13 +232,13 @@
                 {% if request.LANGUAGE_CODE == "en" %}
                     {% if event_form.introduction_en %}
                         <div class="form-introduction">
-                            {{ event_form.introduction_en|linebreaks }}
+                            {{ event_form.introduction_en|simple_rich_text }}
                         </div>
                     {% endif %}
                 {% else %}
                     {% if event_form.introduction_sw %}
                         <div class="form-introduction">
-                            {{ event_form.introduction_sw|linebreaks }}
+                            {{ event_form.introduction_sw|simple_rich_text }}
                         </div>
                     {% endif %}
                 {% endif %}

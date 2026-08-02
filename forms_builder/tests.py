@@ -53,6 +53,7 @@ from .services import (
     safe_spreadsheet_value,
     sync_badge_identity_from_answers,
 )
+from .templatetags.form_text import simple_rich_text
 
 
 class PublicFormServiceTests(SimpleTestCase):
@@ -166,6 +167,22 @@ class PublicFormServiceTests(SimpleTestCase):
             safe_spreadsheet_value("Participant name"),
             "Participant name",
         )
+
+    def test_introduction_supports_safe_bold_text(self):
+        rendered = str(
+            simple_rich_text(
+                "Contact **Jane Doe** on **+255 700 000 000**."
+            )
+        )
+
+        self.assertIn("<strong>Jane Doe</strong>", rendered)
+        self.assertIn("<strong>+255 700 000 000</strong>", rendered)
+
+    def test_introduction_escapes_html_from_administrator(self):
+        rendered = str(simple_rich_text("<script>alert('x')</script>"))
+
+        self.assertNotIn("<script>", rendered)
+        self.assertIn("&lt;script&gt;", rendered)
 
 
 class PublicEvaluationTests(TestCase):
