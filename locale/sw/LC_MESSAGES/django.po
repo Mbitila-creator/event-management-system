@@ -1997,6 +1997,14 @@ msgstr "Jaza na uwasilishe fomu ya tukio."
 msgid "Introduction"
 msgstr "Utangulizi"
 
+#: forms_builder/models.py
+msgid "show event summary above form"
+msgstr "onyesha muhtasari wa tukio juu ya fomu"
+
+#: forms_builder/models.py
+msgid "Display the event logo, code, title, dates and venue above this form."
+msgstr "Onyesha nembo, msimbo, kichwa, tarehe na eneo la tukio juu ya fomu hii."
+
 #: templates/forms_builder/public_event_form.html:50
 msgid "Back"
 msgstr "Rudi"

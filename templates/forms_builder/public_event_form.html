@@ -93,6 +93,7 @@
     </header>
 
     <main class="page-wrapper">
+        {% if event_form.show_event_summary %}
         <section class="event-card">
             {% if event.banner %}
                 <div class="event-banner">
@@ -201,6 +202,7 @@
                 </div>
             </div>
         </section>
+        {% endif %}
 
         <section class="form-card">
             <div class="form-header">

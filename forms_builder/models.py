@@ -59,6 +59,14 @@ class EventForm(BaseModel):
         blank=True,
     )
 
+    show_event_summary = models.BooleanField(
+        _("show event summary above form"),
+        default=True,
+        help_text=_(
+            "Display the event logo, code, title, dates and venue above this form."
+        ),
+    )
+
     success_message_sw = models.TextField(
         _("success message in Kiswahili"),
         blank=True,
