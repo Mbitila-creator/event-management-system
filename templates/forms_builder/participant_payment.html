@@ -10,12 +10,14 @@
     <h1>{% translate "Registration payment" %}</h1>
     <p class="payment-event">{% if request.LANGUAGE_CODE == 'en' %}{{ event.title_en }}{% else %}{{ event.title_sw }}{% endif %}</p>
 
-    <div class="payment-amount"><span>{% translate "Amount payable" %}</span><strong>{{ event.payment_currency }} {{ event.participation_fee|default:"0.00" }}</strong></div>
+    <div class="payment-amount"><span>{% translate "Amount payable" %}</span><strong>{{ payment_currency }} {{ calculated_amount|default:"—" }}</strong></div>
     <div class="payment-instructions">
         {% if request.LANGUAGE_CODE == 'en' %}{{ event.payment_instructions_en|linebreaks }}{% else %}{{ event.payment_instructions_sw|linebreaks }}{% endif %}
     </div>
 
-    {% if latest_payment and latest_payment.status != 'REJECTED' %}
+    {% if calculated_amount == None %}
+        <div class="payment-error">{% translate "The payment amount could not be calculated. Contact the event organizer." %}</div>
+    {% elif latest_payment and latest_payment.status != 'REJECTED' %}
         <section class="payment-status payment-status-{{ latest_payment.status|lower }}">
             <span>{% translate "Payment status" %}</span>
             <h2>{{ latest_payment.get_status_display }}</h2>

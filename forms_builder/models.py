@@ -575,6 +575,60 @@ class CertificateRecord(FormSubmission):
         verbose_name_plural = _("certificates")
 
 
+class QuantityPricingRule(BaseModel):
+    event = models.OneToOneField(
+        Event, verbose_name=_("event"), related_name="quantity_pricing_rule",
+        on_delete=models.CASCADE,
+    )
+    quantity_question = models.ForeignKey(
+        FormQuestion, verbose_name=_("quantity question"),
+        related_name="pricing_rules", on_delete=models.PROTECT,
+        help_text=_("Select the numeric question that determines the quantity."),
+    )
+    first_unit_amount = models.DecimalField(
+        _("first unit price"), max_digits=14, decimal_places=2,
+    )
+    additional_unit_amount = models.DecimalField(
+        _("each additional unit price"), max_digits=14, decimal_places=2,
+    )
+    currency = models.CharField(_("currency"), max_length=3, default="TZS")
+
+    class Meta:
+        verbose_name = _("quantity pricing rule")
+        verbose_name_plural = _("quantity pricing rules")
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if (
+            self.quantity_question_id
+            and self.event_id
+            and self.quantity_question.section.event_form.event_id != self.event_id
+        ):
+            errors["quantity_question"] = _(
+                "The quantity question must belong to the selected event."
+            )
+        if self.first_unit_amount is not None and self.first_unit_amount < 0:
+            errors["first_unit_amount"] = _("The first unit price cannot be negative.")
+        if (
+            self.additional_unit_amount is not None
+            and self.additional_unit_amount < 0
+        ):
+            errors["additional_unit_amount"] = _(
+                "The additional unit price cannot be negative."
+            )
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.currency = self.currency.strip().upper()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.event.code} — {self.quantity_question.label_en}"
+
+
 class Payment(BaseModel):
     class Method(models.TextChoices):
         BANK = "BANK", _("Bank deposit or transfer")

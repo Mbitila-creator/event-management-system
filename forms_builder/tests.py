@@ -2,6 +2,7 @@ from django.test import TestCase
 
 # Create your tests here.
 from datetime import datetime, timedelta
+from decimal import Decimal
 from io import StringIO
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
@@ -35,6 +36,7 @@ from .models import (
     FormSubmission,
     NotificationLog,
     Payment,
+    QuantityPricingRule,
     QuestionOption,
 )
 from .notifications import (
@@ -52,6 +54,7 @@ from .services import (
     public_form_path,
     public_form_url,
     safe_spreadsheet_value,
+    payment_amount_for_submission,
     sync_badge_identity_from_answers,
 )
 from .templatetags.form_text import simple_rich_text
@@ -207,6 +210,7 @@ class ParticipantPaymentTests(TestCase):
         self.submission = FormSubmission.objects.create(
             event_form=event_form, submitter_email="person@example.org",
         )
+        self.event_form = event_form
         self.url = (
             f"/en/participants/{self.submission.participant_token}/payment/"
         )
@@ -256,6 +260,51 @@ class ParticipantPaymentTests(TestCase):
         response = self.client.get(receipt_url)
         self.assertContains(response, "Official payment receipt")
         self.assertContains(response, f"PAY-{payment.created_at.year}-")
+
+    def test_booth_quantity_uses_first_plus_additional_pricing(self):
+        section = FormSection.objects.create(
+            event_form=self.event_form, title_sw="Mabanda", title_en="Booths",
+        )
+        question = FormQuestion.objects.create(
+            section=section, label_sw="Idadi ya mabanda",
+            label_en="Number of booths", question_type=FormQuestion.QuestionType.NUMBER,
+        )
+        QuantityPricingRule.objects.create(
+            event=self.event, quantity_question=question,
+            first_unit_amount=Decimal("2000000.00"),
+            additional_unit_amount=Decimal("1500000.00"), currency="TZS",
+        )
+        answer = FormAnswer.objects.create(
+            submission=self.submission, question=question,
+            number_value=Decimal("1"),
+        )
+        expected = {
+            1: Decimal("2000000.00"),
+            2: Decimal("3500000.00"),
+            3: Decimal("5000000.00"),
+        }
+        for quantity, amount in expected.items():
+            with self.subTest(quantity=quantity):
+                answer.number_value = Decimal(quantity)
+                answer.save(update_fields=["number_value"])
+                self.assertEqual(
+                    payment_amount_for_submission(self.submission), amount,
+                )
+
+    def test_tiered_pricing_rejects_missing_quantity(self):
+        section = FormSection.objects.create(
+            event_form=self.event_form, title_sw="Mabanda", title_en="Booths",
+        )
+        question = FormQuestion.objects.create(
+            section=section, label_sw="Idadi ya mabanda",
+            label_en="Number of booths", question_type=FormQuestion.QuestionType.NUMBER,
+        )
+        QuantityPricingRule.objects.create(
+            event=self.event, quantity_question=question,
+            first_unit_amount=Decimal("2000000.00"),
+            additional_unit_amount=Decimal("1500000.00"),
+        )
+        self.assertIsNone(payment_amount_for_submission(self.submission))
 
 
 class PublicEvaluationTests(TestCase):

@@ -40,6 +40,7 @@ from .services import (
     participant_check_in_url,
     sync_badge_identity_from_answers,
     safe_spreadsheet_value,
+    payment_amount_for_submission,
 )
 
 
@@ -987,6 +988,13 @@ def participant_payment(request, participant_token):
         event_form__event__payment_enabled=True,
     )
     event = submission.event_form.event
+    calculated_amount = payment_amount_for_submission(submission)
+    pricing_rule = getattr(event, "quantity_pricing_rule", None)
+    payment_currency = (
+        pricing_rule.currency
+        if pricing_rule and pricing_rule.is_active
+        else event.payment_currency
+    )
     latest_payment = submission.payments.order_by("-created_at").first()
     errors = {}
 
@@ -1010,12 +1018,16 @@ def participant_payment(request, participant_token):
             errors["payment"] = _(
                 "A payment is already pending or verified for this registration."
             )
+        if calculated_amount is None:
+            errors["payment"] = _(
+                "The payment amount could not be calculated. Contact the event organizer."
+            )
 
         if not errors:
             payment = Payment.objects.create(
                 submission=submission,
-                amount=event.participation_fee or 0,
-                currency=event.payment_currency,
+                amount=calculated_amount,
+                currency=payment_currency,
                 method=method,
                 transaction_reference=transaction_reference,
                 proof=proof,
@@ -1040,6 +1052,8 @@ def participant_payment(request, participant_token):
             "latest_payment": latest_payment,
             "payment_errors": errors,
             "payment_methods": Payment.Method.choices,
+            "calculated_amount": calculated_amount,
+            "payment_currency": payment_currency,
         },
     )
 

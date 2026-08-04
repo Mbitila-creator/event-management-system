@@ -22,6 +22,7 @@ from .models import (
     Payment,
     Participant,
     CertificateRecord,
+    QuantityPricingRule,
     QuestionOption,
 )
 from .notifications import (
@@ -56,6 +57,20 @@ class AuditAdminMixin:
 
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(QuantityPricingRule)
+class QuantityPricingRuleAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "event", "quantity_question", "first_unit_amount",
+        "additional_unit_amount", "currency", "is_active",
+    )
+    list_filter = ("event", "currency", "is_active")
+    search_fields = (
+        "event__code", "event__title_sw", "event__title_en",
+        "quantity_question__label_sw", "quantity_question__label_en",
+    )
+    autocomplete_fields = ("quantity_question",)
 
 
 @admin.register(Payment)

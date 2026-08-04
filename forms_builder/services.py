@@ -11,7 +11,31 @@ from django.utils import timezone, translation
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
 
-from .models import FormQuestion
+from .models import FormQuestion, QuantityPricingRule
+
+
+def payment_amount_for_submission(submission):
+    """Calculate a fixed fee or a configured first-plus-additional quantity fee."""
+    event = submission.event_form.event
+    try:
+        rule = event.quantity_pricing_rule
+    except QuantityPricingRule.DoesNotExist:
+        return event.participation_fee
+    if not rule.is_active:
+        return event.participation_fee
+
+    answer = submission.answers.filter(
+        question=rule.quantity_question,
+    ).first()
+    if not answer or answer.number_value is None:
+        return None
+    quantity = answer.number_value
+    if quantity < 1 or quantity != quantity.to_integral_value():
+        return None
+    return (
+        rule.first_unit_amount
+        + ((int(quantity) - 1) * rule.additional_unit_amount)
+    )
 
 
 def public_form_path(event_form, language="sw"):

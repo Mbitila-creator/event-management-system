@@ -2411,3 +2411,24 @@ msgstr "Risiti hii imetolewa kielektroniki na Mfumo wa Usimamizi wa Matukio."
 
 msgid "Your payment was rejected. Review the payment details and submit again."
 msgstr "Malipo yako yamekataliwa. Hakiki taarifa za malipo na uwasilishe tena."
+
+msgid "quantity question"
+msgstr "swali la idadi"
+
+msgid "Select the numeric question that determines the quantity."
+msgstr "Chagua swali la namba linaloamua idadi."
+
+msgid "first unit price"
+msgstr "bei ya kipengele cha kwanza"
+
+msgid "each additional unit price"
+msgstr "bei ya kila kipengele cha ziada"
+
+msgid "quantity pricing rule"
+msgstr "kanuni ya bei kulingana na idadi"
+
+msgid "quantity pricing rules"
+msgstr "kanuni za bei kulingana na idadi"
+
+msgid "The payment amount could not be calculated. Contact the event organizer."
+msgstr "Kiasi cha malipo hakikuweza kukokotolewa. Wasiliana na mratibu wa tukio."
