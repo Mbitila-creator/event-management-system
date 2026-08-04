@@ -1,0 +1,31 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | {% translate "Event Management System" %}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'admin/admin-dashboard.css' %}">
+{% endblock %}
+
+{% block branding %}
+    <div class="ems-brand">
+        <span class="ems-brand-mark">EMS</span>
+        <div>
+            <strong>{% translate "Event Management System" %}</strong>
+            <small>{% translate "Administration workspace" %}</small>
+        </div>
+    </div>
+{% endblock %}
+
+{% block nav-global %}
+    <nav class="ems-quick-nav" aria-label="{% translate 'Quick navigation' %}">
+        <a href="{% url 'admin:index' %}">{% translate "Dashboard" %}</a>
+        {% if perms.forms_builder.view_formsubmission %}
+            <a href="{% url 'admin:forms_builder_participant_changelist' %}">{% translate "Participants" %}</a>
+        {% endif %}
+        {% if perms.checkin.view_participantcheckin %}
+            <a href="{% url 'checkin:lookup' %}">{% translate "Check-in" %}</a>
+        {% endif %}
+    </nav>
+{% endblock %}

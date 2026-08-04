@@ -73,3 +73,34 @@ class User(AbstractUser):
     def __str__(self):
         full_name = self.get_full_name().strip()
         return full_name or self.username
+
+    ROLE_PERMISSION_APPS = {
+        Role.SYSTEM_ADMIN: {"*"},
+        Role.EVENT_ADMIN: {"events", "forms_builder", "checkin", "core"},
+        Role.REGISTRATION_OFFICER: {"forms_builder"},
+        Role.ATTENDANCE_OFFICER: {"checkin"},
+        Role.REPORT_OFFICER: {"forms_builder", "checkin"},
+        Role.PARTICIPANT: set(),
+    }
+
+    def has_perm(self, perm, obj=None):
+        if not self.is_active:
+            return False
+        if self.is_superuser:
+            return True
+        app_label = perm.partition(".")[0]
+        allowed = self.ROLE_PERMISSION_APPS.get(self.role, set())
+        codename = perm.partition(".")[2]
+        if self.role == self.Role.REPORT_OFFICER:
+            return app_label in allowed and codename.startswith("view_")
+        if "*" in allowed or app_label in allowed:
+            return True
+        return super().has_perm(perm, obj=obj)
+
+    def has_module_perms(self, app_label):
+        if not self.is_active:
+            return False
+        if self.is_superuser:
+            return True
+        allowed = self.ROLE_PERMISSION_APPS.get(self.role, set())
+        return "*" in allowed or app_label in allowed

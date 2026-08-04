@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Council, Country, District, Region
+from .models import Council, Country, District, Region, Ward
 
 
 class AuditAdminMixin:
@@ -148,3 +148,14 @@ class CouncilAdmin(AuditAdminMixin, admin.ModelAdmin):
     readonly_fields = AuditAdminMixin.readonly_fields + (
         "slug",
     )
+
+
+@admin.register(Ward)
+class WardAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = ("code", "name_sw", "name_en", "council", "is_active")
+    list_filter = ("council__region", "council", "is_active")
+    search_fields = (
+        "code", "name_sw", "name_en", "council__name_sw", "council__name_en",
+    )
+    ordering = ("council__region__name_sw", "council__name_sw", "name_sw")
+    readonly_fields = AuditAdminMixin.readonly_fields + ("slug",)

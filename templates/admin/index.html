@@ -1,0 +1,59 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<main class="ems-dashboard">
+    <header class="ems-welcome">
+        <p>{% translate "Workspace" %}</p>
+        <h1>{% translate "Welcome" %}, {{ request.user.get_full_name|default:request.user.username }}</h1>
+        <span>{{ request.user.get_role_display }}</span>
+    </header>
+
+    <div class="ems-groups">
+        {% if perms.core.view_country or perms.core.view_region or perms.core.view_council or perms.core.view_ward %}
+        <section class="ems-group"><h2>{% translate "Reference Data" %}</h2><div class="ems-links">
+            {% if perms.core.view_country %}<a href="{% url 'admin:core_country_changelist' %}">{% translate "Countries" %}</a>{% endif %}
+            {% if perms.core.view_region %}<a href="{% url 'admin:core_region_changelist' %}">{% translate "Regions" %}</a>{% endif %}
+            {% if perms.core.view_council %}<a href="{% url 'admin:core_council_changelist' %}">{% translate "Councils" %}</a>{% endif %}
+            {% if perms.core.view_ward %}<a href="{% url 'admin:core_ward_changelist' %}">{% translate "Wards" %}</a>{% endif %}
+        </div></section>
+        {% endif %}
+
+        {% if perms.events.view_event %}<section class="ems-group"><h2>{% translate "Events" %}</h2><div class="ems-links">
+            <a href="{% url 'admin:events_eventcategory_changelist' %}">{% translate "Categories" %}</a>
+            <a href="{% url 'admin:events_venue_changelist' %}">{% translate "Venues" %}</a>
+            <a href="{% url 'admin:events_event_changelist' %}">{% translate "Events" %}</a>
+        </div></section>{% endif %}
+
+        {% if perms.forms_builder.view_eventform %}<section class="ems-group"><h2>{% translate "Registration" %}</h2><div class="ems-links">
+            <a href="{% url 'admin:forms_builder_eventform_changelist' %}">{% translate "Registration Forms" %}</a>
+            <a href="{% url 'admin:forms_builder_formquestion_changelist' %}">{% translate "Questions" %}</a>
+            <a href="{% url 'admin:forms_builder_formsubmission_changelist' %}">{% translate "Responses" %}</a>
+        </div></section>{% endif %}
+
+        {% if perms.forms_builder.view_formsubmission %}<section class="ems-group"><h2>{% translate "Participants and Certificates" %}</h2><div class="ems-links">
+            <a href="{% url 'admin:forms_builder_participant_changelist' %}">{% translate "Participants" %}</a>
+            <a href="{% url 'admin:forms_builder_participant_changelist' %}">{% translate "QR Codes and Badges" %}</a>
+            <a href="{% url 'admin:forms_builder_certificaterecord_changelist' %}">{% translate "Certificates" %}</a>
+        </div></section>{% endif %}
+
+        {% if perms.forms_builder.view_payment %}<section class="ems-group"><h2>{% translate "Payments" %}</h2><div class="ems-links">
+            <a href="{% url 'admin:forms_builder_payment_changelist' %}">{% translate "Payment Records" %}</a>
+            {% if perms.forms_builder.add_payment %}<a href="{% url 'admin:forms_builder_payment_add' %}">{% translate "Record Payment" %}</a>{% endif %}
+        </div></section>{% endif %}
+
+        {% if perms.checkin.view_participantcheckin %}<section class="ems-group"><h2>{% translate "Attendance" %}</h2><div class="ems-links">
+            <a href="{% url 'checkin:lookup' %}">{% translate "Check-in Participants" %}</a>
+            <a href="{% url 'admin:checkin_participantcheckin_changelist' %}">{% translate "Attendance Records" %}</a>
+            {% if request.user.role == 'REPORT_OFFICER' or request.user.role == 'EVENT_ADMIN' or request.user.role == 'SYSTEM_ADMIN' or request.user.is_superuser %}<a href="{% url 'checkin:reports' %}">{% translate "Attendance Reports" %}</a>{% endif %}
+        </div></section>{% endif %}
+
+        {% if perms.forms_builder.view_formsubmission %}<section class="ems-group"><h2>{% translate "Evaluation and Reports" %}</h2><div class="ems-links">
+            {% if request.user.role == 'REPORT_OFFICER' or request.user.role == 'EVENT_ADMIN' or request.user.role == 'SYSTEM_ADMIN' or request.user.is_superuser %}<a href="{% url 'forms_builder:evaluation_reports' %}">{% translate "Evaluation Reports" %}</a>{% endif %}
+            {% if perms.checkin.view_participantcheckin %}<a href="{% url 'checkin:reports' %}">{% translate "Participant Reports" %}</a>{% endif %}
+        </div></section>{% endif %}
+    </div>
+</main>
+{% endblock %}
+
+{% block sidebar %}{% endblock %}

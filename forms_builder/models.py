@@ -561,6 +561,75 @@ class FormSubmission(BaseModel):
         )
 
 
+class Participant(FormSubmission):
+    class Meta:
+        proxy = True
+        verbose_name = _("participant")
+        verbose_name_plural = _("participants")
+
+
+class CertificateRecord(FormSubmission):
+    class Meta:
+        proxy = True
+        verbose_name = _("certificate")
+        verbose_name_plural = _("certificates")
+
+
+class Payment(BaseModel):
+    class Method(models.TextChoices):
+        BANK = "BANK", _("Bank deposit or transfer")
+        MOBILE = "MOBILE", _("Mobile money")
+        CASH = "CASH", _("Cash")
+        OTHER = "OTHER", _("Other")
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", _("Pending verification")
+        VERIFIED = "VERIFIED", _("Verified")
+        REJECTED = "REJECTED", _("Rejected")
+        REFUNDED = "REFUNDED", _("Refunded")
+
+    submission = models.ForeignKey(
+        FormSubmission, verbose_name=_("participant submission"),
+        related_name="payments", on_delete=models.PROTECT,
+    )
+    amount = models.DecimalField(_("amount"), max_digits=14, decimal_places=2)
+    currency = models.CharField(_("currency"), max_length=3, default="TZS")
+    method = models.CharField(
+        _("payment method"), max_length=20, choices=Method.choices,
+        default=Method.BANK,
+    )
+    transaction_reference = models.CharField(
+        _("transaction reference"), max_length=100, blank=True,
+    )
+    paid_at = models.DateTimeField(_("paid at"), null=True, blank=True)
+    proof = models.FileField(_("payment proof"), upload_to="payments/%Y/%m/", blank=True)
+    status = models.CharField(
+        _("payment status"), max_length=20, choices=Status.choices,
+        default=Status.PENDING, db_index=True,
+    )
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name=_("verified by"),
+        related_name="verified_payments", on_delete=models.SET_NULL,
+        null=True, blank=True, editable=False,
+    )
+    verified_at = models.DateTimeField(
+        _("verified at"), null=True, blank=True, editable=False,
+    )
+    notes = models.TextField(_("payment notes"), blank=True)
+
+    class Meta:
+        verbose_name = _("payment")
+        verbose_name_plural = _("payments")
+        ordering = ["-paid_at", "-created_at"]
+
+    def save(self, *args, **kwargs):
+        self.currency = self.currency.strip().upper()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.submission.reference_number} — {self.currency} {self.amount}"
+
+
 class Booth(BaseModel):
     class Status(models.TextChoices):
         UNASSIGNED = "UNASSIGNED", _("Unassigned")

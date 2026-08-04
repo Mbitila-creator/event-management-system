@@ -232,6 +232,7 @@ class District(BaseModel):
     def __str__(self):
         return f"{self.name_sw} - {self.region.name_sw}"
 
+
 class Council(BaseModel):
     class CouncilType(models.TextChoices):
         CITY = "CITY", _("City Council")
@@ -315,3 +316,33 @@ class Council(BaseModel):
 
     def __str__(self):
         return f"{self.name_sw} - {self.region.name_sw}"
+
+
+class Ward(BaseModel):
+    council = models.ForeignKey(
+        Council, verbose_name=_("council"), related_name="wards",
+        on_delete=models.PROTECT,
+    )
+    name_sw = models.CharField(_("name in Kiswahili"), max_length=160)
+    name_en = models.CharField(_("name in English"), max_length=160)
+    code = models.CharField(_("ward code"), max_length=50)
+    slug = models.SlugField(_("slug"), max_length=220, blank=True)
+
+    class Meta:
+        verbose_name = _("ward")
+        verbose_name_plural = _("wards")
+        ordering = ["council__region__name_sw", "council__name_sw", "name_sw"]
+        constraints = [models.UniqueConstraint(
+            fields=["council", "code"], name="unique_ward_code_per_council",
+        )]
+
+    def save(self, *args, **kwargs):
+        self.code = self.code.strip().upper()
+        if not self.slug:
+            self.slug = slugify(
+                f"{self.council.code}-{self.name_en or self.name_sw}"
+            )
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name_sw} - {self.council.name_sw}"

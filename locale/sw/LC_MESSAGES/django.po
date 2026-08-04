@@ -2186,3 +2186,114 @@ msgstr "Swali linalodhibiti lazima liwe katika fomu hiyo hiyo."
 
 msgid "Enter an active stored option value from the controlling question."
 msgstr "Weka thamani hai iliyohifadhiwa ya chaguo kutoka kwenye swali linalodhibiti."
+
+msgid "Administration workspace"
+msgstr "Eneo la kazi la usimamizi"
+
+msgid "Quick navigation"
+msgstr "Urambazaji wa haraka"
+
+msgid "Dashboard"
+msgstr "Dashibodi"
+
+msgid "Workspace"
+msgstr "Eneo la kazi"
+
+msgid "Reference Data"
+msgstr "Data Rejea"
+
+msgid "Countries"
+msgstr "Nchi"
+
+msgid "Regions"
+msgstr "Mikoa"
+
+msgid "Councils"
+msgstr "Halmashauri"
+
+msgid "Wards"
+msgstr "Kata"
+
+msgid "Categories"
+msgstr "Makundi"
+
+msgid "Venues"
+msgstr "Maeneo"
+
+msgid "Registration Forms"
+msgstr "Fomu za Usajili"
+
+msgid "Questions"
+msgstr "Maswali"
+
+msgid "Responses"
+msgstr "Majibu"
+
+msgid "Participants and Certificates"
+msgstr "Washiriki na Vyeti"
+
+msgid "QR Codes and Badges"
+msgstr "Misimbo ya QR na Beji"
+
+msgid "Payment Records"
+msgstr "Kumbukumbu za Malipo"
+
+msgid "Record Payment"
+msgstr "Weka Malipo"
+
+msgid "Check-in Participants"
+msgstr "Thibitisha Mahudhurio ya Washiriki"
+
+msgid "Attendance Records"
+msgstr "Kumbukumbu za Mahudhurio"
+
+msgid "Attendance Reports"
+msgstr "Ripoti za Mahudhurio"
+
+msgid "Evaluation and Reports"
+msgstr "Tathmini na Ripoti"
+
+msgid "Evaluation Reports"
+msgstr "Ripoti za Tathmini"
+
+msgid "Participant Reports"
+msgstr "Ripoti za Washiriki"
+
+msgid "ward"
+msgstr "kata"
+
+msgid "wards"
+msgstr "kata"
+
+msgid "ward code"
+msgstr "msimbo wa kata"
+
+msgid "payment"
+msgstr "malipo"
+
+msgid "payments"
+msgstr "malipo"
+
+msgid "payment method"
+msgstr "njia ya malipo"
+
+msgid "payment status"
+msgstr "hali ya malipo"
+
+msgid "payment proof"
+msgstr "uthibitisho wa malipo"
+
+msgid "transaction reference"
+msgstr "kumbukumbu ya muamala"
+
+msgid "Pending verification"
+msgstr "Inasubiri uthibitisho"
+
+msgid "Verified"
+msgstr "Imethibitishwa"
+
+msgid "Verify selected payments"
+msgstr "Thibitisha malipo yaliyochaguliwa"
+
+msgid "Reject selected payments"
+msgstr "Kataa malipo yaliyochaguliwa"

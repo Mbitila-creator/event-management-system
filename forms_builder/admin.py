@@ -19,6 +19,9 @@ from .models import (
     FormSection,
     FormSubmission,
     NotificationLog,
+    Payment,
+    Participant,
+    CertificateRecord,
     QuestionOption,
 )
 from .notifications import (
@@ -52,6 +55,40 @@ class AuditAdminMixin:
 
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(Payment)
+class PaymentAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "submission", "amount", "currency", "method", "transaction_reference",
+        "paid_at", "status", "verified_by",
+    )
+    list_filter = ("status", "method", "currency", "submission__event_form__event")
+    search_fields = (
+        "submission__reference_number", "submission__badge_name",
+        "transaction_reference", "submission__submitter_email",
+    )
+    readonly_fields = AuditAdminMixin.readonly_fields + ("verified_by", "verified_at")
+    autocomplete_fields = ("submission",)
+    actions = ("verify_selected", "reject_selected")
+
+    def _set_status(self, request, queryset, status):
+        verified = status == Payment.Status.VERIFIED
+        queryset.update(
+            status=status,
+            verified_by=request.user if verified else None,
+            verified_at=timezone.now() if verified else None,
+            updated_by=request.user,
+            updated_at=timezone.now(),
+        )
+
+    @admin.action(description=_("Verify selected payments"))
+    def verify_selected(self, request, queryset):
+        self._set_status(request, queryset, Payment.Status.VERIFIED)
+
+    @admin.action(description=_("Reject selected payments"))
+    def reject_selected(self, request, queryset):
+        self._set_status(request, queryset, Payment.Status.REJECTED)
 
 
 class BoothOfferingInline(admin.StackedInline):
@@ -826,6 +863,37 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         )
         response["X-Content-Type-Options"] = "nosniff"
         return response
+
+
+@admin.register(Participant)
+class ParticipantAdmin(FormSubmissionAdmin):
+    def get_queryset(self, request):
+        return super().get_queryset(request).exclude(
+            event_form__form_type=EventForm.FormType.EVALUATION,
+        )
+
+
+@admin.register(CertificateRecord)
+class CertificateRecordAdmin(FormSubmissionAdmin):
+    actions = ()
+    list_display = (
+        "reference_number", "event_name", "badge_name", "badge_organization",
+        "certificate_tools", "submitted_on",
+    )
+    list_filter = ("event_form__event", "language", "created_at")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(
+            event_form__event__certificate_enabled=True,
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            check_in__isnull=False,
+        )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(EventReminder)
