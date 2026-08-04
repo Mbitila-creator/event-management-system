@@ -28,6 +28,7 @@ from .notifications import (
     process_event_reminder,
     resend_notification,
     send_submission_notification,
+    send_payment_notification,
 )
 from .services import (
     booth_detail_url,
@@ -61,7 +62,7 @@ class AuditAdminMixin:
 class PaymentAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_display = (
         "submission", "amount", "currency", "method", "transaction_reference",
-        "paid_at", "status", "verified_by",
+        "paid_at", "status", "verified_by", "receipt_tools",
     )
     list_filter = ("status", "method", "currency", "submission__event_form__event")
     search_fields = (
@@ -73,6 +74,8 @@ class PaymentAdmin(AuditAdminMixin, admin.ModelAdmin):
     actions = ("verify_selected", "reject_selected")
 
     def _set_status(self, request, queryset, status):
+        queryset = queryset.exclude(status=status)
+        payments = list(queryset.select_related("submission__event_form__event"))
         verified = status == Payment.Status.VERIFIED
         queryset.update(
             status=status,
@@ -80,6 +83,29 @@ class PaymentAdmin(AuditAdminMixin, admin.ModelAdmin):
             verified_at=timezone.now() if verified else None,
             updated_by=request.user,
             updated_at=timezone.now(),
+        )
+        notification_type = (
+            NotificationLog.NotificationType.PAYMENT_VERIFIED
+            if verified
+            else NotificationLog.NotificationType.PAYMENT_REJECTED
+        )
+        for payment in payments:
+            payment.status = status
+            send_payment_notification(
+                payment, notification_type, request=request,
+            )
+
+    @admin.display(description=_("Receipt"))
+    def receipt_tools(self, obj):
+        if obj.status != Payment.Status.VERIFIED:
+            return _("Available after verification.")
+        url = reverse(
+            "forms_builder:payment_receipt",
+            kwargs={"participant_token": obj.submission.participant_token},
+        )
+        return format_html(
+            '<a href="{}" target="_blank" rel="noopener">{}</a>',
+            url, _("Open receipt"),
         )
 
     @admin.action(description=_("Verify selected payments"))
@@ -89,6 +115,31 @@ class PaymentAdmin(AuditAdminMixin, admin.ModelAdmin):
     @admin.action(description=_("Reject selected payments"))
     def reject_selected(self, request, queryset):
         self._set_status(request, queryset, Payment.Status.REJECTED)
+
+    def save_model(self, request, obj, form, change):
+        previous_status = None
+        if change:
+            previous_status = Payment.objects.filter(pk=obj.pk).values_list(
+                "status", flat=True,
+            ).first()
+        if obj.status == Payment.Status.VERIFIED:
+            obj.verified_by = request.user
+            obj.verified_at = timezone.now()
+        elif obj.status != previous_status:
+            obj.verified_by = None
+            obj.verified_at = None
+        super().save_model(request, obj, form, change)
+        if obj.status != previous_status and obj.status in {
+            Payment.Status.VERIFIED, Payment.Status.REJECTED,
+        }:
+            notification_type = (
+                NotificationLog.NotificationType.PAYMENT_VERIFIED
+                if obj.status == Payment.Status.VERIFIED
+                else NotificationLog.NotificationType.PAYMENT_REJECTED
+            )
+            send_payment_notification(
+                obj, notification_type, request=request,
+            )
 
 
 class BoothOfferingInline(admin.StackedInline):

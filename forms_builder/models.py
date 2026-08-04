@@ -958,6 +958,9 @@ class NotificationLog(BaseModel):
         REGISTRATION_REJECTED = "REGISTRATION_REJECTED", _("Registration rejected")
         CHECK_IN_CONFIRMED = "CHECK_IN_CONFIRMED", _("Check-in confirmed")
         EVENT_REMINDER = "EVENT_REMINDER", _("Event reminder")
+        PAYMENT_RECEIVED = "PAYMENT_RECEIVED", _("Payment received")
+        PAYMENT_VERIFIED = "PAYMENT_VERIFIED", _("Payment verified")
+        PAYMENT_REJECTED = "PAYMENT_REJECTED", _("Payment rejected")
 
     class DeliveryStatus(models.TextChoices):
         SENT = "SENT", _("Sent")

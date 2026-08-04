@@ -5,7 +5,7 @@ from django.db import transaction
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 
-from .models import EventForm, EventReminder, FormSubmission, NotificationLog
+from .models import EventForm, EventReminder, FormSubmission, NotificationLog, Payment
 from .services import participant_badge_url, participant_certificate_path
 
 
@@ -144,6 +144,64 @@ def send_submission_notification(submission, notification_type, request=None):
             "updated_at",
         ]
     )
+    return log
+
+
+def send_payment_notification(payment, notification_type, request=None):
+    submission = payment.submission
+    language = submission.language if submission.language in {"sw", "en"} else "sw"
+    event = submission.event_form.event
+    event_name = event.title_en if language == "en" else event.title_sw
+    payment_path = reverse(
+        "forms_builder:participant_payment",
+        kwargs={"participant_token": submission.participant_token},
+    )
+    payment_url = _absolute_url(payment_path, request=request)
+    with translation.override(language):
+        if notification_type == NotificationLog.NotificationType.PAYMENT_VERIFIED:
+            subject = _("Payment verified — %(event)s") % {"event": event_name}
+            message = _("Your payment has been verified successfully.")
+        elif notification_type == NotificationLog.NotificationType.PAYMENT_REJECTED:
+            subject = _("Payment update — %(event)s") % {"event": event_name}
+            message = _("Your payment was rejected. Review the payment details and submit again.")
+        else:
+            subject = _("Payment received — %(event)s") % {"event": event_name}
+            message = _("Your payment information has been received and is awaiting verification.")
+        body = _(
+            "%(message)s\n\nEvent: %(event)s\nReference number: %(reference)s\n"
+            "Amount: %(currency)s %(amount)s\nPayment status: %(payment_url)s"
+        ) % {
+            "message": message, "event": event_name,
+            "reference": submission.reference_number,
+            "currency": payment.currency, "amount": payment.amount,
+            "payment_url": payment_url,
+        }
+    recipient = submission.submitter_email.strip()
+    log = NotificationLog.objects.create(
+        submission=submission, notification_type=notification_type,
+        recipient=recipient, subject=subject,
+        delivery_status=NotificationLog.DeliveryStatus.SKIPPED,
+    )
+    if not recipient:
+        log.error_message = _("No participant email address was provided.")
+    else:
+        try:
+            delivered = send_mail(
+                subject, body, settings.DEFAULT_FROM_EMAIL, [recipient],
+                fail_silently=False,
+            )
+            log.delivery_status = (
+                NotificationLog.DeliveryStatus.SENT
+                if delivered else NotificationLog.DeliveryStatus.FAILED
+            )
+            if delivered:
+                log.sent_at = timezone.now()
+            else:
+                log.error_message = _("The email backend did not confirm delivery.")
+        except Exception as error:
+            log.delivery_status = NotificationLog.DeliveryStatus.FAILED
+            log.error_message = str(error)[:2000]
+    log.save(update_fields=["delivery_status", "error_message", "sent_at", "updated_at"])
     return log
 
 
@@ -290,6 +348,16 @@ def resend_notification(log, request=None):
             log.event_reminder,
             request=request,
         )
+    if log.notification_type in {
+        NotificationLog.NotificationType.PAYMENT_RECEIVED,
+        NotificationLog.NotificationType.PAYMENT_VERIFIED,
+        NotificationLog.NotificationType.PAYMENT_REJECTED,
+    }:
+        payment = log.submission.payments.order_by("-created_at").first()
+        if payment:
+            return send_payment_notification(
+                payment, log.notification_type, request=request,
+            )
     return send_submission_notification(
         log.submission,
         log.notification_type,

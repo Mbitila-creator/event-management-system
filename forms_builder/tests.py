@@ -221,6 +221,10 @@ class ParticipantPaymentTests(TestCase):
         self.assertEqual(payment.amount, self.event.participation_fee)
         self.assertEqual(payment.transaction_reference, "TX-100")
         self.assertEqual(payment.status, Payment.Status.PENDING)
+        self.assertTrue(NotificationLog.objects.filter(
+            submission=self.submission,
+            notification_type=NotificationLog.NotificationType.PAYMENT_RECEIVED,
+        ).exists())
 
     def test_pending_payment_cannot_be_submitted_twice(self):
         Payment.objects.create(
@@ -238,6 +242,20 @@ class ParticipantPaymentTests(TestCase):
         self.event.payment_enabled = False
         self.event.save(update_fields=["payment_enabled"])
         self.assertEqual(self.client.get(self.url).status_code, 404)
+
+    def test_verified_payment_has_printable_receipt(self):
+        payment = Payment.objects.create(
+            submission=self.submission, amount=self.event.participation_fee,
+            method=Payment.Method.BANK, transaction_reference="TX-OK",
+            status=Payment.Status.VERIFIED, verified_at=timezone.now(),
+        )
+        receipt_url = (
+            f"/en/participants/{self.submission.participant_token}/"
+            "payment/receipt/"
+        )
+        response = self.client.get(receipt_url)
+        self.assertContains(response, "Official payment receipt")
+        self.assertContains(response, f"PAY-{payment.created_at.year}-")
 
 
 class PublicEvaluationTests(TestCase):

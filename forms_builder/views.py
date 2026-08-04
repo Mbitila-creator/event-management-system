@@ -27,7 +27,9 @@ from .models import (
     Payment,
     QuestionOption,
 )
-from .notifications import process_due_reminders, send_submission_notification
+from .notifications import (
+    process_due_reminders, send_payment_notification, send_submission_notification,
+)
 from .services import (
     booth_detail_url,
     certificate_number,
@@ -1010,7 +1012,7 @@ def participant_payment(request, participant_token):
             )
 
         if not errors:
-            Payment.objects.create(
+            payment = Payment.objects.create(
                 submission=submission,
                 amount=event.participation_fee or 0,
                 currency=event.payment_currency,
@@ -1018,6 +1020,11 @@ def participant_payment(request, participant_token):
                 transaction_reference=transaction_reference,
                 proof=proof,
                 paid_at=timezone.now(),
+            )
+            send_payment_notification(
+                payment,
+                NotificationLog.NotificationType.PAYMENT_RECEIVED,
+                request=request,
             )
             return redirect(
                 "forms_builder:participant_payment",
@@ -1035,6 +1042,26 @@ def participant_payment(request, participant_token):
             "payment_methods": Payment.Method.choices,
         },
     )
+
+
+@require_http_methods(["GET"])
+def payment_receipt(request, participant_token):
+    submission = get_object_or_404(
+        FormSubmission.objects.select_related("event_form__event"),
+        participant_token=participant_token,
+        is_active=True,
+    )
+    payment = submission.payments.filter(
+        status=Payment.Status.VERIFIED,
+    ).order_by("-verified_at", "-created_at").first()
+    if payment is None:
+        raise Http404("No verified payment was found.")
+    return render(request, "forms_builder/payment_receipt.html", {
+        "submission": submission,
+        "event": submission.event_form.event,
+        "payment": payment,
+        "receipt_number": f"PAY-{payment.created_at.year}-{payment.pk:06d}",
+    })
 
 @require_http_methods(["GET", "POST"])
 def registration_status(request):

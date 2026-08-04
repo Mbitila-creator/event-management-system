@@ -2369,3 +2369,45 @@ msgstr "Weka kumbukumbu ya muamala."
 
 msgid "A payment is already pending or verified for this registration."
 msgstr "Malipo ya usajili huu tayari yanasubiri au yamethibitishwa."
+
+msgid "Payment received"
+msgstr "Malipo yamepokelewa"
+
+msgid "Payment verified"
+msgstr "Malipo yamethibitishwa"
+
+msgid "Payment rejected"
+msgstr "Malipo yamekataliwa"
+
+msgid "Payment receipt"
+msgstr "Risiti ya malipo"
+
+msgid "Official payment receipt"
+msgstr "Risiti rasmi ya malipo"
+
+msgid "Open payment receipt"
+msgstr "Fungua risiti ya malipo"
+
+msgid "Open receipt"
+msgstr "Fungua risiti"
+
+msgid "Back to payment status"
+msgstr "Rudi kwenye hali ya malipo"
+
+msgid "Print receipt"
+msgstr "Chapisha risiti"
+
+msgid "Registration reference"
+msgstr "Kumbukumbu ya usajili"
+
+msgid "Amount paid"
+msgstr "Kiasi kilicholipwa"
+
+msgid "Verification date"
+msgstr "Tarehe ya uthibitisho"
+
+msgid "This receipt was generated electronically by the Event Management System."
+msgstr "Risiti hii imetolewa kielektroniki na Mfumo wa Usimamizi wa Matukio."
+
+msgid "Your payment was rejected. Review the payment details and submit again."
+msgstr "Malipo yako yamekataliwa. Hakiki taarifa za malipo na uwasilishe tena."

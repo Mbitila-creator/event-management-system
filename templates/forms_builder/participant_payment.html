@@ -21,7 +21,7 @@
             <h2>{{ latest_payment.get_status_display }}</h2>
             <dl><div><dt>{% translate "Transaction reference" %}</dt><dd>{{ latest_payment.transaction_reference|default:"—" }}</dd></div><div><dt>{% translate "Submitted on" %}</dt><dd>{{ latest_payment.created_at|date:"d M Y, H:i" }}</dd></div></dl>
             {% if latest_payment.status == 'PENDING' %}<p>{% translate "Your payment information has been received and is awaiting verification." %}</p>{% endif %}
-            {% if latest_payment.status == 'VERIFIED' %}<p>{% translate "Your payment has been verified successfully." %}</p>{% endif %}
+            {% if latest_payment.status == 'VERIFIED' %}<p>{% translate "Your payment has been verified successfully." %}</p><a href="{% url 'forms_builder:payment_receipt' submission.participant_token %}">{% translate "Open payment receipt" %}</a>{% endif %}
         </section>
     {% else %}
         {% if latest_payment.status == 'REJECTED' %}<div class="payment-error">{% translate "The previous payment was rejected. Check the details and submit again." %}</div>{% endif %}
