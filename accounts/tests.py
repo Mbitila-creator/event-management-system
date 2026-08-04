@@ -34,6 +34,20 @@ class RoleAndLanguageTests(TestCase):
         self.assertContains(response, "Reference Data")
         self.assertContains(response, "Payments")
         self.assertContains(response, "Participants and Certificates")
+        self.assertContains(response, "Active events")
+        self.assertContains(response, "Pending registrations")
+
+    def test_attendance_officer_dashboard_only_shows_attendance_statistics(self):
+        user = User.objects.create_user(
+            username="attendance-dashboard", email="attendance@example.org",
+            role=User.Role.ATTENDANCE_OFFICER,
+            preferred_language="en", is_staff=True,
+        )
+        self.client.force_login(user)
+        response = self.client.get("/en/admin/")
+        self.assertContains(response, "Participants checked in")
+        self.assertNotContains(response, "Pending registrations")
+        self.assertNotContains(response, "Payments awaiting verification")
 
 
 class RoleAccessMatrixTests(TestCase):

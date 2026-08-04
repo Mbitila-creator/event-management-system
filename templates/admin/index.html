@@ -9,6 +9,18 @@
         <span>{{ request.user.get_role_display }}</span>
     </header>
 
+    {% if operational_dashboard_cards %}
+    <section class="ems-statistics" aria-label="{% translate 'Operational statistics' %}">
+        {% for card in operational_dashboard_cards %}
+            <a class="ems-stat ems-stat-{{ card.tone }}" href="{{ card.url }}">
+                <span>{{ card.label }}</span>
+                <strong>{{ card.value }}</strong>
+                <small>{% translate "Open records" %} →</small>
+            </a>
+        {% endfor %}
+    </section>
+    {% endif %}
+
     <div class="ems-groups">
         {% if perms.core.view_country or perms.core.view_region or perms.core.view_council or perms.core.view_ward %}
         <section class="ems-group"><h2>{% translate "Reference Data" %}</h2><div class="ems-links">

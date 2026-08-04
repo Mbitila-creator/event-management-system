@@ -2297,3 +2297,24 @@ msgstr "Thibitisha malipo yaliyochaguliwa"
 
 msgid "Reject selected payments"
 msgstr "Kataa malipo yaliyochaguliwa"
+
+msgid "Active events"
+msgstr "Matukio yanayotumika"
+
+msgid "Pending registrations"
+msgstr "Usajili unaosubiri"
+
+msgid "Evaluation responses"
+msgstr "Majibu ya tathmini"
+
+msgid "Payments awaiting verification"
+msgstr "Malipo yanayosubiri uthibitisho"
+
+msgid "Participants checked in"
+msgstr "Washiriki waliothibitisha mahudhurio"
+
+msgid "Operational statistics"
+msgstr "Takwimu za uendeshaji"
+
+msgid "Open records"
+msgstr "Fungua kumbukumbu"
