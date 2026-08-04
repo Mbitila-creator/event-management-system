@@ -36,7 +36,6 @@ def can_check_in(user):
         user.is_authenticated
         and (
             user.is_superuser
-            or user.is_staff
             or user.role in CHECK_IN_ROLES
         )
     )

@@ -4,6 +4,21 @@ from django.contrib.auth.admin import UserAdmin
 from .models import User
 
 
+def event_admin_permission(request):
+    """Exclude participant accounts even if staff was enabled accidentally."""
+    return bool(
+        request.user.is_active
+        and request.user.is_staff
+        and (
+            request.user.is_superuser
+            or request.user.role != User.Role.PARTICIPANT
+        )
+    )
+
+
+admin.site.has_permission = event_admin_permission
+
+
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     list_display = (
