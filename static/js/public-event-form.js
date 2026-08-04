@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const submitButton = form.querySelector(".submit-button");
-    const steps = Array.from(form.querySelectorAll(".wizard-step"));
+    const allSteps = Array.from(form.querySelectorAll(".wizard-step"));
     const previousButton = form.querySelector(".wizard-previous");
     const nextButton = form.querySelector(".wizard-next");
     const progressTrack = form.querySelector(".wizard-progress-track");
@@ -18,6 +18,48 @@ document.addEventListener("DOMContentLoaded", () => {
     const language =
         document.documentElement.lang === "en" ? "en" : "sw";
     let currentStep = 0;
+
+    allSteps.forEach((step) => {
+        step.querySelectorAll("input, select, textarea").forEach((control) => {
+            control.dataset.originalRequired = control.required ? "true" : "false";
+        });
+    });
+
+    const conditionMatches = (step) => {
+        const questionId = step.dataset.conditionQuestionId;
+        const expectedValue = step.dataset.conditionValue;
+
+        if (!questionId || !expectedValue) {
+            return true;
+        }
+
+        return Array.from(
+            form.querySelectorAll(`[name="question_${questionId}"]`)
+        ).some((control) => {
+            if (control.type === "checkbox" || control.type === "radio") {
+                return control.checked && control.value === expectedValue;
+            }
+            return control.value === expectedValue;
+        });
+    };
+
+    const getVisibleSteps = () => allSteps.filter(conditionMatches);
+
+    const applyConditionalState = () => {
+        allSteps.forEach((step) => {
+            const visible = conditionMatches(step);
+            step.dataset.conditionVisible = visible ? "true" : "false";
+
+            step.querySelectorAll("input, select, textarea").forEach((control) => {
+                control.disabled = !visible;
+                control.required = visible &&
+                    control.dataset.originalRequired === "true";
+                if (!visible) {
+                    control.setCustomValidity("");
+                }
+            });
+        });
+    };
 
     const originalButtonText = submitButton
         ? submitButton.textContent.trim()
@@ -108,7 +150,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         reviewContainer.replaceChildren();
 
-        steps.slice(0, -1).forEach((step, index) => {
+        getVisibleSteps()
+            .filter((step) => !step.classList.contains("wizard-review-step"))
+            .forEach((step, index) => {
             const section = document.createElement("section");
             section.className = "review-section";
 
@@ -146,6 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const updateProgress = () => {
+        const steps = getVisibleSteps();
         const total = steps.length;
         const percent = total
             ? Math.round(((currentStep + 1) / total) * 100)
@@ -179,9 +224,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const showStep = (index, focusHeading = true) => {
+        const steps = getVisibleSteps();
         currentStep = Math.max(0, Math.min(index, steps.length - 1));
 
-        steps.forEach((step, stepIndex) => {
+        allSteps.forEach((step) => {
+            const stepIndex = steps.indexOf(step);
             const active = stepIndex === currentStep;
             step.hidden = !active;
             step.classList.toggle("is-active", active);
@@ -223,7 +270,30 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const validateCurrentStep = () => {
+        const steps = getVisibleSteps();
         const step = steps[currentStep];
+        const unansweredRequiredGroup = Array.from(
+            step.querySelectorAll(
+                '.form-field[data-required="true"][data-question-type="MULTIPLE_CHOICE"]'
+            )
+        ).find((field) => !field.querySelector("input:checked"));
+
+        if (unansweredRequiredGroup) {
+            const firstChoice = unansweredRequiredGroup.querySelector("input");
+            firstChoice?.setCustomValidity(
+                language === "en"
+                    ? "Select at least one option."
+                    : "Chagua angalau chaguo moja."
+            );
+            firstChoice?.reportValidity();
+            firstChoice?.focus({preventScroll: true});
+            unansweredRequiredGroup.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
+            return false;
+        }
+
         const controls = Array.from(
             step.querySelectorAll("input, select, textarea")
         );
@@ -242,14 +312,17 @@ document.addEventListener("DOMContentLoaded", () => {
         return false;
     };
 
-    if (steps.length) {
+    if (allSteps.length) {
         form.classList.add("wizard-ready");
 
-        steps.forEach((step, index) => {
+        const rebuildStepDots = () => {
             if (!stepDots) {
                 return;
             }
 
+            stepDots.replaceChildren();
+
+            getVisibleSteps().forEach((step, index) => {
             const item = document.createElement("li");
             const button = document.createElement("button");
             button.type = "button";
@@ -265,6 +338,29 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             item.append(button);
             stepDots.append(item);
+            });
+        };
+
+        applyConditionalState();
+        rebuildStepDots();
+
+        form.addEventListener("change", (event) => {
+            if (!event.target.matches("input, select, textarea")) {
+                return;
+            }
+
+            event.target.closest(".form-field")
+                ?.querySelectorAll("input, select, textarea")
+                .forEach((control) => control.setCustomValidity(""));
+            const activeStep = getVisibleSteps()[currentStep];
+            applyConditionalState();
+            const updatedSteps = getVisibleSteps();
+            const updatedIndex = updatedSteps.indexOf(activeStep);
+            currentStep = updatedIndex >= 0
+                ? updatedIndex
+                : Math.min(currentStep, updatedSteps.length - 1);
+            rebuildStepDots();
+            showStep(currentStep, false);
         });
 
         previousButton?.addEventListener(
@@ -337,6 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
         clearErrors();
 
         if (!form.checkValidity()) {
+            const steps = getVisibleSteps();
             const firstInvalid = form.querySelector(":invalid");
             const invalidStep = steps.findIndex(
                 (step) => firstInvalid && step.contains(firstInvalid)
@@ -396,7 +493,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const errorField = form.querySelector(
                         `[data-question-id="${firstErrorId}"]`
                     );
-                    const errorStep = steps.findIndex(
+                    const errorStep = getVisibleSteps().findIndex(
                         (step) => errorField && step.contains(errorField)
                     );
 

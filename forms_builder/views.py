@@ -659,6 +659,15 @@ def validate_question_answer(request, question):
     return result, None
 
 
+def section_is_visible_for_submission(request, section):
+    """Apply a section's configured answer condition on the server."""
+    if not section.condition_question_id or not section.condition_value:
+        return True
+
+    field_name = f"question_{section.condition_question_id}"
+    return section.condition_value in request.POST.getlist(field_name)
+
+
 @require_http_methods(["GET", "POST"])
 def public_event_form(request, event_slug, form_slug):
     event_form = get_public_event_form(
@@ -745,7 +754,7 @@ def public_event_form(request, event_slug, form_slug):
                 section__is_active=True,
                 is_active=True,
             )
-            .select_related("section")
+            .select_related("section", "section__condition_question")
             .prefetch_related("options")
             .order_by(
                 "section__display_order",
@@ -758,6 +767,12 @@ def public_event_form(request, event_slug, form_slug):
         validated_answers = []
 
         for question in questions:
+            if not section_is_visible_for_submission(
+                request,
+                question.section,
+            ):
+                continue
+
             answer_data, error = validate_question_answer(
                 request,
                 question,
@@ -778,8 +793,8 @@ def public_event_form(request, event_slug, form_slug):
                 status=400,
             )
 
-        submitter_email = ""
-        submitter_phone = ""
+        email_answers = []
+        phone_answers = []
 
         for answer_data in validated_answers:
             question = answer_data["question"]
@@ -787,22 +802,28 @@ def public_event_form(request, event_slug, form_slug):
             if (
                 question.question_type
                 == FormQuestion.QuestionType.EMAIL
-                and not submitter_email
             ):
-                submitter_email = answer_data.get(
-                    "text_value",
-                    "",
+                email_answers.append(
+                    (question, answer_data.get("text_value", ""))
                 )
 
             if (
                 question.question_type
                 == FormQuestion.QuestionType.PHONE
-                and not submitter_phone
             ):
-                submitter_phone = answer_data.get(
-                    "text_value",
-                    "",
+                phone_answers.append(
+                    (question, answer_data.get("text_value", ""))
                 )
+
+        def representative_answer(answers):
+            for question, value in answers:
+                labels = f"{question.label_en} {question.label_sw}".lower()
+                if "representative" in labels or "mwakilishi" in labels:
+                    return value
+            return answers[0][1] if answers else ""
+
+        submitter_email = representative_answer(email_answers)
+        submitter_phone = representative_answer(phone_answers)
 
         with transaction.atomic():
             submission = FormSubmission.objects.create(

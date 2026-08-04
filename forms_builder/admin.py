@@ -281,6 +281,8 @@ class FormSectionInline(admin.TabularInline):
         "title_sw",
         "title_en",
         "display_order",
+        "condition_question",
+        "condition_value",
         "is_active",
     )
 
@@ -416,6 +418,8 @@ class FormSectionAdmin(AuditAdminMixin, admin.ModelAdmin):
         "title_sw",
         "event_form",
         "display_order",
+        "condition_question",
+        "condition_value",
         "is_active",
     )
 

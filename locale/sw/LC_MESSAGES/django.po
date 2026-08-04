@@ -2165,3 +2165,24 @@ msgstr "Asante kwa maoni yako"
 #: templates/forms_builder/submission_success.html:113
 msgid "View all events"
 msgstr "Tazama matukio yote"
+
+msgid "show when question"
+msgstr "onyesha wakati swali"
+
+msgid "Leave blank to always show this section."
+msgstr "Acha wazi ili sehemu hii ionekane wakati wote."
+
+msgid "show when answer contains"
+msgstr "onyesha wakati jibu lina"
+
+msgid "Use the stored value of the controlling question option."
+msgstr "Tumia thamani iliyohifadhiwa ya chaguo la swali linalodhibiti."
+
+msgid "Both the controlling question and answer value are required for conditional display."
+msgstr "Swali linalodhibiti na thamani ya jibu vinahitajika kwa mwonekano wenye masharti."
+
+msgid "The controlling question must belong to the same form."
+msgstr "Swali linalodhibiti lazima liwe katika fomu hiyo hiyo."
+
+msgid "Enter an active stored option value from the controlling question."
+msgstr "Weka thamani hai iliyohifadhiwa ya chaguo kutoka kwenye swali linalodhibiti."

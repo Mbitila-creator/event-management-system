@@ -254,6 +254,134 @@ class PublicEvaluationTests(TestCase):
         self.assertContains(success_response, "Thank you for your feedback")
         self.assertNotContains(success_response, "Check registration status")
 
+    def test_hidden_conditional_section_is_not_required_or_saved(self):
+        participation = FormQuestion.objects.create(
+            section=self.question.section,
+            label_sw="Aina ya ushiriki",
+            label_en="Participation type",
+            question_type=FormQuestion.QuestionType.MULTIPLE_CHOICE,
+            is_required=True,
+            display_order=2,
+        )
+        QuestionOption.objects.create(
+            question=participation,
+            value="CONFERENCE",
+            label_sw="Kongamano",
+            label_en="Conference",
+        )
+        QuestionOption.objects.create(
+            question=participation,
+            value="EXHIBITION",
+            label_sw="Maonesho",
+            label_en="Exhibition",
+        )
+        conference_section = FormSection.objects.create(
+            event_form=self.event_form,
+            title_sw="Kongamano",
+            title_en="Conference",
+            display_order=2,
+            condition_question=participation,
+            condition_value="CONFERENCE",
+        )
+        conditional_question = FormQuestion.objects.create(
+            section=conference_section,
+            label_sw="Eneo la kongamano",
+            label_en="Conference area",
+            is_required=True,
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                f"question_{self.question.pk}": "Exhibition only.",
+                f"question_{participation.pk}": "EXHIBITION",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        submission = FormSubmission.objects.get(event_form=self.event_form)
+        self.assertFalse(
+            submission.answers.filter(question=conditional_question).exists()
+        )
+
+    def test_visible_conditional_section_becomes_required(self):
+        participation = FormQuestion.objects.create(
+            section=self.question.section,
+            label_sw="Aina ya ushiriki",
+            label_en="Participation type",
+            question_type=FormQuestion.QuestionType.MULTIPLE_CHOICE,
+            is_required=True,
+            display_order=2,
+        )
+        QuestionOption.objects.create(
+            question=participation,
+            value="CONFERENCE",
+            label_sw="Kongamano",
+            label_en="Conference",
+        )
+        conference_section = FormSection.objects.create(
+            event_form=self.event_form,
+            title_sw="Kongamano",
+            title_en="Conference",
+            display_order=2,
+            condition_question=participation,
+            condition_value="CONFERENCE",
+        )
+        conditional_question = FormQuestion.objects.create(
+            section=conference_section,
+            label_sw="Eneo la kongamano",
+            label_en="Conference area",
+            is_required=True,
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                f"question_{self.question.pk}": "Conference visit.",
+                f"question_{participation.pk}": "CONFERENCE",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            str(conditional_question.pk),
+            response.json()["errors"],
+        )
+
+    def test_representative_contact_is_used_when_institution_comes_first(self):
+        institution_email = FormQuestion.objects.create(
+            section=self.question.section,
+            label_sw="Barua pepe ya taasisi",
+            label_en="Institution Email Address",
+            question_type=FormQuestion.QuestionType.EMAIL,
+            is_required=True,
+            display_order=2,
+        )
+        representative_email = FormQuestion.objects.create(
+            section=self.question.section,
+            label_sw="Barua pepe ya mwakilishi",
+            label_en="Representative Email Address",
+            question_type=FormQuestion.QuestionType.EMAIL,
+            is_required=True,
+            display_order=3,
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                f"question_{self.question.pk}": "Useful event.",
+                f"question_{institution_email.pk}": "office@example.org",
+                f"question_{representative_email.pk}": "person@example.org",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        submission = FormSubmission.objects.get(event_form=self.event_form)
+        self.assertEqual(submission.submitter_email, "person@example.org")
+
     def test_disabled_evaluation_is_not_public(self):
         self.event.evaluation_enabled = False
         self.event.save(update_fields=["evaluation_enabled"])
