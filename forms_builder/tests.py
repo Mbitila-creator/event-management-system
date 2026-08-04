@@ -34,6 +34,7 @@ from .models import (
     FormSection,
     FormSubmission,
     NotificationLog,
+    Payment,
     QuestionOption,
 )
 from .notifications import (
@@ -183,6 +184,60 @@ class PublicFormServiceTests(SimpleTestCase):
 
         self.assertNotIn("<script>", rendered)
         self.assertIn("&lt;script&gt;", rendered)
+
+
+class ParticipantPaymentTests(TestCase):
+    def setUp(self):
+        category = EventCategory.objects.create(
+            name_sw="Maonesho", name_en="Exhibition", code="PAY",
+        )
+        starts_at = timezone.now() + timedelta(days=10)
+        self.event = Event.objects.create(
+            category=category, code="PAY-2026",
+            title_sw="Tukio la Malipo", title_en="Payment Event",
+            starts_at=starts_at, ends_at=starts_at + timedelta(days=2),
+            payment_enabled=True, participation_fee="50000.00",
+            payment_instructions_sw="Lipa kupitia benki.",
+            payment_instructions_en="Pay through the bank.",
+        )
+        event_form = EventForm.objects.create(
+            event=self.event, name_sw="Usajili", name_en="Registration",
+            is_published=True,
+        )
+        self.submission = FormSubmission.objects.create(
+            event_form=event_form, submitter_email="person@example.org",
+        )
+        self.url = (
+            f"/en/participants/{self.submission.participant_token}/payment/"
+        )
+
+    def test_participant_can_submit_payment_information(self):
+        response = self.client.post(
+            self.url,
+            {"method": Payment.Method.BANK, "transaction_reference": "TX-100"},
+        )
+        self.assertRedirects(response, self.url)
+        payment = Payment.objects.get(submission=self.submission)
+        self.assertEqual(payment.amount, self.event.participation_fee)
+        self.assertEqual(payment.transaction_reference, "TX-100")
+        self.assertEqual(payment.status, Payment.Status.PENDING)
+
+    def test_pending_payment_cannot_be_submitted_twice(self):
+        Payment.objects.create(
+            submission=self.submission, amount=self.event.participation_fee,
+            method=Payment.Method.BANK, transaction_reference="TX-OLD",
+        )
+        response = self.client.post(
+            self.url,
+            {"method": Payment.Method.BANK, "transaction_reference": "TX-NEW"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.submission.payments.count(), 1)
+
+    def test_payment_page_is_unavailable_when_event_disables_payments(self):
+        self.event.payment_enabled = False
+        self.event.save(update_fields=["payment_enabled"])
+        self.assertEqual(self.client.get(self.url).status_code, 404)
 
 
 class PublicEvaluationTests(TestCase):

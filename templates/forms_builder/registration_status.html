@@ -104,6 +104,9 @@
                     </dl>
 
                     <div class="status-explanation">
+                        {% if submission.event_form.event.payment_enabled %}
+                            <a href="{% url 'forms_builder:participant_payment' submission.participant_token %}" class="primary-button status-badge-link">{% translate "View payment status" %}</a>
+                        {% endif %}
                         {% if submission.review_status == "APPROVED" %}
                             <h2>{% translate "Registration approved" %}</h2>
                             <p>

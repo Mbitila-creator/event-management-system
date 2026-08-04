@@ -57,6 +57,11 @@ urlpatterns = [
         name="participant_badge",
     ),
     path(
+        "participants/<uuid:participant_token>/payment/",
+        views.participant_payment,
+        name="participant_payment",
+    ),
+    path(
         "participants/<uuid:participant_token>/badge/qr/",
         views.participant_badge_qr,
         name="participant_badge_qr",

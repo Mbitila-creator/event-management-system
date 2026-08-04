@@ -356,6 +356,23 @@ class Event(BaseModel):
         default=False,
     )
 
+    payment_enabled = models.BooleanField(
+        _("payment collection enabled"), default=False,
+    )
+    participation_fee = models.DecimalField(
+        _("participation fee"), max_digits=14, decimal_places=2,
+        null=True, blank=True,
+    )
+    payment_currency = models.CharField(
+        _("payment currency"), max_length=3, default="TZS",
+    )
+    payment_instructions_sw = models.TextField(
+        _("payment instructions in Kiswahili"), blank=True,
+    )
+    payment_instructions_en = models.TextField(
+        _("payment instructions in English"), blank=True,
+    )
+
     class Meta:
         verbose_name = _("event")
         verbose_name_plural = _("events")
@@ -403,11 +420,26 @@ class Event(BaseModel):
                 "Registration cannot close after the event has started."
             )
 
+        if self.payment_enabled:
+            if self.participation_fee is None or self.participation_fee <= 0:
+                errors["participation_fee"] = _(
+                    "Enter a participation fee greater than zero."
+                )
+            if not self.payment_instructions_sw:
+                errors["payment_instructions_sw"] = _(
+                    "Enter payment instructions in Kiswahili."
+                )
+            if not self.payment_instructions_en:
+                errors["payment_instructions_en"] = _(
+                    "Enter payment instructions in English."
+                )
+
         if errors:
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
         self.code = self.code.strip().upper()
+        self.payment_currency = self.payment_currency.strip().upper()
 
         if not self.slug:
             base_slug = slugify(self.title_en or self.title_sw)

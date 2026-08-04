@@ -24,6 +24,7 @@ from .models import (
     FormQuestion,
     FormSubmission,
     NotificationLog,
+    Payment,
     QuestionOption,
 )
 from .notifications import process_due_reminders, send_submission_notification
@@ -902,6 +903,11 @@ def public_event_form(request, event_slug, form_slug):
             f"/{language_code}/submissions/"
             f"{submission.reference_number}/success/"
         )
+        recent_submissions = request.session.get("recent_submissions", {})
+        recent_submissions[submission.reference_number] = str(
+            submission.participant_token
+        )
+        request.session["recent_submissions"] = recent_submissions
 
         return JsonResponse(
             {
@@ -955,9 +961,80 @@ def submission_success(request, reference_number):
                 submission.event_form.form_type
                 == EventForm.FormType.EVALUATION
             ),
+            "can_access_payment": (
+                request.session.get("recent_submissions", {}).get(
+                    submission.reference_number
+                ) == str(submission.participant_token)
+            ),
         },
     )
 
+
+@require_http_methods(["GET", "POST"])
+def participant_payment(request, participant_token):
+    submission = get_object_or_404(
+        FormSubmission.objects.select_related("event_form__event"),
+        participant_token=participant_token,
+        is_active=True,
+        is_complete=True,
+        event_form__form_type__in=[
+            EventForm.FormType.REGISTRATION,
+            EventForm.FormType.EXHIBITOR,
+            EventForm.FormType.SPEAKER,
+        ],
+        event_form__event__payment_enabled=True,
+    )
+    event = submission.event_form.event
+    latest_payment = submission.payments.order_by("-created_at").first()
+    errors = {}
+
+    if request.method == "POST":
+        method = request.POST.get("method", "").strip()
+        transaction_reference = request.POST.get(
+            "transaction_reference", ""
+        ).strip()
+        proof = request.FILES.get("proof")
+        valid_methods = {value for value, label in Payment.Method.choices}
+        if method not in valid_methods:
+            errors["method"] = _("Select a valid payment method.")
+        if method != Payment.Method.CASH and not transaction_reference:
+            errors["transaction_reference"] = _(
+                "Enter the transaction reference."
+            )
+        if latest_payment and latest_payment.status in {
+            Payment.Status.PENDING,
+            Payment.Status.VERIFIED,
+        }:
+            errors["payment"] = _(
+                "A payment is already pending or verified for this registration."
+            )
+
+        if not errors:
+            Payment.objects.create(
+                submission=submission,
+                amount=event.participation_fee or 0,
+                currency=event.payment_currency,
+                method=method,
+                transaction_reference=transaction_reference,
+                proof=proof,
+                paid_at=timezone.now(),
+            )
+            return redirect(
+                "forms_builder:participant_payment",
+                participant_token=submission.participant_token,
+            )
+
+    return render(
+        request,
+        "forms_builder/participant_payment.html",
+        {
+            "submission": submission,
+            "event": event,
+            "latest_payment": latest_payment,
+            "payment_errors": errors,
+            "payment_methods": Payment.Method.choices,
+        },
+    )
 
 @require_http_methods(["GET", "POST"])
 def registration_status(request):

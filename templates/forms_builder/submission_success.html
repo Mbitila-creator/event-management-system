@@ -91,6 +91,9 @@
 
             <div class="success-actions">
                 {% if not is_evaluation %}
+                    {% if event.payment_enabled and can_access_payment %}
+                    <a href="{% url 'forms_builder:participant_payment' submission.participant_token %}" class="submit-button success-link">{% translate "Submit payment" %}</a>
+                    {% endif %}
                     <a
                         href="{% url 'forms_builder:registration_status' %}?reference={{ submission.reference_number|urlencode }}"
                         class="submit-button success-link"

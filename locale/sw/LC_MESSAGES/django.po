@@ -2318,3 +2318,54 @@ msgstr "Takwimu za uendeshaji"
 
 msgid "Open records"
 msgstr "Fungua kumbukumbu"
+
+msgid "payment collection enabled"
+msgstr "ukusanyaji wa malipo umeruhusiwa"
+
+msgid "participation fee"
+msgstr "ada ya ushiriki"
+
+msgid "payment currency"
+msgstr "sarafu ya malipo"
+
+msgid "payment instructions in Kiswahili"
+msgstr "maelekezo ya malipo kwa Kiswahili"
+
+msgid "payment instructions in English"
+msgstr "maelekezo ya malipo kwa Kiingereza"
+
+msgid "Registration payment"
+msgstr "Malipo ya usajili"
+
+msgid "Amount payable"
+msgstr "Kiasi cha kulipa"
+
+msgid "Your payment information has been received and is awaiting verification."
+msgstr "Taarifa zako za malipo zimepokelewa na zinasubiri uthibitisho."
+
+msgid "Your payment has been verified successfully."
+msgstr "Malipo yako yamethibitishwa kwa mafanikio."
+
+msgid "The previous payment was rejected. Check the details and submit again."
+msgstr "Malipo ya awali yalikataliwa. Hakiki taarifa na uwasilishe tena."
+
+msgid "Required for bank and mobile-money payments."
+msgstr "Inahitajika kwa malipo ya benki na fedha kwa simu."
+
+msgid "Submit payment information"
+msgstr "Wasilisha taarifa za malipo"
+
+msgid "Submit payment"
+msgstr "Wasilisha malipo"
+
+msgid "View payment status"
+msgstr "Tazama hali ya malipo"
+
+msgid "Select a valid payment method."
+msgstr "Chagua njia sahihi ya malipo."
+
+msgid "Enter the transaction reference."
+msgstr "Weka kumbukumbu ya muamala."
+
+msgid "A payment is already pending or verified for this registration."
+msgstr "Malipo ya usajili huu tayari yanasubiri au yamethibitishwa."

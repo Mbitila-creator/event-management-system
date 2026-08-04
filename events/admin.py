@@ -194,6 +194,7 @@ class EventAdmin(admin.ModelAdmin):
         "ends_at",
         "status",
         "registration_enabled",
+        "payment_enabled",
         "is_active",
     )
 
@@ -201,6 +202,7 @@ class EventAdmin(admin.ModelAdmin):
         "status",
         "category",
         "registration_enabled",
+        "payment_enabled",
         "evaluation_enabled",
         "qr_checkin_enabled",
         "badge_enabled",
@@ -304,6 +306,18 @@ class EventAdmin(admin.ModelAdmin):
                     "badge_enabled",
                     "certificate_enabled",
                     "booth_enabled",
+                    "payment_enabled",
+                )
+            },
+        ),
+        (
+            "Payment Configuration",
+            {
+                "fields": (
+                    "participation_fee",
+                    "payment_currency",
+                    "payment_instructions_sw",
+                    "payment_instructions_en",
                 )
             },
         ),
