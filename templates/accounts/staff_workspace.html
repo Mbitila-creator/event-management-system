@@ -1,0 +1,76 @@
+{% extends "events/base_public.html" %}
+{% load static i18n %}
+
+{% block title %}{% translate "Staff workspace" %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/staff-workspace.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="staff-workspace-page">
+    <div class="staff-workspace-container">
+        <header class="workspace-welcome">
+            <div>
+                <span>{% translate "Staff workspace" %}</span>
+                <h1>{% translate "Welcome" %}, {{ request.user.get_full_name|default:request.user.username }}</h1>
+                <p>{{ request.user.get_role_display }}</p>
+            </div>
+            {% if is_event_admin %}
+                <a href="{% url 'admin:index' %}" class="workspace-secondary-button">{% translate "Advanced administration" %}</a>
+            {% endif %}
+        </header>
+
+        <div class="workspace-statistics">
+            <article><span>{% translate "Active events" %}</span><strong>{{ active_events }}</strong></article>
+            <article><span>{% translate "Pending registrations" %}</span><strong>{{ pending_registration_count }}</strong></article>
+            <article><span>{% translate "Payments awaiting verification" %}</span><strong>{{ pending_payment_count }}</strong></article>
+            <article><span>{% translate "Participants checked in" %}</span><strong>{{ checked_in_count }}</strong></article>
+        </div>
+
+        <nav class="workspace-actions" aria-label="{% translate 'Staff tools' %}">
+            <a href="{% url 'checkin:lookup' %}"><strong>{% translate "Participant check-in" %}</strong><span>{% translate "Scan a badge or enter a reference number" %}</span></a>
+            {% if is_event_admin %}
+                <a href="{% url 'checkin:reports' %}"><strong>{% translate "Attendance reports" %}</strong><span>{% translate "Review attendance and certificate authorization" %}</span></a>
+                <a href="{% url 'forms_builder:evaluation_reports' %}"><strong>{% translate "Evaluation reports" %}</strong><span>{% translate "Review visitor and participant feedback" %}</span></a>
+            {% endif %}
+        </nav>
+
+        <div class="workspace-panels">
+            <section class="workspace-panel">
+                <div class="workspace-panel-heading">
+                    <h2>{% translate "Registrations awaiting review" %}</h2>
+                    <span>{{ pending_registration_count }}</span>
+                </div>
+                <div class="workspace-table-scroll">
+                    <table>
+                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Participant" %}</th><th>{% translate "Event" %}</th><th>{% translate "Submitted on" %}</th></tr></thead>
+                        <tbody>
+                        {% for submission in recent_submissions %}
+                            <tr><td>{{ submission.reference_number }}</td><td>{{ submission.badge_display_name }}</td><td>{{ submission.event_form.event }}</td><td>{{ submission.created_at|date:"d M Y, H:i" }}</td></tr>
+                        {% empty %}<tr><td colspan="4">{% translate "No registrations are awaiting review." %}</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="workspace-panel">
+                <div class="workspace-panel-heading">
+                    <h2>{% translate "Payments awaiting verification" %}</h2>
+                    <span>{{ pending_payment_count }}</span>
+                </div>
+                <div class="workspace-table-scroll">
+                    <table>
+                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Amount" %}</th><th>{% translate "Transaction reference" %}</th><th>{% translate "Submitted on" %}</th></tr></thead>
+                        <tbody>
+                        {% for payment in recent_payments %}
+                            <tr><td>{{ payment.submission.reference_number }}</td><td>{{ payment.currency }} {{ payment.amount }}</td><td>{{ payment.transaction_reference|default:"—" }}</td><td>{{ payment.created_at|date:"d M Y, H:i" }}</td></tr>
+                        {% empty %}<tr><td colspan="4">{% translate "No payments are awaiting verification." %}</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+</section>
+{% endblock %}

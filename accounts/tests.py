@@ -79,7 +79,7 @@ class RoleAndLanguageTests(TestCase):
             fetch_redirect_response=False,
         )
 
-    def test_event_administrator_workspace_opens_administration(self):
+    def test_event_administrator_opens_independent_staff_workspace(self):
         user = User.objects.create_user(
             username="login-event-admin",
             email="login-event-admin@example.org",
@@ -92,11 +92,27 @@ class RoleAndLanguageTests(TestCase):
 
         response = self.client.get("/en/staff/")
 
-        self.assertRedirects(
-            response,
-            "/en/admin/",
-            fetch_redirect_response=False,
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Staff workspace")
+        self.assertContains(response, "Advanced administration")
+        self.assertNotContains(response, "Start typing to filter")
+
+    def test_registration_officer_workspace_has_no_django_admin_sidebar(self):
+        user = User.objects.create_user(
+            username="workspace-registration",
+            email="workspace-registration@example.org",
+            password="test-password",
+            role=User.Role.REGISTRATION_OFFICER,
+            preferred_language="en",
         )
+        self.client.force_login(user)
+
+        response = self.client.get("/en/staff/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Registrations awaiting review")
+        self.assertNotContains(response, "Site administration")
+        self.assertNotContains(response, "Start typing to filter")
 
     def test_report_officer_has_view_but_not_change_permission(self):
         user = User.objects.create_user(

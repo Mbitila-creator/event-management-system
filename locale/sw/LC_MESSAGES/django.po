@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-05 09:52+0300\n"
+"POT-Creation-Date: 2026-08-05 10:24+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -37,7 +37,8 @@ msgstr "Afisa Mahudhurio"
 msgid "Report Officer"
 msgstr "Afisa Ripoti"
 
-#: accounts/models.py:19 templates/forms_builder/payment_receipt.html:12
+#: accounts/models.py:19 templates/accounts/staff_workspace.html:47
+#: templates/forms_builder/payment_receipt.html:12
 msgid "Participant"
 msgstr "Mshiriki"
 
@@ -121,7 +122,9 @@ msgstr "uthibitishaji wa mahudhurio ya mshiriki"
 msgid "participant check-ins"
 msgstr "uthibitishaji wa mahudhurio ya washiriki"
 
-#: checkin/views.py:258 templates/checkin/participant_check_in.html:97
+#: checkin/views.py:258 templates/accounts/staff_workspace.html:47
+#: templates/accounts/staff_workspace.html:64
+#: templates/checkin/participant_check_in.html:97
 #: templates/checkin/reports.html:76
 #: templates/forms_builder/participant_badge.html:75
 #: templates/forms_builder/participant_portal.html:11
@@ -184,11 +187,11 @@ msgstr "Ndiyo"
 msgid "No"
 msgstr "Hapana"
 
-#: core/context_processors.py:18
+#: core/context_processors.py:18 templates/accounts/staff_workspace.html:25
 msgid "Active events"
 msgstr "Matukio yanayotumika"
 
-#: core/context_processors.py:29
+#: core/context_processors.py:29 templates/accounts/staff_workspace.html:26
 msgid "Pending registrations"
 msgstr "Usajili unaosubiri"
 
@@ -196,11 +199,12 @@ msgstr "Usajili unaosubiri"
 msgid "Evaluation responses"
 msgstr "Majibu ya tathmini"
 
-#: core/context_processors.py:57
+#: core/context_processors.py:57 templates/accounts/staff_workspace.html:27
+#: templates/accounts/staff_workspace.html:59
 msgid "Payments awaiting verification"
 msgstr "Malipo yanayosubiri uthibitisho"
 
-#: core/context_processors.py:68
+#: core/context_processors.py:68 templates/accounts/staff_workspace.html:28
 msgid "Participants checked in"
 msgstr "Washiriki waliothibitisha mahudhurio"
 
@@ -646,7 +650,8 @@ msgstr "Kataa malipo yaliyochaguliwa"
 msgid "Export selected visitor interests to CSV"
 msgstr "Hamisha nia za wageni zilizochaguliwa kwenda CSV"
 
-#: forms_builder/admin.py:351 templates/checkin/participant_check_in.html:102
+#: forms_builder/admin.py:351 templates/accounts/staff_workspace.html:47
+#: templates/checkin/participant_check_in.html:102
 #: templates/forms_builder/booth_detail.html:26
 #: templates/forms_builder/certificate_verification.html:31
 #: templates/forms_builder/registration_status.html:90
@@ -679,6 +684,8 @@ msgid "Message"
 msgstr "Ujumbe"
 
 #: forms_builder/admin.py:358 forms_builder/views.py:423
+#: templates/accounts/staff_workspace.html:47
+#: templates/accounts/staff_workspace.html:64
 #: templates/forms_builder/evaluation_reports.html:58
 #: templates/forms_builder/participant_payment.html:24
 #: templates/forms_builder/registration_status.html:101
@@ -1924,6 +1931,77 @@ msgstr "Washiriki hawahitaji akaunti ya mtumishi."
 msgid "Check registration status"
 msgstr "Angalia hali ya usajili"
 
+#: templates/accounts/staff_workspace.html:4
+#: templates/accounts/staff_workspace.html:15
+msgid "Staff workspace"
+msgstr "Eneo la kazi la watumishi"
+
+#: templates/accounts/staff_workspace.html:16 templates/admin/index.html:8
+#: templates/events/home.html:14
+msgid "Welcome"
+msgstr "Karibu"
+
+#: templates/accounts/staff_workspace.html:20
+msgid "Advanced administration"
+msgstr "Usimamizi wa kina"
+
+#: templates/accounts/staff_workspace.html:31
+msgid "Staff tools"
+msgstr "Zana za watumishi"
+
+#: templates/accounts/staff_workspace.html:32 templates/checkin/lookup.html:5
+#: templates/checkin/lookup.html:15
+#: templates/checkin/participant_check_in.html:5
+#: templates/checkin/participant_check_in.html:17
+msgid "Participant check-in"
+msgstr "Thibitisha mahudhurio ya mshiriki"
+
+#: templates/accounts/staff_workspace.html:32
+msgid "Scan a badge or enter a reference number"
+msgstr "Changanua beji au weka namba ya kumbukumbu"
+
+#: templates/accounts/staff_workspace.html:34
+#: templates/admin/checkin/participantcheckin/change_list.html:6
+msgid "Attendance reports"
+msgstr "Ripoti za mahudhurio"
+
+#: templates/accounts/staff_workspace.html:34
+msgid "Review attendance and certificate authorization"
+msgstr "Kagua mahudhurio na idhini za vyeti"
+
+#: templates/accounts/staff_workspace.html:35
+#: templates/forms_builder/evaluation_reports.html:5
+#: templates/forms_builder/evaluation_reports.html:17
+msgid "Evaluation reports"
+msgstr "Ripoti za tathmini"
+
+#: templates/accounts/staff_workspace.html:35
+msgid "Review visitor and participant feedback"
+msgstr "Kagua maoni ya wageni na washiriki"
+
+#: templates/accounts/staff_workspace.html:42
+msgid "Registrations awaiting review"
+msgstr "Usajili unaosubiri kukaguliwa"
+
+#: templates/accounts/staff_workspace.html:51
+msgid "No registrations are awaiting review."
+msgstr "Hakuna usajili unaosubiri kukaguliwa."
+
+#: templates/accounts/staff_workspace.html:64
+msgid "Amount"
+msgstr "Kiasi"
+
+#: templates/accounts/staff_workspace.html:64
+#: templates/forms_builder/participant_payment.html:24
+#: templates/forms_builder/participant_payment.html:35
+#: templates/forms_builder/payment_receipt.html:16
+msgid "Transaction reference"
+msgstr "Kumbukumbu ya muamala"
+
+#: templates/accounts/staff_workspace.html:68
+msgid "No payments are awaiting verification."
+msgstr "Hakuna malipo yanayosubiri uthibitisho."
+
 #: templates/admin/base_site.html:4 templates/admin/base_site.html:15
 #: templates/events/base_public.html:16 templates/events/base_public.html:21
 #: templates/events/base_public.html:49 templates/events/base_public.html:144
@@ -1957,17 +2035,9 @@ msgstr "Mshiriki"
 msgid "Check-in"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: templates/admin/checkin/participantcheckin/change_list.html:6
-msgid "Attendance reports"
-msgstr "Ripoti za mahudhurio"
-
 #: templates/admin/index.html:7
 msgid "Workspace"
 msgstr "Eneo la kazi"
-
-#: templates/admin/index.html:8 templates/events/home.html:14
-msgid "Welcome"
-msgstr "Karibu"
 
 #: templates/admin/index.html:13
 msgid "Operational statistics"
@@ -2086,12 +2156,6 @@ msgstr "Ripoti za Tathmini"
 #: templates/admin/index.html:65
 msgid "Participant Reports"
 msgstr "Ripoti za Washiriki"
-
-#: templates/checkin/lookup.html:5 templates/checkin/lookup.html:15
-#: templates/checkin/participant_check_in.html:5
-#: templates/checkin/participant_check_in.html:17
-msgid "Participant check-in"
-msgstr "Thibitisha mahudhurio ya mshiriki"
 
 #: templates/checkin/lookup.html:14
 msgid "Event attendance"
@@ -2498,11 +2562,6 @@ msgstr ""
 "Cheti hiki ni halali na kimetolewa kwa mshiriki ambaye mahudhurio yake "
 "yamethibitishwa."
 
-#: templates/forms_builder/evaluation_reports.html:5
-#: templates/forms_builder/evaluation_reports.html:17
-msgid "Evaluation reports"
-msgstr "Ripoti za tathmini"
-
 #: templates/forms_builder/evaluation_reports.html:16
 msgid "Visitor feedback"
 msgstr "Maoni ya wageni"
@@ -2617,14 +2676,6 @@ msgstr "Kiasi cha kulipa"
 #| msgid "payment status"
 msgid "Payment status"
 msgstr "hali ya malipo"
-
-#: templates/forms_builder/participant_payment.html:24
-#: templates/forms_builder/participant_payment.html:35
-#: templates/forms_builder/payment_receipt.html:16
-#, fuzzy
-#| msgid "transaction reference"
-msgid "Transaction reference"
-msgstr "kumbukumbu ya muamala"
 
 #: templates/forms_builder/participant_payment.html:26
 msgid "Open payment receipt"
