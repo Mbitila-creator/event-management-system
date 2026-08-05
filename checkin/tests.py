@@ -21,18 +21,21 @@ class ParticipantCheckInTests(TestCase):
             email="officer@example.org",
             password="test-password",
             role=User.Role.ATTENDANCE_OFFICER,
+            preferred_language="en",
         )
         self.participant_user = get_user_model().objects.create_user(
             username="ordinary-participant",
             email="ordinary@example.org",
             password="test-password",
             role=User.Role.PARTICIPANT,
+            preferred_language="en",
         )
         self.report_officer = get_user_model().objects.create_user(
             username="report-officer",
             email="reports@example.org",
             password="test-password",
             role=User.Role.REPORT_OFFICER,
+            preferred_language="en",
             is_staff=True,
         )
         category = EventCategory.objects.create(

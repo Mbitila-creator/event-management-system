@@ -131,6 +131,47 @@ class RoleAndLanguageTests(TestCase):
         response = self.client.get("/sw/admin/")
         self.assertRedirects(response, "/en/admin/", fetch_redirect_response=False)
 
+    def test_staff_workspace_uses_authenticated_users_preferred_language(self):
+        user = User.objects.create_user(
+            username="swahili-registration",
+            email="swahili-registration@example.org",
+            role=User.Role.REGISTRATION_OFFICER,
+            preferred_language="sw",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get("/en/staff/")
+
+        self.assertRedirects(response, "/sw/staff/", fetch_redirect_response=False)
+
+    def test_check_in_uses_authenticated_users_preferred_language(self):
+        user = User.objects.create_user(
+            username="english-attendance",
+            email="english-attendance@example.org",
+            role=User.Role.ATTENDANCE_OFFICER,
+            preferred_language="en",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get("/sw/check-in/")
+
+        self.assertRedirects(response, "/en/check-in/", fetch_redirect_response=False)
+
+    def test_registration_officer_permissions_are_limited_to_operations(self):
+        user = User.objects.create_user(
+            username="limited-registration",
+            email="limited-registration@example.org",
+            role=User.Role.REGISTRATION_OFFICER,
+        )
+
+        self.assertTrue(user.has_perm("forms_builder.change_formsubmission"))
+        self.assertTrue(user.has_perm("forms_builder.change_payment"))
+        self.assertTrue(user.has_perm("checkin.add_participantcheckin"))
+        self.assertFalse(user.has_perm("forms_builder.change_eventform"))
+        self.assertFalse(user.has_perm("forms_builder.add_formquestion"))
+        self.assertFalse(user.has_perm("forms_builder.change_certificaterecord"))
+        self.assertFalse(user.has_perm("events.change_event"))
+
     def test_system_administrator_sees_operational_dashboard(self):
         user = User.objects.create_user(
             username="system-admin", email="system@example.org",

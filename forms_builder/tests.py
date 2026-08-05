@@ -628,6 +628,7 @@ class PublicEvaluationTests(TestCase):
             email="evaluation-reporter@example.org",
             password="test-password",
             role="REPORT_OFFICER",
+            preferred_language="en",
             is_staff=True,
         )
         self.client.force_login(report_officer)
@@ -660,6 +661,7 @@ class PublicEvaluationTests(TestCase):
             email="evaluation-participant@example.org",
             password="test-password",
             role="PARTICIPANT",
+            preferred_language="en",
         )
         self.client.force_login(participant)
 

@@ -77,10 +77,29 @@ class User(AbstractUser):
     ROLE_PERMISSION_APPS = {
         Role.SYSTEM_ADMIN: {"*"},
         Role.EVENT_ADMIN: {"events", "forms_builder", "checkin", "core"},
-        Role.REGISTRATION_OFFICER: {"forms_builder", "checkin"},
+        Role.REGISTRATION_OFFICER: set(),
         Role.ATTENDANCE_OFFICER: {"checkin"},
         Role.REPORT_OFFICER: {"forms_builder", "checkin"},
         Role.PARTICIPANT: set(),
+    }
+
+    REGISTRATION_OFFICER_PERMISSIONS = {
+        "forms_builder.view_eventform",
+        "forms_builder.view_formsubmission",
+        "forms_builder.change_formsubmission",
+        "forms_builder.view_participant",
+        "forms_builder.change_participant",
+        "forms_builder.view_formanswer",
+        "forms_builder.view_payment",
+        "forms_builder.add_payment",
+        "forms_builder.change_payment",
+        "forms_builder.view_notificationlog",
+        "forms_builder.view_booth",
+        "forms_builder.change_booth",
+        "forms_builder.view_boothinterest",
+        "checkin.view_participantcheckin",
+        "checkin.add_participantcheckin",
+        "checkin.change_participantcheckin",
     }
 
     OPERATIONAL_ROLES = {
@@ -108,6 +127,8 @@ class User(AbstractUser):
         app_label = perm.partition(".")[0]
         allowed = self.ROLE_PERMISSION_APPS.get(self.role, set())
         codename = perm.partition(".")[2]
+        if self.role == self.Role.REGISTRATION_OFFICER:
+            return perm in self.REGISTRATION_OFFICER_PERMISSIONS
         if self.role == self.Role.REPORT_OFFICER:
             return app_label in allowed and codename.startswith("view_")
         if "*" in allowed or app_label in allowed:
@@ -119,5 +140,7 @@ class User(AbstractUser):
             return False
         if self.is_superuser:
             return True
+        if self.role == self.Role.REGISTRATION_OFFICER:
+            return app_label in {"forms_builder", "checkin"}
         allowed = self.ROLE_PERMISSION_APPS.get(self.role, set())
         return "*" in allowed or app_label in allowed
