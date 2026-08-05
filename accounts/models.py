@@ -83,6 +83,23 @@ class User(AbstractUser):
         Role.PARTICIPANT: set(),
     }
 
+    OPERATIONAL_ROLES = {
+        Role.SYSTEM_ADMIN,
+        Role.EVENT_ADMIN,
+        Role.REGISTRATION_OFFICER,
+        Role.ATTENDANCE_OFFICER,
+        Role.REPORT_OFFICER,
+    }
+
+    def save(self, *args, **kwargs):
+        """Operational roles must be able to enter their protected workspace."""
+        if self.role in self.OPERATIONAL_ROLES:
+            self.is_staff = True
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"is_staff"}
+        super().save(*args, **kwargs)
+
     def has_perm(self, perm, obj=None):
         if not self.is_active:
             return False

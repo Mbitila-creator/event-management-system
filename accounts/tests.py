@@ -6,6 +6,26 @@ from .models import User
 
 
 class RoleAndLanguageTests(TestCase):
+    def test_operational_role_automatically_enables_staff_status(self):
+        user = User.objects.create_user(
+            username="automatic-staff",
+            email="automatic-staff@example.org",
+            role=User.Role.ATTENDANCE_OFFICER,
+            is_staff=False,
+        )
+
+        self.assertTrue(user.is_staff)
+
+    def test_participant_role_does_not_automatically_enable_staff_status(self):
+        user = User.objects.create_user(
+            username="public-participant",
+            email="public-participant@example.org",
+            role=User.Role.PARTICIPANT,
+            is_staff=False,
+        )
+
+        self.assertFalse(user.is_staff)
+
     def test_staff_login_page_is_public_and_bilingual_ready(self):
         response = self.client.get("/en/staff/login/")
 
