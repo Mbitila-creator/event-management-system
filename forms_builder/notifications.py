@@ -6,7 +6,7 @@ from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 
 from .models import EventForm, EventReminder, FormSubmission, NotificationLog, Payment
-from .services import participant_badge_url, participant_certificate_path
+from .services import participant_certificate_path
 
 
 def _absolute_url(path, request=None):
@@ -41,15 +41,6 @@ def _notification_content(submission, notification_type, request=None):
             }
         elif notification_type == NotificationLog.NotificationType.REGISTRATION_APPROVED:
             subject = _("Registration approved — %(event)s") % {"event": event_name}
-            badge_line = ""
-            if event.badge_enabled:
-                badge_line = _("\nParticipant badge: %(badge_url)s") % {
-                    "badge_url": participant_badge_url(
-                        submission,
-                        request=request,
-                        language=language,
-                    )
-                }
             body = _(
                 "Your registration for %(event)s has been approved.\n\n"
                 "Reference number: %(reference)s\n"
@@ -59,7 +50,6 @@ def _notification_content(submission, notification_type, request=None):
                 "reference": submission.reference_number,
                 "status_url": status_url,
             }
-            body += badge_line
         elif notification_type == NotificationLog.NotificationType.REGISTRATION_REJECTED:
             subject = _("Registration update — %(event)s") % {"event": event_name}
             body = _(
@@ -173,7 +163,7 @@ def send_payment_notification(payment, notification_type, request=None):
         ) % {
             "message": message, "event": event_name,
             "reference": submission.reference_number,
-            "currency": payment.currency, "amount": payment.amount,
+            "currency": payment.currency, "amount": f"{payment.amount:,.2f}",
             "payment_url": payment_url,
         }
     recipient = submission.submitter_email.strip()

@@ -290,6 +290,8 @@ class ParticipantPaymentTests(TestCase):
                 self.assertEqual(
                     payment_amount_for_submission(self.submission), amount,
                 )
+        response = self.client.get(self.url)
+        self.assertContains(response, "TZS 5,000,000.00")
 
     def test_tiered_pricing_rejects_missing_quantity(self):
         section = FormSection.objects.create(
@@ -1005,6 +1007,16 @@ class SubmissionNotificationTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("Usajili umeidhinishwa", mail.outbox[0].subject)
         self.assertIn("Namba ya kumbukumbu", mail.outbox[0].body)
+
+    def test_approval_email_uses_status_link_without_badge_link(self):
+        send_submission_notification(
+            self.submission,
+            NotificationLog.NotificationType.REGISTRATION_APPROVED,
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("registration-status", mail.outbox[0].body)
+        self.assertNotIn("Participant badge:", mail.outbox[0].body)
+        self.assertNotIn("/badge/", mail.outbox[0].body)
 
     def test_email_backend_failure_is_logged_without_raising(self):
         with patch(

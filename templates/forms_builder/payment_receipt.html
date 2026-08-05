@@ -1,5 +1,5 @@
 {% extends "events/base_public.html" %}
-{% load i18n static %}
+{% load i18n static humanize %}
 {% block title %}{% translate "Payment receipt" %} — {{ receipt_number }}{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/payment-receipt.css' %}">{% endblock %}
 {% block content %}
@@ -11,7 +11,7 @@
         <dl>
             <div><dt>{% translate "Participant" %}</dt><dd>{{ submission.badge_display_name }}</dd></div>
             <div><dt>{% translate "Registration reference" %}</dt><dd>{{ submission.reference_number }}</dd></div>
-            <div><dt>{% translate "Amount paid" %}</dt><dd>{{ payment.currency }} {{ payment.amount }}</dd></div>
+            <div><dt>{% translate "Amount paid" %}</dt><dd>{{ payment.currency }} {{ payment.amount|floatformat:2|intcomma }}</dd></div>
             <div><dt>{% translate "Payment method" %}</dt><dd>{{ payment.get_method_display }}</dd></div>
             <div><dt>{% translate "Transaction reference" %}</dt><dd>{{ payment.transaction_reference|default:"—" }}</dd></div>
             <div><dt>{% translate "Verification date" %}</dt><dd>{{ payment.verified_at|date:"d M Y, H:i" }}</dd></div>

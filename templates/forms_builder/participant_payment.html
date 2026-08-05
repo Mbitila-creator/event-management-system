@@ -1,5 +1,5 @@
 {% extends "events/base_public.html" %}
-{% load i18n static %}
+{% load i18n static humanize %}
 
 {% block title %}{% translate "Registration payment" %}{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/participant-payment.css' %}">{% endblock %}
@@ -10,7 +10,7 @@
     <h1>{% translate "Registration payment" %}</h1>
     <p class="payment-event">{% if request.LANGUAGE_CODE == 'en' %}{{ event.title_en }}{% else %}{{ event.title_sw }}{% endif %}</p>
 
-    <div class="payment-amount"><span>{% translate "Amount payable" %}</span><strong>{{ payment_currency }} {{ calculated_amount|default:"—" }}</strong></div>
+    <div class="payment-amount"><span>{% translate "Amount payable" %}</span><strong>{{ payment_currency }} {% if calculated_amount != None %}{{ calculated_amount|floatformat:2|intcomma }}{% else %}—{% endif %}</strong></div>
     <div class="payment-instructions">
         {% if request.LANGUAGE_CODE == 'en' %}{{ event.payment_instructions_en|linebreaks }}{% else %}{{ event.payment_instructions_sw|linebreaks }}{% endif %}
     </div>
