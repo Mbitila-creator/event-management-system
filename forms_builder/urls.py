@@ -7,6 +7,11 @@ app_name = "forms_builder"
 
 urlpatterns = [
     path(
+        "participants/<uuid:participant_token>/",
+        views.participant_portal,
+        name="participant_portal",
+    ),
+    path(
         "events/<slug:event_slug>/booths/",
         views.booth_directory,
         name="booth_directory",

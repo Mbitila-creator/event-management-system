@@ -308,6 +308,32 @@ class ParticipantPaymentTests(TestCase):
         )
         self.assertIsNone(payment_amount_for_submission(self.submission))
 
+    def test_participant_portal_shows_services_without_check_in_action(self):
+        self.submission.review_status = FormSubmission.ReviewStatus.APPROVED
+        self.submission.save(update_fields=["review_status"])
+        portal_url = (
+            f"/en/participants/{self.submission.participant_token}/"
+        )
+        response = self.client.get(portal_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Participant portal")
+        self.assertContains(response, "Payment and receipt")
+        self.assertContains(response, "Participant badge")
+        self.assertNotContains(response, "Staff check-in")
+
+    def test_participant_portal_formats_payment_amount(self):
+        Payment.objects.create(
+            submission=self.submission,
+            amount=Decimal("5000000.00"),
+            currency="TZS",
+            method=Payment.Method.BANK,
+            transaction_reference="TX-PORTAL",
+        )
+        response = self.client.get(
+            f"/en/participants/{self.submission.participant_token}/"
+        )
+        self.assertContains(response, "TZS 5,000,000.00")
+
 
 class PublicEvaluationTests(TestCase):
     def setUp(self):

@@ -104,6 +104,7 @@
                     </dl>
 
                     <div class="status-explanation">
+                        <a href="{% url 'forms_builder:participant_portal' submission.participant_token %}" class="primary-button status-badge-link">{% translate "Open participant portal" %}</a>
                         {% if submission.event_form.event.payment_enabled %}
                             <a href="{% url 'forms_builder:participant_payment' submission.participant_token %}" class="primary-button status-badge-link">{% translate "View payment status" %}</a>
                         {% endif %}

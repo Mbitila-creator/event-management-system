@@ -2432,3 +2432,45 @@ msgstr "kanuni za bei kulingana na idadi"
 
 msgid "The payment amount could not be calculated. Contact the event organizer."
 msgstr "Kiasi cha malipo hakikuweza kukokotolewa. Wasiliana na mratibu wa tukio."
+
+msgid "Participant portal"
+msgstr "Tovuti ya mshiriki"
+
+msgid "Open participant portal"
+msgstr "Fungua tovuti ya mshiriki"
+
+msgid "Not submitted"
+msgstr "Hayajawasilishwa"
+
+msgid "Not required"
+msgstr "Hayahitajiki"
+
+msgid "Not available"
+msgstr "Hakipatikani"
+
+msgid "Your services"
+msgstr "Huduma zako"
+
+msgid "Payment and receipt"
+msgstr "Malipo na risiti"
+
+msgid "View or print your badge and QR code"
+msgstr "Tazama au chapisha beji na msimbo wako wa QR"
+
+msgid "Assigned booth"
+msgstr "Banda ulilopangiwa"
+
+msgid "Event evaluation"
+msgstr "Tathmini ya tukio"
+
+msgid "Share your experience and suggestions"
+msgstr "Toa uzoefu na mapendekezo yako"
+
+msgid "Event information"
+msgstr "Taarifa za tukio"
+
+msgid "Event dates"
+msgstr "Tarehe za tukio"
+
+msgid "View and download your certificate"
+msgstr "Tazama na pakua cheti chako"

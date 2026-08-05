@@ -973,6 +973,48 @@ def submission_success(request, reference_number):
     )
 
 
+@require_http_methods(["GET"])
+def participant_portal(request, participant_token):
+    submission = get_object_or_404(
+        FormSubmission.objects.select_related(
+            "event_form__event",
+            "event_form__event__venue",
+            "check_in",
+            "booth_assignment",
+        ),
+        participant_token=participant_token,
+        is_active=True,
+        is_complete=True,
+        event_form__form_type__in=[
+            EventForm.FormType.REGISTRATION,
+            EventForm.FormType.EXHIBITOR,
+            EventForm.FormType.SPEAKER,
+        ],
+    )
+    event = submission.event_form.event
+    latest_payment = submission.payments.order_by("-created_at").first()
+    evaluation_form = None
+    if event.evaluation_enabled:
+        evaluation_form = EventForm.objects.filter(
+            event=event,
+            form_type=EventForm.FormType.EVALUATION,
+            is_published=True,
+            is_active=True,
+        ).first()
+    return render(
+        request,
+        "forms_builder/participant_portal.html",
+        {
+            "submission": submission,
+            "event": event,
+            "latest_payment": latest_payment,
+            "checked_in": hasattr(submission, "check_in"),
+            "booth": getattr(submission, "booth_assignment", None),
+            "evaluation_form": evaluation_form,
+        },
+    )
+
+
 @require_http_methods(["GET", "POST"])
 def participant_payment(request, participant_token):
     submission = get_object_or_404(
