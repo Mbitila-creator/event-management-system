@@ -19,6 +19,7 @@ from events.models import Event
 from .models import (
     Booth,
     BoothInterest,
+    CertificateRecord,
     EventForm,
     FormAnswer,
     FormQuestion,
@@ -1009,7 +1010,11 @@ def participant_portal(request, participant_token):
             "event": event,
             "latest_payment": latest_payment,
             "checked_in": hasattr(submission, "check_in"),
-            "certificate_authorized": submission.certificate_authorized,
+            "certificate_authorized": (
+                hasattr(submission, "certificate_record")
+                and submission.certificate_record.status
+                == CertificateRecord.Status.AUTHORIZED
+            ),
             "booth": getattr(submission, "booth_assignment", None),
             "evaluation_form": evaluation_form,
         },
@@ -1219,6 +1224,7 @@ def participant_certificate(request, participant_token):
             "event_form__event",
             "event_form__event__venue",
             "check_in",
+            "certificate_record",
         ),
         participant_token=participant_token,
         review_status=FormSubmission.ReviewStatus.APPROVED,
@@ -1226,7 +1232,7 @@ def participant_certificate(request, participant_token):
         is_active=True,
         event_form__event__certificate_enabled=True,
         check_in__isnull=False,
-        certificate_authorized=True,
+        certificate_record__status=CertificateRecord.Status.AUTHORIZED,
         event_form__form_type__in=[
             EventForm.FormType.REGISTRATION,
             EventForm.FormType.EXHIBITOR,
@@ -1266,6 +1272,7 @@ def get_certificate_submission(participant_token):
             "event_form__event",
             "event_form__event__venue",
             "check_in",
+            "certificate_record",
         ),
         participant_token=participant_token,
         review_status=FormSubmission.ReviewStatus.APPROVED,
@@ -1273,7 +1280,7 @@ def get_certificate_submission(participant_token):
         is_active=True,
         event_form__event__certificate_enabled=True,
         check_in__isnull=False,
-        certificate_authorized=True,
+        certificate_record__status=CertificateRecord.Status.AUTHORIZED,
         event_form__form_type__in=[
             EventForm.FormType.REGISTRATION,
             EventForm.FormType.EXHIBITOR,

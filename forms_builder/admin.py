@@ -40,6 +40,7 @@ from .services import (
     public_form_url,
     participant_badge_path,
     participant_certificate_path,
+    certificate_number,
     submissions_csv,
     safe_spreadsheet_value,
 )
@@ -641,7 +642,6 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "booth_assignment_display",
         "badge_tools",
         "certificate_tools",
-        "certificate_authorized",
         "submitted_on",
     )
 
@@ -675,9 +675,6 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "is_complete",
         "reviewed_by",
         "reviewed_at",
-        "certificate_authorized",
-        "certificate_authorized_by",
-        "certificate_authorized_at",
         "participant_token",
         "badge_tools",
         "certificate_tools",
@@ -802,7 +799,8 @@ class FormSubmissionAdmin(admin.ModelAdmin):
 
         if not hasattr(obj, "check_in"):
             return "Available after participant check-in."
-        if not obj.certificate_authorized:
+        certificate = getattr(obj, "certificate_record", None)
+        if not certificate or certificate.status != CertificateRecord.Status.AUTHORIZED:
             return "Waiting for certificate authorization."
 
         certificate_url = participant_certificate_path(
@@ -838,20 +836,35 @@ class FormSubmissionAdmin(admin.ModelAdmin):
             event_form__event__certificate_enabled=True,
             review_status=FormSubmission.ReviewStatus.APPROVED,
             check_in__isnull=False,
-            certificate_authorized=False,
-        ).select_related("event_form__event"))
+        ).exclude(
+            certificate_record__status=CertificateRecord.Status.AUTHORIZED,
+        ).select_related("event_form__event", "certificate_record"))
         now = timezone.now()
-        FormSubmission.objects.filter(
-            pk__in=[item.pk for item in eligible]
-        ).update(
-            certificate_authorized=True,
-            certificate_authorized_by=request.user,
-            certificate_authorized_at=now,
-            updated_by=request.user,
-            updated_at=now,
-        )
         for submission in eligible:
-            submission.certificate_authorized = True
+            certificate, created = CertificateRecord.objects.get_or_create(
+                submission=submission,
+                defaults={
+                    "certificate_number": certificate_number(submission),
+                    "status": CertificateRecord.Status.AUTHORIZED,
+                    "authorized_by": request.user,
+                    "authorized_at": now,
+                    "revoked_by": None,
+                    "revoked_at": None,
+                    "revocation_reason": "",
+                    "updated_by": request.user,
+                    "created_by": request.user,
+                },
+            )
+            if not created:
+                certificate.certificate_number = certificate_number(submission)
+                certificate.status = CertificateRecord.Status.AUTHORIZED
+                certificate.authorized_by = request.user
+                certificate.authorized_at = now
+                certificate.revoked_by = None
+                certificate.revoked_at = None
+                certificate.revocation_reason = ""
+                certificate.updated_by = request.user
+                certificate.save()
             send_submission_notification(
                 submission,
                 NotificationLog.NotificationType.CERTIFICATE_AUTHORIZED,
@@ -873,10 +886,13 @@ class FormSubmissionAdmin(admin.ModelAdmin):
             }
         ):
             return
-        queryset.update(
-            certificate_authorized=False,
-            certificate_authorized_by=None,
-            certificate_authorized_at=None,
+        CertificateRecord.objects.filter(
+            submission__in=queryset,
+            status=CertificateRecord.Status.AUTHORIZED,
+        ).update(
+            status=CertificateRecord.Status.REVOKED,
+            revoked_by=request.user,
+            revoked_at=timezone.now(),
             updated_by=request.user,
             updated_at=timezone.now(),
         )
@@ -1023,20 +1039,49 @@ class ParticipantAdmin(FormSubmissionAdmin):
 
 
 @admin.register(CertificateRecord)
-class CertificateRecordAdmin(FormSubmissionAdmin):
+class CertificateRecordAdmin(admin.ModelAdmin):
     actions = ()
     list_display = (
-        "reference_number", "event_name", "badge_name", "badge_organization",
-        "certificate_tools", "submitted_on",
+        "certificate_number", "reference_number", "event_name",
+        "participant_name", "status", "authorized_by", "authorized_at",
+        "certificate_link",
     )
-    list_filter = ("event_form__event", "language", "created_at")
+    list_filter = ("status", "submission__event_form__event", "authorized_at")
+    search_fields = (
+        "certificate_number", "submission__reference_number",
+        "submission__badge_name", "submission__submitter_email",
+    )
+    readonly_fields = (
+        "submission", "certificate_number", "status", "authorized_by",
+        "authorized_at", "revoked_by", "revoked_at", "revocation_reason",
+        "created_by", "updated_by", "created_at", "updated_at",
+    )
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(
-            event_form__event__certificate_enabled=True,
-            review_status=FormSubmission.ReviewStatus.APPROVED,
-            check_in__isnull=False,
-            certificate_authorized=True,
+        return super().get_queryset(request).select_related(
+            "submission__event_form__event", "authorized_by", "revoked_by",
+        )
+
+    @admin.display(description=_("Reference number"), ordering="submission__reference_number")
+    def reference_number(self, obj):
+        return obj.submission.reference_number
+
+    @admin.display(description=_("Event"), ordering="submission__event_form__event__code")
+    def event_name(self, obj):
+        return obj.submission.event_form.event.code
+
+    @admin.display(description=_("Participant"), ordering="submission__badge_name")
+    def participant_name(self, obj):
+        return obj.submission.badge_display_name
+
+    @admin.display(description=_("Certificate"))
+    def certificate_link(self, obj):
+        if obj.status != CertificateRecord.Status.AUTHORIZED:
+            return _("Revoked")
+        return format_html(
+            '<a href="{}" target="_blank">{}</a>',
+            participant_certificate_path(obj.submission, obj.submission.language),
+            _("Open certificate"),
         )
 
     def has_add_permission(self, request):

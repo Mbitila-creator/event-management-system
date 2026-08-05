@@ -97,7 +97,7 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            {% if submission.certificate_authorized %}
+                                            {% if submission.certificate_record.status == "AUTHORIZED" %}
                                                 <span class="report-status report-status-success">{% translate "Yes" %}</span>
                                             {% else %}
                                                 <span class="report-status report-status-muted">{% translate "No" %}</span>

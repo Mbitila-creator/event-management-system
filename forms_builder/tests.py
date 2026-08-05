@@ -28,6 +28,7 @@ from .models import (
     Booth,
     BoothInterest,
     BoothOffering,
+    CertificateRecord,
     EventForm,
     EventReminder,
     FormAnswer,
@@ -241,6 +242,39 @@ class ParticipantPaymentTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.submission.payments.count(), 1)
+
+    def test_payment_reference_cannot_be_reused_for_same_method(self):
+        Payment.objects.create(
+            submission=self.submission, amount=self.event.participation_fee,
+            method=Payment.Method.BANK, transaction_reference="UNIQUE-TX",
+        )
+        second_submission = FormSubmission.objects.create(
+            event_form=self.event_form, submitter_email="second@example.org",
+        )
+
+        with self.assertRaises(ValidationError):
+            Payment.objects.create(
+                submission=second_submission,
+                amount=self.event.participation_fee,
+                method=Payment.Method.BANK,
+                transaction_reference="UNIQUE-TX",
+            )
+
+    def test_answer_rejects_value_type_that_does_not_match_question(self):
+        section = FormSection.objects.create(
+            event_form=self.event_form, title_sw="Namba", title_en="Number",
+        )
+        question = FormQuestion.objects.create(
+            section=section, label_sw="Idadi", label_en="Quantity",
+            question_type=FormQuestion.QuestionType.NUMBER,
+        )
+
+        with self.assertRaises(ValidationError):
+            FormAnswer.objects.create(
+                submission=self.submission,
+                question=question,
+                text_value="Not a number",
+            )
 
     def test_payment_page_is_unavailable_when_event_disables_payments(self):
         self.event.payment_enabled = False
@@ -1330,13 +1364,13 @@ class SubmissionReviewAdminTests(TestCase):
             FormSubmission.objects.filter(pk=self.submission.pk),
         )
 
-        self.submission.refresh_from_db()
-        self.assertTrue(self.submission.certificate_authorized)
+        certificate = CertificateRecord.objects.get(submission=self.submission)
+        self.assertEqual(certificate.status, CertificateRecord.Status.AUTHORIZED)
         self.assertEqual(
-            self.submission.certificate_authorized_by,
+            certificate.authorized_by,
             self.event_admin,
         )
-        self.assertIsNotNone(self.submission.certificate_authorized_at)
+        self.assertIsNotNone(certificate.authorized_at)
         self.assertTrue(
             NotificationLog.objects.filter(
                 submission=self.submission,
@@ -1353,8 +1387,35 @@ class SubmissionReviewAdminTests(TestCase):
             FormSubmission.objects.filter(pk=self.submission.pk),
         )
 
-        self.submission.refresh_from_db()
-        self.assertFalse(self.submission.certificate_authorized)
+        self.assertFalse(
+            CertificateRecord.objects.filter(submission=self.submission).exists()
+        )
+
+    def test_revoked_certificate_keeps_audit_history_and_blocks_access(self):
+        event = self.submission.event_form.event
+        event.certificate_enabled = True
+        event.save(update_fields=["certificate_enabled"])
+        self.submission.review_status = FormSubmission.ReviewStatus.APPROVED
+        self.submission.save(update_fields=["review_status"])
+        ParticipantCheckIn.objects.create(
+            submission=self.submission,
+            checked_in_by=self.event_admin,
+        )
+        self.request.user = self.event_admin
+        queryset = FormSubmission.objects.filter(pk=self.submission.pk)
+        self.model_admin.authorize_certificates(self.request, queryset)
+
+        self.model_admin.revoke_certificate_authorization(self.request, queryset)
+
+        certificate = CertificateRecord.objects.get(submission=self.submission)
+        self.assertEqual(certificate.status, CertificateRecord.Status.REVOKED)
+        self.assertEqual(certificate.revoked_by, self.event_admin)
+        self.assertIsNotNone(certificate.revoked_at)
+        self.assertIsNotNone(certificate.authorized_at)
+        response = self.client.get(
+            f"/en/participants/{self.submission.participant_token}/certificate/"
+        )
+        self.assertEqual(response.status_code, 404)
 
     def test_status_lookup_accepts_matching_email(self):
         FormSubmission.objects.filter(pk=self.submission.pk).update(
@@ -1476,13 +1537,17 @@ class SubmissionReviewAdminTests(TestCase):
             reviewed_at=timezone.now(),
             badge_name="Asha Mwangaza",
             badge_organization="Innovation Institute",
-            certificate_authorized=True,
-            certificate_authorized_by=self.reviewer,
-            certificate_authorized_at=timezone.now(),
         )
         ParticipantCheckIn.objects.create(
             submission=self.submission,
             checked_in_by=self.reviewer,
+        )
+        CertificateRecord.objects.create(
+            submission=self.submission,
+            certificate_number=certificate_number(self.submission),
+            status=CertificateRecord.Status.AUTHORIZED,
+            authorized_by=self.reviewer,
+            authorized_at=timezone.now(),
         )
 
         response = self.client.get(

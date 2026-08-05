@@ -96,6 +96,9 @@ def participant_certificate_path(submission, language="sw"):
 
 
 def certificate_number(submission):
+    certificate = getattr(submission, "certificate_record", None)
+    if certificate and certificate.certificate_number:
+        return certificate.certificate_number
     event_year = timezone.localtime(
         submission.event_form.event.starts_at
     ).year

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-05 17:38+0300\n"
+"POT-Creation-Date: 2026-08-05 18:52+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -45,16 +45,17 @@ msgstr "Afisa Mahudhurio"
 msgid "Report Officer"
 msgstr "Afisa Ripoti"
 
-#: accounts/models.py:19 templates/accounts/staff_workspace.html:47
+#: accounts/models.py:19 forms_builder/admin.py:1073
+#: templates/accounts/staff_workspace.html:47
 #: templates/forms_builder/payment_receipt.html:12
 msgid "Participant"
 msgstr "Mshiriki"
 
-#: accounts/models.py:22 forms_builder/models.py:425
+#: accounts/models.py:22 forms_builder/models.py:438
 msgid "Kiswahili"
 msgstr "Kiswahili"
 
-#: accounts/models.py:23 forms_builder/models.py:426
+#: accounts/models.py:23 forms_builder/models.py:439
 msgid "English"
 msgstr "Kiingereza"
 
@@ -78,11 +79,11 @@ msgstr "jukumu"
 msgid "preferred language"
 msgstr "lugha inayopendelewa"
 
-#: accounts/models.py:59 core/models.py:44
+#: accounts/models.py:59 core/models.py:45
 msgid "created at"
 msgstr "iliundwa tarehe"
 
-#: accounts/models.py:64 core/models.py:49
+#: accounts/models.py:64 core/models.py:50
 msgid "updated at"
 msgstr "ilisasishwa tarehe"
 
@@ -102,7 +103,7 @@ msgstr "Msimbo wa QR"
 msgid "Manual lookup"
 msgstr "Utafutaji wa kawaida"
 
-#: checkin/models.py:16 forms_builder/models.py:659
+#: checkin/models.py:16 forms_builder/models.py:591 forms_builder/models.py:735
 msgid "participant submission"
 msgstr "uwasilishaji wa mshiriki"
 
@@ -130,7 +131,8 @@ msgstr "uthibitishaji wa mahudhurio ya mshiriki"
 msgid "participant check-ins"
 msgstr "uthibitishaji wa mahudhurio ya washiriki"
 
-#: checkin/views.py:258 templates/accounts/staff_workspace.html:47
+#: checkin/views.py:259 forms_builder/admin.py:1065
+#: templates/accounts/staff_workspace.html:47
 #: templates/accounts/staff_workspace.html:64
 #: templates/checkin/participant_check_in.html:97
 #: templates/checkin/reports.html:76
@@ -142,25 +144,25 @@ msgstr "uthibitishaji wa mahudhurio ya washiriki"
 msgid "Reference number"
 msgstr "Namba ya kumbukumbu"
 
-#: checkin/views.py:259 templates/checkin/reports.html:77
+#: checkin/views.py:260 templates/checkin/reports.html:77
 #: templates/forms_builder/booth_detail.html:24
 #: templates/forms_builder/certificate_verification.html:21
 msgid "Representative"
 msgstr "Mwakilishi"
 
-#: checkin/views.py:260 templates/checkin/participant_check_in.html:84
+#: checkin/views.py:261 templates/checkin/participant_check_in.html:84
 #: templates/checkin/reports.html:78
 #: templates/forms_builder/certificate_verification.html:26
 msgid "Organization"
 msgstr "Taasisi"
 
-#: checkin/views.py:261
+#: checkin/views.py:262
 #, fuzzy
 #| msgid "review status"
 msgid "Review status"
 msgstr "hali ya ukaguzi"
 
-#: checkin/views.py:262 templates/checkin/reports.html:46
+#: checkin/views.py:263 templates/checkin/reports.html:46
 #: templates/checkin/reports.html:94
 #: templates/forms_builder/participant_portal.html:17
 #, fuzzy
@@ -168,28 +170,28 @@ msgstr "hali ya ukaguzi"
 msgid "Checked in"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: checkin/views.py:263 templates/checkin/participant_check_in.html:115
+#: checkin/views.py:264 templates/checkin/participant_check_in.html:115
 #: templates/checkin/reports.html:82
 msgid "Checked in at"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: checkin/views.py:264 templates/checkin/participant_check_in.html:117
+#: checkin/views.py:265 templates/checkin/participant_check_in.html:117
 msgid "Checked in by"
 msgstr "Mahudhurio yamethibitishwa na"
 
-#: checkin/views.py:267 forms_builder/services.py:299
+#: checkin/views.py:268 forms_builder/services.py:302
 #: templates/forms_builder/certificate_verification.html:41
 #: templates/forms_builder/participant_certificate.html:70
 msgid "Certificate number"
 msgstr "Namba ya cheti"
 
-#: checkin/views.py:277 forms_builder/views.py:118
+#: checkin/views.py:278 forms_builder/views.py:119
 #: templates/checkin/reports.html:101
 #: templates/forms_builder/partials/question_input.html:188
 msgid "Yes"
 msgstr "Ndiyo"
 
-#: checkin/views.py:277 forms_builder/views.py:118
+#: checkin/views.py:278 forms_builder/views.py:119
 #: templates/checkin/reports.html:103
 #: templates/forms_builder/partials/question_input.html:203
 msgid "No"
@@ -220,139 +222,147 @@ msgstr "Washiriki waliothibitisha mahudhurio"
 msgid "Certificate eligible"
 msgstr "Wanaostahili cheti"
 
-#: core/models.py:19
+#: core/models.py:20
 msgid "is active"
 msgstr "inatumika"
 
-#: core/models.py:25
+#: core/models.py:26
 msgid "created by"
 msgstr "iliundwa na"
 
-#: core/models.py:35
+#: core/models.py:36
 msgid "updated by"
 msgstr "ilisasishwa na"
 
-#: core/models.py:61 core/models.py:119 core/models.py:182 core/models.py:264
-#: core/models.py:326 events/models.py:11
+#: core/models.py:62 core/models.py:120 core/models.py:183 core/models.py:275
+#: core/models.py:345 events/models.py:11
 msgid "name in Kiswahili"
 msgstr "jina kwa Kiswahili"
 
-#: core/models.py:67 core/models.py:124 core/models.py:187 core/models.py:269
-#: core/models.py:327 events/models.py:17
+#: core/models.py:68 core/models.py:125 core/models.py:188 core/models.py:280
+#: core/models.py:346 events/models.py:17
 msgid "name in English"
 msgstr "jina kwa Kiingereza"
 
-#: core/models.py:73
+#: core/models.py:74
 msgid "country code"
 msgstr "msimbo wa nchi"
 
-#: core/models.py:76
+#: core/models.py:77
 msgid "Use the ISO country code, for example TZA."
 msgstr "Tumia msimbo wa nchi wa ISO, kwa mfano TZA."
 
-#: core/models.py:80
+#: core/models.py:81
 msgid "phone code"
 msgstr "msimbo wa simu"
 
-#: core/models.py:83
+#: core/models.py:84
 msgid "For example +255."
 msgstr "Kwa mfano +255."
 
-#: core/models.py:87 core/models.py:134 core/models.py:197 core/models.py:286
-#: core/models.py:329 events/models.py:32 events/models.py:226
-#: forms_builder/models.py:47
+#: core/models.py:88 core/models.py:135 core/models.py:198 core/models.py:297
+#: core/models.py:348 events/models.py:32 events/models.py:226
+#: forms_builder/models.py:60
 msgid "slug"
 msgstr "slug"
 
-#: core/models.py:94 core/models.py:113
+#: core/models.py:95 core/models.py:114
 msgid "country"
 msgstr "nchi"
 
-#: core/models.py:95
+#: core/models.py:96
 msgid "countries"
 msgstr "nchi"
 
-#: core/models.py:129
+#: core/models.py:130
 msgid "region code"
 msgstr "msimbo wa mkoa"
 
-#: core/models.py:140 core/models.py:176 core/models.py:258
+#: core/models.py:141 core/models.py:177 core/models.py:259
 msgid "region"
 msgstr "mkoa"
 
-#: core/models.py:141
+#: core/models.py:142
 msgid "regions"
 msgstr "mikoa"
 
-#: core/models.py:192
+#: core/models.py:193
 msgid "district code"
 msgstr "msimbo wa wilaya"
 
-#: core/models.py:203
+#: core/models.py:204 core/models.py:266
 msgid "district"
 msgstr "wilaya"
 
-#: core/models.py:204
+#: core/models.py:205
 msgid "districts"
 msgstr "wilaya"
 
-#: core/models.py:238
+#: core/models.py:239
 msgid "City Council"
 msgstr "Halmashauri ya Jiji"
 
-#: core/models.py:239
+#: core/models.py:240
 msgid "Municipal Council"
 msgstr "Halmashauri ya Manispaa"
 
-#: core/models.py:240
+#: core/models.py:241
 msgid "Town Council"
 msgstr "Halmashauri ya Mji"
 
-#: core/models.py:241
+#: core/models.py:242
 msgid "District Council"
 msgstr "Halmashauri ya Wilaya"
 
-#: core/models.py:244
+#: core/models.py:245
 msgid "Municipal Council - Zanzibar"
 msgstr "Halmashauri ya Manispaa - Zanzibar"
 
-#: core/models.py:248
+#: core/models.py:249
 msgid "Town Council - Zanzibar"
 msgstr "Halmashauri ya Mji - Zanzibar"
 
-#: core/models.py:252
+#: core/models.py:253
 msgid "District Council - Zanzibar"
 msgstr "Halmashauri ya Wilaya - Zanzibar"
 
-#: core/models.py:254 forms_builder/models.py:650 forms_builder/models.py:842
+#: core/models.py:255 forms_builder/models.py:726 forms_builder/models.py:930
 msgid "Other"
 msgstr "Nyingine"
 
-#: core/models.py:274
+#: core/models.py:271
+msgid "Optional district grouping within the selected region."
+msgstr "Mpangilio wa hiari wa wilaya ndani ya mkoa uliochaguliwa."
+
+#: core/models.py:285
 msgid "council code"
 msgstr "msimbo wa halmashauri"
 
-#: core/models.py:279
+#: core/models.py:290
 msgid "council type"
 msgstr "aina ya halmashauri"
 
-#: core/models.py:292 core/models.py:323 events/models.py:87
+#: core/models.py:303 core/models.py:342 events/models.py:87
 msgid "council"
 msgstr "halmashauri"
 
-#: core/models.py:293
+#: core/models.py:304
 msgid "councils"
 msgstr "halmashauri"
 
-#: core/models.py:328
+#: core/models.py:333
+msgid "The district must belong to the selected region."
+msgstr "Wilaya lazima iwe ndani ya mkoa uliochaguliwa."
+
+#: core/models.py:347
 msgid "ward code"
 msgstr "msimbo wa kata"
 
-#: core/models.py:332
+#: core/models.py:351
 msgid "ward"
 msgstr "kata"
 
-#: core/models.py:333
+#: core/models.py:352
 msgid "wards"
 msgstr "kata"
 
@@ -372,8 +382,8 @@ msgstr "maelezo kwa Kiswahili"
 msgid "description in English"
 msgstr "maelezo kwa Kiingereza"
 
-#: events/models.py:49 forms_builder/models.py:160 forms_builder/models.py:308
-#: forms_builder/models.py:373 forms_builder/models.py:873
+#: events/models.py:49 forms_builder/models.py:173 forms_builder/models.py:321
+#: forms_builder/models.py:386 forms_builder/models.py:961
 msgid "display order"
 msgstr "mpangilio wa kuonekana"
 
@@ -453,7 +463,7 @@ msgstr "eneo"
 msgid "venues"
 msgstr "maeneo"
 
-#: events/models.py:176 forms_builder/models.py:954
+#: events/models.py:176 forms_builder/models.py:1042
 msgid "Draft"
 msgstr "Rasimu"
 
@@ -473,7 +483,7 @@ msgstr "Usajili Umefungwa"
 msgid "Ongoing"
 msgstr "Inaendelea"
 
-#: events/models.py:187 forms_builder/models.py:957
+#: events/models.py:187 forms_builder/models.py:1045
 msgid "Completed"
 msgstr "Imekamilika"
 
@@ -593,8 +603,8 @@ msgstr "maelekezo ya malipo kwa Kiswahili"
 msgid "payment instructions in English"
 msgstr "maelekezo ya malipo kwa Kiingereza"
 
-#: events/models.py:377 forms_builder/models.py:24 forms_builder/models.py:593
-#: forms_builder/models.py:709 forms_builder/models.py:961
+#: events/models.py:377 forms_builder/models.py:37 forms_builder/models.py:669
+#: forms_builder/models.py:797 forms_builder/models.py:1049
 msgid "event"
 msgstr "tukio"
 
@@ -630,35 +640,36 @@ msgstr "maelekezo ya malipo kwa Kiswahili"
 msgid "Enter payment instructions in English."
 msgstr "maelekezo ya malipo kwa Kiingereza"
 
-#: forms_builder/admin.py:115
+#: forms_builder/admin.py:116
 #, fuzzy
 #| msgid "Open receipt"
 msgid "Receipt"
 msgstr "Fungua risiti"
 
-#: forms_builder/admin.py:118
+#: forms_builder/admin.py:119
 #, fuzzy
 #| msgid "Certificate verification"
 msgid "Available after verification."
 msgstr "Uthibitishaji wa cheti"
 
-#: forms_builder/admin.py:125
+#: forms_builder/admin.py:126
 msgid "Open receipt"
 msgstr "Fungua risiti"
 
-#: forms_builder/admin.py:128
+#: forms_builder/admin.py:129
 msgid "Verify selected payments"
 msgstr "Thibitisha malipo yaliyochaguliwa"
 
-#: forms_builder/admin.py:132
+#: forms_builder/admin.py:133
 msgid "Reject selected payments"
 msgstr "Kataa malipo yaliyochaguliwa"
 
-#: forms_builder/admin.py:341
+#: forms_builder/admin.py:342
 msgid "Export selected visitor interests to CSV"
 msgstr "Hamisha nia za wageni zilizochaguliwa kwenda CSV"
 
-#: forms_builder/admin.py:351 templates/accounts/staff_workspace.html:47
+#: forms_builder/admin.py:352 forms_builder/admin.py:1069
+#: templates/accounts/staff_workspace.html:47
 #: templates/checkin/participant_check_in.html:102
 #: templates/forms_builder/booth_detail.html:26
 #: templates/forms_builder/certificate_verification.html:31
@@ -667,31 +678,31 @@ msgstr "Hamisha nia za wageni zilizochaguliwa kwenda CSV"
 msgid "Event"
 msgstr "Tukio"
 
-#: forms_builder/admin.py:352
+#: forms_builder/admin.py:353
 msgid "Booth"
 msgstr "Banda"
 
-#: forms_builder/admin.py:353
+#: forms_builder/admin.py:354
 msgid "Offering"
 msgstr "Kinachotolewa"
 
-#: forms_builder/admin.py:354
+#: forms_builder/admin.py:355
 msgid "Visitor name"
 msgstr "Jina la mgeni"
 
-#: forms_builder/admin.py:355 templates/events/event_detail.html:191
+#: forms_builder/admin.py:356 templates/events/event_detail.html:191
 msgid "Email"
 msgstr "Baruapepe"
 
-#: forms_builder/admin.py:356 templates/events/event_detail.html:180
+#: forms_builder/admin.py:357 templates/events/event_detail.html:180
 msgid "Phone"
 msgstr "Simu"
 
-#: forms_builder/admin.py:357
+#: forms_builder/admin.py:358
 msgid "Message"
 msgstr "Ujumbe"
 
-#: forms_builder/admin.py:358 forms_builder/views.py:423
+#: forms_builder/admin.py:359 forms_builder/views.py:424
 #: templates/accounts/staff_workspace.html:47
 #: templates/accounts/staff_workspace.html:64
 #: templates/forms_builder/evaluation_reports.html:58
@@ -701,173 +712,187 @@ msgstr "Ujumbe"
 msgid "Submitted on"
 msgstr "Iliwasilishwa tarehe"
 
-#: forms_builder/admin.py:824
+#: forms_builder/admin.py:822
 msgid "Authorize certificates for selected participants"
 msgstr "Ruhusu vyeti kwa washiriki waliochaguliwa"
 
-#: forms_builder/admin.py:834
+#: forms_builder/admin.py:832
 msgid "You cannot authorize certificates."
 msgstr "Huna ruhusa ya kuidhinisha vyeti."
 
-#: forms_builder/admin.py:862
+#: forms_builder/admin.py:875
 #, python-format
 msgid "Certificates authorized: %(count)s"
 msgstr "Vyeti vilivyoidhinishwa: %(count)s"
 
-#: forms_builder/admin.py:866
+#: forms_builder/admin.py:879
 msgid "Revoke certificate authorization"
 msgstr "Ondoa idhini ya cheti"
 
+#: forms_builder/admin.py:1077
+#: templates/forms_builder/participant_portal.html:18
+#: templates/forms_builder/participant_portal.html:25
+msgid "Certificate"
+msgstr "Cheti"
+
+#: forms_builder/admin.py:1080 forms_builder/models.py:587
+msgid "Revoked"
+msgstr "Kimebatilishwa"
+
 #: forms_builder/admin.py:1084
+msgid "Open certificate"
+msgstr "Tazama cheti"
+
+#: forms_builder/admin.py:1129
 msgid "Send selected reminders now"
 msgstr "Tuma vikumbusho vilivyochaguliwa sasa"
 
-#: forms_builder/admin.py:1096
+#: forms_builder/admin.py:1141
 #, python-format
 msgid "%(completed)s reminder(s) sent; %(skipped)s already completed."
 msgstr ""
 "Vikumbusho %(completed)s vimetumwa; %(skipped)s vilikuwa vimekamilika tayari."
 
-#: forms_builder/admin.py:1153
+#: forms_builder/admin.py:1198
 msgid "Resend selected notifications"
 msgstr "Tuma tena taarifa zilizochaguliwa"
 
-#: forms_builder/admin.py:1164
+#: forms_builder/admin.py:1209
 #, python-format
 msgid "%(count)s notification(s) resent."
 msgstr "Taarifa %(count)s zimetumwa tena."
 
-#: forms_builder/models.py:15
+#: forms_builder/models.py:28
 msgid "Registration Form"
 msgstr "Fomu ya Usajili"
 
-#: forms_builder/models.py:16
+#: forms_builder/models.py:29
 msgid "Evaluation Form"
 msgstr "Fomu ya Tathmini"
 
-#: forms_builder/models.py:17
+#: forms_builder/models.py:30
 msgid "Exhibitor Form"
 msgstr "Fomu ya Mshiriki wa Maonesho"
 
-#: forms_builder/models.py:18
+#: forms_builder/models.py:31
 msgid "Speaker Application Form"
 msgstr "Fomu ya Maombi ya Mzungumzaji"
 
-#: forms_builder/models.py:19
+#: forms_builder/models.py:32
 msgid "Attendance Confirmation Form"
 msgstr "Fomu ya Uthibitisho wa Mahudhurio"
 
-#: forms_builder/models.py:20
+#: forms_builder/models.py:33
 msgid "Other Form"
 msgstr "Fomu Nyingine"
 
-#: forms_builder/models.py:30
+#: forms_builder/models.py:43
 msgid "form name in Kiswahili"
 msgstr "jina la fomu kwa Kiswahili"
 
-#: forms_builder/models.py:35
+#: forms_builder/models.py:48
 msgid "form name in English"
 msgstr "jina la fomu kwa Kiingereza"
 
-#: forms_builder/models.py:40
+#: forms_builder/models.py:53
 msgid "form type"
 msgstr "aina ya fomu"
 
-#: forms_builder/models.py:53
+#: forms_builder/models.py:66
 msgid "introduction in Kiswahili"
 msgstr "utangulizi kwa Kiswahili"
 
-#: forms_builder/models.py:58
+#: forms_builder/models.py:71
 msgid "introduction in English"
 msgstr "utangulizi kwa Kiingereza"
 
-#: forms_builder/models.py:63
+#: forms_builder/models.py:76
 msgid "show event summary above form"
 msgstr "onyesha muhtasari wa tukio juu ya fomu"
 
-#: forms_builder/models.py:66
+#: forms_builder/models.py:79
 msgid "Display the event logo, code, title, dates and venue above this form."
 msgstr ""
 "Onyesha nembo, msimbo, kichwa, tarehe na eneo la tukio juu ya fomu hii."
 
-#: forms_builder/models.py:71
+#: forms_builder/models.py:84
 msgid "success message in Kiswahili"
 msgstr "ujumbe wa mafanikio kwa Kiswahili"
 
-#: forms_builder/models.py:77
+#: forms_builder/models.py:90
 msgid "success message in English"
 msgstr "ujumbe wa mafanikio kwa Kiingereza"
 
-#: forms_builder/models.py:83
+#: forms_builder/models.py:96
 msgid "form opens"
 msgstr "fomu inafunguliwa"
 
-#: forms_builder/models.py:89
+#: forms_builder/models.py:102
 msgid "form closes"
 msgstr "fomu inafungwa"
 
-#: forms_builder/models.py:95
+#: forms_builder/models.py:108
 msgid "requires login"
 msgstr "inahitaji kuingia kwenye mfumo"
 
-#: forms_builder/models.py:100
+#: forms_builder/models.py:113
 msgid "allow multiple submissions"
 msgstr "ruhusu uwasilishaji zaidi ya mmoja"
 
-#: forms_builder/models.py:105
+#: forms_builder/models.py:118
 msgid "published"
 msgstr "imechapishwa"
 
-#: forms_builder/models.py:110 forms_builder/models.py:134
-#: forms_builder/models.py:400
+#: forms_builder/models.py:123 forms_builder/models.py:147
+#: forms_builder/models.py:413
 msgid "event form"
 msgstr "fomu ya tukio"
 
-#: forms_builder/models.py:111
+#: forms_builder/models.py:124
 msgid "event forms"
 msgstr "fomu za tukio"
 
-#: forms_builder/models.py:140
+#: forms_builder/models.py:153
 msgid "section title in Kiswahili"
 msgstr "kichwa cha sehemu kwa Kiswahili"
 
-#: forms_builder/models.py:145
+#: forms_builder/models.py:158
 msgid "section title in English"
 msgstr "kichwa cha sehemu kwa Kiingereza"
 
-#: forms_builder/models.py:150
+#: forms_builder/models.py:163
 msgid "section description in Kiswahili"
 msgstr "maelezo ya sehemu kwa Kiswahili"
 
-#: forms_builder/models.py:155
+#: forms_builder/models.py:168
 msgid "section description in English"
 msgstr "maelezo ya sehemu kwa Kiingereza"
 
-#: forms_builder/models.py:166
+#: forms_builder/models.py:179
 msgid "show when question"
 msgstr "onyesha wakati swali"
 
-#: forms_builder/models.py:172
+#: forms_builder/models.py:185
 msgid "Leave blank to always show this section."
 msgstr "Acha wazi ili sehemu hii ionekane wakati wote."
 
-#: forms_builder/models.py:177
+#: forms_builder/models.py:190
 msgid "show when answer contains"
 msgstr "onyesha wakati jibu lina"
 
-#: forms_builder/models.py:181
+#: forms_builder/models.py:194
 msgid "Use the stored value of the controlling question option."
 msgstr "Tumia thamani iliyohifadhiwa ya chaguo la swali linalodhibiti."
 
-#: forms_builder/models.py:186 forms_builder/models.py:256
+#: forms_builder/models.py:199 forms_builder/models.py:269
 msgid "form section"
 msgstr "sehemu ya fomu"
 
-#: forms_builder/models.py:187
+#: forms_builder/models.py:200
 msgid "form sections"
 msgstr "sehemu za fomu"
 
-#: forms_builder/models.py:198
+#: forms_builder/models.py:211
 msgid ""
 "Both the controlling question and answer value are required for conditional "
 "display."
@@ -875,247 +900,235 @@ msgstr ""
 "Swali linalodhibiti na thamani ya jibu vinahitajika kwa mwonekano wenye "
 "masharti."
 
-#: forms_builder/models.py:212
+#: forms_builder/models.py:225
 msgid "The controlling question must belong to the same form."
 msgstr "Swali linalodhibiti lazima liwe katika fomu hiyo hiyo."
 
-#: forms_builder/models.py:228
+#: forms_builder/models.py:241
 msgid "Enter an active stored option value from the controlling question."
 msgstr ""
 "Weka thamani hai iliyohifadhiwa ya chaguo kutoka kwenye swali linalodhibiti."
 
-#: forms_builder/models.py:240
+#: forms_builder/models.py:253
 msgid "Short text"
 msgstr "Maandishi mafupi"
 
-#: forms_builder/models.py:241
+#: forms_builder/models.py:254
 msgid "Long text"
 msgstr "Maandishi marefu"
 
-#: forms_builder/models.py:242 forms_builder/views.py:425
+#: forms_builder/models.py:255 forms_builder/views.py:426
 #: templates/forms_builder/booth_detail.html:73
 msgid "Email address"
 msgstr "Anwani ya baruapepe"
 
-#: forms_builder/models.py:243 forms_builder/views.py:426
+#: forms_builder/models.py:256 forms_builder/views.py:427
 #: templates/forms_builder/booth_detail.html:74
 msgid "Phone number"
 msgstr "Namba ya simu"
 
-#: forms_builder/models.py:244
+#: forms_builder/models.py:257
 msgid "Number"
 msgstr "Namba"
 
-#: forms_builder/models.py:245 templates/events/home.html:170
+#: forms_builder/models.py:258 templates/events/home.html:170
 msgid "Date"
 msgstr "Tarehe"
 
-#: forms_builder/models.py:246
+#: forms_builder/models.py:259
 msgid "Date and time"
 msgstr "Tarehe na muda"
 
-#: forms_builder/models.py:247
+#: forms_builder/models.py:260
 msgid "Single choice"
 msgstr "Chaguo moja"
 
-#: forms_builder/models.py:248
+#: forms_builder/models.py:261
 msgid "Multiple choice"
 msgstr "Chaguo nyingi"
 
-#: forms_builder/models.py:249
+#: forms_builder/models.py:262
 msgid "Dropdown"
 msgstr "Orodha kunjuzi"
 
-#: forms_builder/models.py:250
+#: forms_builder/models.py:263
 msgid "Yes or No"
 msgstr "Ndiyo au Hapana"
 
-#: forms_builder/models.py:251
+#: forms_builder/models.py:264
 msgid "File upload"
 msgstr "Pakia faili"
 
-#: forms_builder/models.py:252
+#: forms_builder/models.py:265
 msgid "Image upload"
 msgstr "Pakia picha"
 
-#: forms_builder/models.py:262
+#: forms_builder/models.py:275
 msgid "question in Kiswahili"
 msgstr "swali kwa Kiswahili"
 
-#: forms_builder/models.py:267
+#: forms_builder/models.py:280
 msgid "question in English"
 msgstr "swali kwa Kiingereza"
 
-#: forms_builder/models.py:272
+#: forms_builder/models.py:285
 msgid "question type"
 msgstr "aina ya swali"
 
-#: forms_builder/models.py:279
+#: forms_builder/models.py:292
 msgid "help text in Kiswahili"
 msgstr "maelekezo ya usaidizi kwa Kiswahili"
 
-#: forms_builder/models.py:285
+#: forms_builder/models.py:298
 msgid "help text in English"
 msgstr "maelekezo ya usaidizi kwa Kiingereza"
 
-#: forms_builder/models.py:291
+#: forms_builder/models.py:304
 msgid "placeholder in Kiswahili"
 msgstr "maandishi elekezi kwa Kiswahili"
 
-#: forms_builder/models.py:297
+#: forms_builder/models.py:310
 msgid "placeholder in English"
 msgstr "maandishi elekezi kwa Kiingereza"
 
-#: forms_builder/models.py:303
+#: forms_builder/models.py:316
 msgid "required"
 msgstr "lazima"
 
-#: forms_builder/models.py:313
+#: forms_builder/models.py:326
 msgid "minimum length"
 msgstr "urefu wa chini"
 
-#: forms_builder/models.py:319
+#: forms_builder/models.py:332
 msgid "maximum length"
 msgstr "urefu wa juu"
 
-#: forms_builder/models.py:325
+#: forms_builder/models.py:338
 msgid "minimum value"
 msgstr "thamani ya chini"
 
-#: forms_builder/models.py:333
+#: forms_builder/models.py:346
 msgid "maximum value"
 msgstr "thamani ya juu"
 
-#: forms_builder/models.py:341
+#: forms_builder/models.py:354
 msgid "form question"
 msgstr "swali la fomu"
 
-#: forms_builder/models.py:342
+#: forms_builder/models.py:355
 msgid "form questions"
 msgstr "maswali ya fomu"
 
-#: forms_builder/models.py:352 forms_builder/models.py:1107
+#: forms_builder/models.py:365 forms_builder/models.py:1195
 msgid "question"
 msgstr "swali"
 
-#: forms_builder/models.py:358
+#: forms_builder/models.py:371
 msgid "stored value"
 msgstr "thamani inayohifadhiwa"
 
-#: forms_builder/models.py:363
+#: forms_builder/models.py:376
 msgid "option in Kiswahili"
 msgstr "chaguo kwa Kiswahili"
 
-#: forms_builder/models.py:368
+#: forms_builder/models.py:381
 msgid "option in English"
 msgstr "chaguo kwa Kiingereza"
 
-#: forms_builder/models.py:378
+#: forms_builder/models.py:391
 msgid "question option"
 msgstr "chaguo la swali"
 
-#: forms_builder/models.py:379
+#: forms_builder/models.py:392
 msgid "question options"
 msgstr "chaguo za swali"
 
-#: forms_builder/models.py:394
+#: forms_builder/models.py:407
 msgid "Pending review"
 msgstr "Inasubiri ukaguzi"
 
-#: forms_builder/models.py:395 templates/checkin/reports.html:45
+#: forms_builder/models.py:408 templates/checkin/reports.html:45
 msgid "Approved"
 msgstr "Imepitishwa"
 
-#: forms_builder/models.py:396 forms_builder/models.py:655
+#: forms_builder/models.py:409 forms_builder/models.py:731
 #: templates/checkin/reports.html:51
 msgid "Rejected"
 msgstr "Imekataliwa"
 
-#: forms_builder/models.py:407
+#: forms_builder/models.py:420
 msgid "submitted by"
 msgstr "imewasilishwa na"
 
-#: forms_builder/models.py:415
+#: forms_builder/models.py:428
 msgid "reference number"
 msgstr "namba ya kumbukumbu"
 
-#: forms_builder/models.py:422
+#: forms_builder/models.py:435
 msgid "submission language"
 msgstr "lugha ya uwasilishaji"
 
-#: forms_builder/models.py:432
+#: forms_builder/models.py:445
 msgid "submitter email"
 msgstr "baruapepe ya mwasilishaji"
 
-#: forms_builder/models.py:437
+#: forms_builder/models.py:450
 msgid "submitter phone"
 msgstr "simu ya mwasilishaji"
 
-#: forms_builder/models.py:443
+#: forms_builder/models.py:456
 msgid "IP address"
 msgstr "anwani ya IP"
 
-#: forms_builder/models.py:449
+#: forms_builder/models.py:462
 msgid "user agent"
 msgstr "taarifa za kivinjari"
 
-#: forms_builder/models.py:454
+#: forms_builder/models.py:467
 msgid "complete submission"
 msgstr "uwasilishaji umekamilika"
 
-#: forms_builder/models.py:459
+#: forms_builder/models.py:472
 msgid "review status"
 msgstr "hali ya ukaguzi"
 
-#: forms_builder/models.py:468
+#: forms_builder/models.py:481
 msgid "reviewed by"
 msgstr "imekaguliwa na"
 
-#: forms_builder/models.py:476
+#: forms_builder/models.py:489
 msgid "reviewed at"
 msgstr "imekaguliwa tarehe"
 
-#: forms_builder/models.py:482
+#: forms_builder/models.py:495
 msgid "internal review notes"
 msgstr "maelezo ya ndani ya ukaguzi"
 
-#: forms_builder/models.py:485
+#: forms_builder/models.py:498
 msgid "Visible to administrators only. Do not include passwords or secrets."
 msgstr "Yanaonekana kwa wasimamizi pekee. Usiweke nywila au taarifa za siri."
 
-#: forms_builder/models.py:490
+#: forms_builder/models.py:503
 msgid "participant token"
 msgstr "kitambulisho cha kipekee cha mshiriki"
 
-#: forms_builder/models.py:497
+#: forms_builder/models.py:510
 msgid "badge name"
 msgstr "jina la beji"
 
-#: forms_builder/models.py:500
+#: forms_builder/models.py:513
 msgid "Name that will be printed on the participant badge."
 msgstr "Jina litakalochapishwa kwenye beji ya mshiriki."
 
-#: forms_builder/models.py:504
+#: forms_builder/models.py:517
 msgid "badge organization"
 msgstr "taasisi kwenye beji"
 
-#: forms_builder/models.py:510
+#: forms_builder/models.py:523
 msgid "badge title or role"
 msgstr "cheo au jukumu kwenye beji"
 
-#: forms_builder/models.py:516
-msgid "certificate issuance authorized"
-msgstr "utoaji wa cheti umeidhinishwa"
-
-#: forms_builder/models.py:520
-msgid "certificate authorized by"
-msgstr "cheti kimeidhinishwa na"
-
-#: forms_builder/models.py:525
-msgid "certificate authorized at"
-msgstr "cheti kimeidhinishwa tarehe"
-
-#: forms_builder/models.py:529 forms_builder/models.py:1042
+#: forms_builder/models.py:529 forms_builder/models.py:1130
 msgid "form submission"
 msgstr "uwasilishaji wa fomu"
 
@@ -1130,511 +1143,565 @@ msgid "participant"
 msgstr "Mshiriki"
 
 #: forms_builder/models.py:581
-#, fuzzy
-#| msgid "Participant"
 msgid "participants"
-msgstr "Mshiriki"
+msgstr "washiriki"
 
-#: forms_builder/models.py:587
-#, fuzzy
-#| msgid "View certificate"
+#: forms_builder/models.py:586
+msgid "Authorized"
+msgstr "Kimeidhinishwa"
+
+#: forms_builder/models.py:596
+msgid "certificate number"
+msgstr "namba ya cheti"
+
+#: forms_builder/models.py:599
+msgid "certificate status"
+msgstr "hali ya cheti"
+
+#: forms_builder/models.py:604
+msgid "authorized by"
+msgstr "kimeidhinishwa na"
+
+#: forms_builder/models.py:609
+msgid "authorized at"
+msgstr "kimeidhinishwa tarehe"
+
+#: forms_builder/models.py:612
+msgid "revoked by"
+msgstr "kimebatilishwa na"
+
+#: forms_builder/models.py:617
+msgid "revoked at"
+msgstr "kimebatilishwa tarehe"
+
+#: forms_builder/models.py:618
+msgid "revocation reason"
+msgstr "sababu ya kubatilisha"
+
+#: forms_builder/models.py:621
 msgid "certificate"
-msgstr "Tazama cheti"
+msgstr "cheti"
 
-#: forms_builder/models.py:588
-#, fuzzy
-#| msgid "View certificate"
+#: forms_builder/models.py:622
 msgid "certificates"
-msgstr "Tazama cheti"
+msgstr "vyeti"
 
-#: forms_builder/models.py:597
+#: forms_builder/models.py:644
+msgid "An authorized certificate cannot contain revocation details."
+msgstr "Cheti kilichoidhinishwa hakiwezi kuwa na taarifa za kubatilishwa."
+
+#: forms_builder/models.py:655
+msgid "Only an approved, checked-in participant may receive a certificate."
+msgstr "Ni mshiriki aliyeidhinishwa na kuthibitishwa mahudhurio pekee anayeweza kupewa cheti."
+
+#: forms_builder/models.py:657
+msgid "A revoked certificate requires the officer and revocation time."
+msgstr "Cheti kilichobatilishwa kinahitaji afisa na muda wa kubatilishwa."
+
+#: forms_builder/models.py:673
 msgid "quantity question"
 msgstr "swali la idadi"
 
-#: forms_builder/models.py:599
+#: forms_builder/models.py:675
 msgid "Select the numeric question that determines the quantity."
 msgstr "Chagua swali la namba linaloamua idadi."
 
-#: forms_builder/models.py:602
+#: forms_builder/models.py:678
 msgid "first unit price"
 msgstr "bei ya kipengele cha kwanza"
 
-#: forms_builder/models.py:605
+#: forms_builder/models.py:681
 msgid "each additional unit price"
 msgstr "bei ya kila kipengele cha ziada"
 
-#: forms_builder/models.py:607 forms_builder/models.py:663
+#: forms_builder/models.py:683 forms_builder/models.py:739
 #, fuzzy
 #| msgid "payment currency"
 msgid "currency"
 msgstr "sarafu ya malipo"
 
-#: forms_builder/models.py:610
+#: forms_builder/models.py:686
 msgid "quantity pricing rule"
 msgstr "kanuni ya bei kulingana na idadi"
 
-#: forms_builder/models.py:611
+#: forms_builder/models.py:687
 msgid "quantity pricing rules"
 msgstr "kanuni za bei kulingana na idadi"
 
-#: forms_builder/models.py:622
+#: forms_builder/models.py:698
 #, fuzzy
 #| msgid "The controlling question must belong to the same form."
 msgid "The quantity question must belong to the selected event."
 msgstr "Swali linalodhibiti lazima liwe katika fomu hiyo hiyo."
 
-#: forms_builder/models.py:625
+#: forms_builder/models.py:701
 msgid "The first unit price cannot be negative."
 msgstr ""
 
-#: forms_builder/models.py:631
+#: forms_builder/models.py:707
 #, fuzzy
 #| msgid "each additional unit price"
 msgid "The additional unit price cannot be negative."
 msgstr "bei ya kila kipengele cha ziada"
 
-#: forms_builder/models.py:647
+#: forms_builder/models.py:723
 msgid "Bank deposit or transfer"
 msgstr ""
 
-#: forms_builder/models.py:648
+#: forms_builder/models.py:724
 msgid "Mobile money"
 msgstr ""
 
-#: forms_builder/models.py:649
+#: forms_builder/models.py:725
 msgid "Cash"
 msgstr ""
 
-#: forms_builder/models.py:653
+#: forms_builder/models.py:729
 msgid "Pending verification"
 msgstr "Inasubiri uthibitisho"
 
-#: forms_builder/models.py:654
+#: forms_builder/models.py:730
 msgid "Verified"
 msgstr "Imethibitishwa"
 
-#: forms_builder/models.py:656
+#: forms_builder/models.py:732
 msgid "Refunded"
 msgstr ""
 
-#: forms_builder/models.py:662
+#: forms_builder/models.py:738
 #, fuzzy
 #| msgid "country"
 msgid "amount"
 msgstr "nchi"
 
-#: forms_builder/models.py:665
+#: forms_builder/models.py:741
 msgid "payment method"
 msgstr "njia ya malipo"
 
-#: forms_builder/models.py:669
+#: forms_builder/models.py:745
 msgid "transaction reference"
 msgstr "kumbukumbu ya muamala"
 
-#: forms_builder/models.py:671
+#: forms_builder/models.py:747
 #, fuzzy
 #| msgid "updated at"
 msgid "paid at"
 msgstr "ilisasishwa tarehe"
 
-#: forms_builder/models.py:672
+#: forms_builder/models.py:748
 msgid "payment proof"
 msgstr "uthibitisho wa malipo"
 
-#: forms_builder/models.py:674
+#: forms_builder/models.py:750
 msgid "payment status"
 msgstr "hali ya malipo"
 
-#: forms_builder/models.py:678
+#: forms_builder/models.py:754
 #, fuzzy
 #| msgid "Verified"
 msgid "verified by"
 msgstr "Imethibitishwa"
 
-#: forms_builder/models.py:683
+#: forms_builder/models.py:759
 #, fuzzy
 #| msgid "Verified"
 msgid "verified at"
 msgstr "Imethibitishwa"
 
-#: forms_builder/models.py:685
+#: forms_builder/models.py:761
 #, fuzzy
 #| msgid "payments"
 msgid "payment notes"
 msgstr "malipo"
 
-#: forms_builder/models.py:688
+#: forms_builder/models.py:764
 msgid "payment"
 msgstr "malipo"
 
-#: forms_builder/models.py:689
+#: forms_builder/models.py:765
 msgid "payments"
 msgstr "malipo"
 
-#: forms_builder/models.py:702
+#: forms_builder/models.py:790
 msgid "Unassigned"
 msgstr "Halijapangiwa"
 
-#: forms_builder/models.py:703
+#: forms_builder/models.py:791
 msgid "Assigned"
 msgstr "Limepangiwa"
 
-#: forms_builder/models.py:704
+#: forms_builder/models.py:792
 msgid "Ready"
 msgstr "Tayari"
 
-#: forms_builder/models.py:705
+#: forms_builder/models.py:793
 msgid "Closed"
 msgstr ""
 
-#: forms_builder/models.py:714
+#: forms_builder/models.py:802
 msgid "booth public token"
 msgstr "kitambulisho cha umma cha banda"
 
-#: forms_builder/models.py:720
+#: forms_builder/models.py:808
 msgid "booth code"
 msgstr "msimbo wa banda"
 
-#: forms_builder/models.py:722
+#: forms_builder/models.py:810
 msgid "For example A-01 or HALL-B-12."
 msgstr "Kwa mfano A-01 au UKUMBI-B-12."
 
-#: forms_builder/models.py:725
+#: forms_builder/models.py:813
 msgid "booth name in Kiswahili"
 msgstr "jina la banda kwa Kiswahili"
 
-#: forms_builder/models.py:729
+#: forms_builder/models.py:817
 msgid "booth name in English"
 msgstr "jina la banda kwa Kiingereza"
 
-#: forms_builder/models.py:733
+#: forms_builder/models.py:821
 msgid "zone or location in Kiswahili"
 msgstr "eneo au mahali kwa Kiswahili"
 
-#: forms_builder/models.py:738
+#: forms_builder/models.py:826
 msgid "zone or location in English"
 msgstr "eneo au mahali kwa Kiingereza"
 
-#: forms_builder/models.py:744
+#: forms_builder/models.py:832
 msgid "assigned exhibitor submission"
 msgstr "usajili wa mwoneshaji aliyepangiwa"
 
-#: forms_builder/models.py:749
+#: forms_builder/models.py:837
 msgid "Only an approved submission from this event may be assigned."
 msgstr "Usajili ulioidhinishwa kutoka tukio hili pekee ndio unaweza kupangiwa."
 
-#: forms_builder/models.py:752
+#: forms_builder/models.py:840
 msgid "booth setup status"
 msgstr "hali ya maandalizi ya banda"
 
-#: forms_builder/models.py:758
+#: forms_builder/models.py:846
 msgid "internal booth notes"
 msgstr "maelezo ya ndani ya banda"
 
-#: forms_builder/models.py:762
+#: forms_builder/models.py:850
 msgid "public booth description in Kiswahili"
 msgstr "maelezo ya umma ya banda kwa Kiswahili"
 
-#: forms_builder/models.py:766
+#: forms_builder/models.py:854
 msgid "public booth description in English"
 msgstr "maelezo ya umma ya banda kwa Kiingereza"
 
-#: forms_builder/models.py:770
+#: forms_builder/models.py:858
 msgid "public booth email"
 msgstr "baruapepe ya umma ya banda"
 
-#: forms_builder/models.py:774
+#: forms_builder/models.py:862
 msgid "public booth phone"
 msgstr "simu ya umma ya banda"
 
-#: forms_builder/models.py:779
+#: forms_builder/models.py:867
 msgid "public booth website"
 msgstr "tovuti ya umma ya banda"
 
-#: forms_builder/models.py:784 forms_builder/models.py:846
-#: forms_builder/models.py:889
+#: forms_builder/models.py:872 forms_builder/models.py:934
+#: forms_builder/models.py:977
 msgid "booth"
 msgstr "banda"
 
-#: forms_builder/models.py:785
+#: forms_builder/models.py:873
 msgid "booths"
 msgstr "mabanda"
 
-#: forms_builder/models.py:802
+#: forms_builder/models.py:890
 msgid "The assigned exhibitor must belong to the same event."
 msgstr "Mwoneshaji anayepangiwa lazima awe wa tukio hilo hilo."
 
-#: forms_builder/models.py:806
+#: forms_builder/models.py:894
 msgid "Only an approved exhibitor submission may be assigned."
 msgstr "Usajili wa mwoneshaji ulioidhinishwa pekee ndio unaweza kupangiwa."
 
-#: forms_builder/models.py:810
+#: forms_builder/models.py:898
 msgid "The assigned exhibitor submission must be active and complete."
 msgstr "Usajili wa mwoneshaji lazima uwe hai na umekamilika."
 
-#: forms_builder/models.py:817
+#: forms_builder/models.py:905
 msgid "This submission type cannot be assigned to a booth."
 msgstr "Aina hii ya usajili haiwezi kupangiwa banda."
 
-#: forms_builder/models.py:839
+#: forms_builder/models.py:927
 msgid "Product"
 msgstr "Bidhaa"
 
-#: forms_builder/models.py:840
+#: forms_builder/models.py:928
 msgid "Technology"
 msgstr "Teknolojia"
 
-#: forms_builder/models.py:841
+#: forms_builder/models.py:929
 msgid "Service"
 msgstr "Huduma"
 
-#: forms_builder/models.py:851
+#: forms_builder/models.py:939
 msgid "offering type"
 msgstr "aina ya kinachotolewa"
 
-#: forms_builder/models.py:857
+#: forms_builder/models.py:945
 msgid "offering name in Kiswahili"
 msgstr "jina la kinachotolewa kwa Kiswahili"
 
-#: forms_builder/models.py:861
+#: forms_builder/models.py:949
 msgid "offering name in English"
 msgstr "jina la kinachotolewa kwa Kiingereza"
 
-#: forms_builder/models.py:865
+#: forms_builder/models.py:953
 msgid "offering description in Kiswahili"
 msgstr "maelezo ya kinachotolewa kwa Kiswahili"
 
-#: forms_builder/models.py:869
+#: forms_builder/models.py:957
 msgid "offering description in English"
 msgstr "maelezo ya kinachotolewa kwa Kiingereza"
 
-#: forms_builder/models.py:878
+#: forms_builder/models.py:966
 msgid "booth offering"
 msgstr "kinachotolewa bandani"
 
-#: forms_builder/models.py:879
+#: forms_builder/models.py:967
 msgid "booth offerings"
 msgstr "vinavyotolewa bandani"
 
-#: forms_builder/models.py:895
+#: forms_builder/models.py:983
 msgid "offering of interest"
 msgstr "kinachovutia mgeni"
 
-#: forms_builder/models.py:902
+#: forms_builder/models.py:990
 msgid "visitor name"
 msgstr "jina la mgeni"
 
-#: forms_builder/models.py:907
+#: forms_builder/models.py:995
 msgid "visitor email"
 msgstr "baruapepe ya mgeni"
 
-#: forms_builder/models.py:911
+#: forms_builder/models.py:999
 msgid "visitor phone"
 msgstr "simu ya mgeni"
 
-#: forms_builder/models.py:916
+#: forms_builder/models.py:1004
 msgid "visitor message"
 msgstr "ujumbe wa mgeni"
 
-#: forms_builder/models.py:920
+#: forms_builder/models.py:1008
 #, fuzzy
 #| msgid "Language"
 msgid "language"
 msgstr "Lugha"
 
-#: forms_builder/models.py:927
+#: forms_builder/models.py:1015
 msgid "booth visitor interest"
 msgstr "nia ya mgeni wa banda"
 
-#: forms_builder/models.py:928
+#: forms_builder/models.py:1016
 msgid "booth visitor interests"
 msgstr "nia za wageni wa banda"
 
-#: forms_builder/models.py:935 forms_builder/models.py:936
-#: forms_builder/views.py:205
+#: forms_builder/models.py:1023 forms_builder/models.py:1024
+#: forms_builder/views.py:206
 msgid "Enter an email address or phone number."
 msgstr "Weka anwani ya baruapepe au namba ya simu."
 
-#: forms_builder/models.py:939
+#: forms_builder/models.py:1027
 msgid "The selected offering must belong to this booth."
 msgstr "Kinachochaguliwa lazima kiwe cha banda hili."
 
-#: forms_builder/models.py:955
+#: forms_builder/models.py:1043
 msgid "Scheduled"
 msgstr "Imepangwa"
 
-#: forms_builder/models.py:956
+#: forms_builder/models.py:1044
 msgid "Processing"
 msgstr "Inachakatwa"
 
-#: forms_builder/models.py:966
+#: forms_builder/models.py:1054
 msgid "reminder subject in Kiswahili"
 msgstr "kichwa cha kikumbusho kwa Kiswahili"
 
-#: forms_builder/models.py:970
+#: forms_builder/models.py:1058
 msgid "reminder subject in English"
 msgstr "kichwa cha kikumbusho kwa Kiingereza"
 
-#: forms_builder/models.py:974
+#: forms_builder/models.py:1062
 msgid "reminder message in Kiswahili"
 msgstr "ujumbe wa kikumbusho kwa Kiswahili"
 
-#: forms_builder/models.py:977
+#: forms_builder/models.py:1065
 msgid "reminder message in English"
 msgstr "ujumbe wa kikumbusho kwa Kiingereza"
 
-#: forms_builder/models.py:980
+#: forms_builder/models.py:1068
 msgid "scheduled sending time"
 msgstr "muda uliopangwa wa kutuma"
 
-#: forms_builder/models.py:984
+#: forms_builder/models.py:1072
 msgid "reminder status"
 msgstr "hali ya kikumbusho"
 
-#: forms_builder/models.py:991
+#: forms_builder/models.py:1079
 msgid "sent count"
 msgstr "idadi iliyotumwa"
 
-#: forms_builder/models.py:996
+#: forms_builder/models.py:1084
 msgid "skipped count"
 msgstr "idadi iliyorukwa"
 
-#: forms_builder/models.py:1001
+#: forms_builder/models.py:1089
 msgid "failed count"
 msgstr "idadi iliyoshindikana"
 
-#: forms_builder/models.py:1006
+#: forms_builder/models.py:1094
 msgid "processed at"
 msgstr "ilichakatwa tarehe"
 
-#: forms_builder/models.py:1013 forms_builder/models.py:1048
+#: forms_builder/models.py:1101 forms_builder/models.py:1136
 msgid "event reminder"
 msgstr "kikumbusho cha tukio"
 
-#: forms_builder/models.py:1014
+#: forms_builder/models.py:1102
 msgid "event reminders"
 msgstr "vikumbusho vya tukio"
 
-#: forms_builder/models.py:1023
+#: forms_builder/models.py:1111
 msgid "Registration received"
 msgstr "Usajili umepokelewa"
 
-#: forms_builder/models.py:1024
+#: forms_builder/models.py:1112
 #: templates/forms_builder/registration_status.html:112
 msgid "Registration approved"
 msgstr "Usajili umeidhinishwa"
 
-#: forms_builder/models.py:1025
+#: forms_builder/models.py:1113
 msgid "Registration rejected"
 msgstr "Usajili umekataliwa"
 
-#: forms_builder/models.py:1026
+#: forms_builder/models.py:1114
 msgid "Check-in confirmed"
 msgstr "Mahudhurio yamethibitishwa"
 
-#: forms_builder/models.py:1027
+#: forms_builder/models.py:1115
 msgid "Event reminder"
 msgstr "Kikumbusho cha tukio"
 
-#: forms_builder/models.py:1028
+#: forms_builder/models.py:1116
 msgid "Payment received"
 msgstr "Malipo yamepokelewa"
 
-#: forms_builder/models.py:1029 templates/forms_builder/payment_receipt.html:10
+#: forms_builder/models.py:1117 templates/forms_builder/payment_receipt.html:10
 msgid "Payment verified"
 msgstr "Malipo yamethibitishwa"
 
-#: forms_builder/models.py:1030
+#: forms_builder/models.py:1118
 msgid "Payment rejected"
 msgstr "Malipo yamekataliwa"
 
-#: forms_builder/models.py:1032 templates/checkin/reports.html:81
+#: forms_builder/models.py:1120 templates/checkin/reports.html:81
 msgid "Certificate authorized"
 msgstr "Cheti kimeidhinishwa"
 
-#: forms_builder/models.py:1036
+#: forms_builder/models.py:1124
 msgid "Sent"
 msgstr "Imetumwa"
 
-#: forms_builder/models.py:1037
+#: forms_builder/models.py:1125
 msgid "Failed"
 msgstr "Imeshindikana"
 
-#: forms_builder/models.py:1038
+#: forms_builder/models.py:1126
 msgid "Skipped"
 msgstr "Imerukwa"
 
-#: forms_builder/models.py:1055
+#: forms_builder/models.py:1143
 msgid "notification type"
 msgstr "aina ya taarifa"
 
-#: forms_builder/models.py:1060
+#: forms_builder/models.py:1148
 msgid "recipient email"
 msgstr "baruapepe ya mpokeaji"
 
-#: forms_builder/models.py:1064
+#: forms_builder/models.py:1152
 msgid "email subject"
 msgstr "kichwa cha baruapepe"
 
-#: forms_builder/models.py:1069
+#: forms_builder/models.py:1157
 msgid "delivery status"
 msgstr "hali ya utumaji"
 
-#: forms_builder/models.py:1075
+#: forms_builder/models.py:1163
 msgid "delivery error"
 msgstr "kosa la utumaji"
 
-#: forms_builder/models.py:1079
+#: forms_builder/models.py:1167
 msgid "sent at"
 msgstr "imetumwa tarehe"
 
-#: forms_builder/models.py:1085
+#: forms_builder/models.py:1173
 msgid "notification log"
 msgstr "kumbukumbu ya taarifa"
 
-#: forms_builder/models.py:1086
+#: forms_builder/models.py:1174
 msgid "notification logs"
 msgstr "kumbukumbu za taarifa"
 
-#: forms_builder/models.py:1100
+#: forms_builder/models.py:1188
 msgid "submission"
 msgstr "uwasilishaji"
 
-#: forms_builder/models.py:1113
+#: forms_builder/models.py:1201
 msgid "text value"
 msgstr "thamani ya maandishi"
 
-#: forms_builder/models.py:1118
+#: forms_builder/models.py:1206
 msgid "number value"
 msgstr "thamani ya namba"
 
-#: forms_builder/models.py:1126
+#: forms_builder/models.py:1214
 msgid "date value"
 msgstr "thamani ya tarehe"
 
-#: forms_builder/models.py:1132
+#: forms_builder/models.py:1220
 msgid "date and time value"
 msgstr "thamani ya tarehe na muda"
 
-#: forms_builder/models.py:1138
+#: forms_builder/models.py:1226
 msgid "boolean value"
 msgstr "thamani ya ndiyo/hapana"
 
-#: forms_builder/models.py:1145
+#: forms_builder/models.py:1233
 msgid "selected options"
 msgstr "chaguo zilizochaguliwa"
 
-#: forms_builder/models.py:1151
+#: forms_builder/models.py:1239
 msgid "uploaded file"
 msgstr "faili lililopakiwa"
 
-#: forms_builder/models.py:1158
+#: forms_builder/models.py:1246
 msgid "form answer"
 msgstr "jibu la fomu"
 
-#: forms_builder/models.py:1159
+#: forms_builder/models.py:1247
 msgid "form answers"
 msgstr "majibu ya fomu"
+
+#: forms_builder/models.py:1276
+msgid "The question must belong to the submitted form."
+msgstr "Swali lazima liwe katika fomu iliyowasilishwa."
+
+#: forms_builder/models.py:1288
+msgid "An answer may contain only one scalar value type."
+msgstr "Jibu linaweza kuwa na aina moja tu ya thamani."
+
+#: forms_builder/models.py:1307
+msgid "The stored answer type does not match the question type."
+msgstr "Aina ya jibu lililohifadhiwa hailingani na aina ya swali."
+
+#: forms_builder/models.py:1322
+msgid "Selected options must belong to the answered question."
+msgstr "Chaguo zilizoteuliwa lazima ziwe za swali lililojibiwa."
 
 #: forms_builder/notifications.py:32
 #, python-format
@@ -1802,19 +1869,19 @@ msgstr ""
 "Tukio: %(event)s\n"
 "Namba ya kumbukumbu: %(reference)s"
 
-#: forms_builder/services.py:291
+#: forms_builder/services.py:294
 #: templates/forms_builder/participant_certificate.html:5
 #: templates/forms_builder/participant_certificate.html:32
 #: templates/forms_builder/participant_certificate.html:49
 msgid "Certificate of Participation"
 msgstr "Cheti cha Ushiriki"
 
-#: forms_builder/services.py:292
+#: forms_builder/services.py:295
 #: templates/forms_builder/participant_certificate.html:50
 msgid "This certificate is proudly presented to"
 msgstr "Cheti hiki kinatolewa kwa fahari kwa"
 
-#: forms_builder/services.py:294
+#: forms_builder/services.py:297
 #: templates/forms_builder/participant_certificate.html:56
 #, python-format
 msgid "for participating in %(event_name)s and completing verified attendance."
@@ -1822,65 +1889,65 @@ msgstr ""
 "kwa kushiriki katika %(event_name)s na kukamilisha mahudhurio "
 "yaliyothibitishwa."
 
-#: forms_builder/services.py:297
+#: forms_builder/services.py:300
 #: templates/forms_builder/certificate_verification.html:45
 #: templates/forms_builder/participant_certificate.html:15
 #: templates/forms_builder/participant_certificate.html:66
 msgid "Attendance verified"
 msgstr "Mahudhurio yamethibitishwa"
 
-#: forms_builder/services.py:298
+#: forms_builder/services.py:301
 #: templates/forms_builder/certificate_verification.html:37
 #: templates/forms_builder/participant_certificate.html:62
 msgid "Event date"
 msgstr "Tarehe ya tukio"
 
-#: forms_builder/services.py:300
+#: forms_builder/services.py:303
 #: templates/forms_builder/participant_certificate.html:78
 msgid "Scan to verify this certificate"
 msgstr "Changanua ili kuthibitisha cheti hiki"
 
-#: forms_builder/views.py:208
+#: forms_builder/views.py:209
 #, fuzzy
 #| msgid "email address"
 msgid "Enter a valid email address."
 msgstr "anwani ya baruapepe"
 
-#: forms_builder/views.py:221
+#: forms_builder/views.py:222
 #, fuzzy
 #| msgid "Select an option"
 msgid "Select a valid option."
 msgstr "Chagua"
 
-#: forms_builder/views.py:422
+#: forms_builder/views.py:423
 #: templates/forms_builder/submission_success.html:66
 msgid "Evaluation reference"
 msgstr "Kumbukumbu ya tathmini"
 
-#: forms_builder/views.py:424 templates/events/base_public.html:92
+#: forms_builder/views.py:425 templates/events/base_public.html:92
 #: templates/events/base_public.html:98
 #: templates/forms_builder/public_event_form.html:65
 #: templates/forms_builder/public_event_form.html:68
 msgid "Language"
 msgstr "Lugha"
 
-#: forms_builder/views.py:745
+#: forms_builder/views.py:746
 msgid "You have already submitted this evaluation."
 msgstr "Tayari umewasilisha tathmini hii."
 
-#: forms_builder/views.py:1052
+#: forms_builder/views.py:1057
 msgid "Select a valid payment method."
 msgstr "Chagua njia sahihi ya malipo."
 
-#: forms_builder/views.py:1055
+#: forms_builder/views.py:1060
 msgid "Enter the transaction reference."
 msgstr "Weka kumbukumbu ya muamala."
 
-#: forms_builder/views.py:1062
+#: forms_builder/views.py:1067
 msgid "A payment is already pending or verified for this registration."
 msgstr "Malipo ya usajili huu tayari yanasubiri au yamethibitishwa."
 
-#: forms_builder/views.py:1066
+#: forms_builder/views.py:1071
 #: templates/forms_builder/participant_payment.html:19
 msgid ""
 "The payment amount could not be calculated. Contact the event organizer."
@@ -2774,13 +2841,6 @@ msgstr "Hayajawasilishwa"
 #: templates/forms_builder/participant_portal.html:16
 msgid "Not required"
 msgstr "Hayahitajiki"
-
-#: templates/forms_builder/participant_portal.html:18
-#: templates/forms_builder/participant_portal.html:25
-#, fuzzy
-#| msgid "Certificate number"
-msgid "Certificate"
-msgstr "Namba ya cheti"
 
 #: templates/forms_builder/participant_portal.html:18
 msgid "Available"

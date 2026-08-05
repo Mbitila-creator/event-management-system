@@ -10,7 +10,7 @@ from django.views.decorators.http import require_http_methods
 
 from accounts.models import User
 from events.models import Event
-from forms_builder.models import EventForm, FormSubmission
+from forms_builder.models import CertificateRecord, EventForm, FormSubmission
 from forms_builder.models import NotificationLog
 from forms_builder.notifications import send_submission_notification
 from forms_builder.services import (
@@ -101,6 +101,7 @@ def report_submissions(event):
     ).select_related(
         "event_form__event",
         "check_in",
+        "certificate_record",
     )
 
 
@@ -154,7 +155,7 @@ def attendance_reports(request):
         certificate_authorized = rows.filter(
             review_status=FormSubmission.ReviewStatus.APPROVED,
             check_in__isnull=False,
-            certificate_authorized=True,
+            certificate_record__status=CertificateRecord.Status.AUTHORIZED,
         ).count()
         approved_not_checked_in = rows.filter(
             review_status=FormSubmission.ReviewStatus.APPROVED,
@@ -207,7 +208,7 @@ def attendance_reports(request):
                 rows.filter(
                     review_status=FormSubmission.ReviewStatus.APPROVED,
                     check_in__isnull=False,
-                    certificate_authorized=True,
+                    certificate_record__status=CertificateRecord.Status.AUTHORIZED,
                 )
                 if selected_event.certificate_enabled
                 else rows.none()
@@ -245,7 +246,7 @@ def attendance_report_csv(request):
         rows = rows.filter(
             review_status=FormSubmission.ReviewStatus.APPROVED,
             check_in__isnull=False,
-            certificate_authorized=True,
+            certificate_record__status=CertificateRecord.Status.AUTHORIZED,
         )
 
     response = HttpResponse(content_type="text/csv; charset=utf-8")
@@ -409,7 +410,9 @@ def participant_check_in(request, participant_token):
                 )
                 if (
                     check_in
-                    and submission.certificate_authorized
+                    and hasattr(submission, "certificate_record")
+                    and submission.certificate_record.status
+                    == CertificateRecord.Status.AUTHORIZED
                     and submission.event_form.event.certificate_enabled
                 )
                 else ""

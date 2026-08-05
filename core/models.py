@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -260,6 +261,16 @@ class Council(BaseModel):
         on_delete=models.PROTECT,
     )
 
+    district = models.ForeignKey(
+        District,
+        verbose_name=_("district"),
+        related_name="councils",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        help_text=_("Optional district grouping within the selected region."),
+    )
+
     name_sw = models.CharField(
         _("name in Kiswahili"),
         max_length=160,
@@ -312,7 +323,15 @@ class Council(BaseModel):
                 f"{self.region.code}-{self.name_en or self.name_sw}"
             )
 
+        self.full_clean()
         super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        if self.district_id and self.region_id and self.district.region_id != self.region_id:
+            raise ValidationError({
+                "district": _("The district must belong to the selected region."),
+            })
 
     def __str__(self):
         return f"{self.name_sw} - {self.region.name_sw}"

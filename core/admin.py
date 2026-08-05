@@ -121,6 +121,7 @@ class CouncilAdmin(AuditAdminMixin, admin.ModelAdmin):
         "name_sw",
         "name_en",
         "region",
+        "district",
         "council_type",
         "is_active",
     )
@@ -128,6 +129,7 @@ class CouncilAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_filter = (
         "region__country",
         "region",
+        "district",
         "council_type",
         "is_active",
     )

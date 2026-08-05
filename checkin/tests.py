@@ -6,7 +6,10 @@ from django.utils import timezone
 
 from accounts.models import User
 from events.models import Event, EventCategory
-from forms_builder.models import EventForm, FormSubmission, NotificationLog
+from forms_builder.models import (
+    CertificateRecord, EventForm, FormSubmission, NotificationLog,
+)
+from forms_builder.services import certificate_number
 
 from .models import ParticipantCheckIn
 
@@ -184,18 +187,17 @@ class ParticipantCheckInTests(TestCase):
 
     def test_certificate_report_csv_is_downloadable_and_safe(self):
         self.submission.badge_name = "=Unsafe Name"
-        self.submission.certificate_authorized = True
-        self.submission.certificate_authorized_by = self.report_officer
-        self.submission.certificate_authorized_at = timezone.now()
-        self.submission.save(update_fields=[
-            "badge_name",
-            "certificate_authorized",
-            "certificate_authorized_by",
-            "certificate_authorized_at",
-        ])
+        self.submission.save(update_fields=["badge_name"])
         ParticipantCheckIn.objects.create(
             submission=self.submission,
             checked_in_by=self.officer,
+        )
+        CertificateRecord.objects.create(
+            submission=self.submission,
+            certificate_number=certificate_number(self.submission),
+            status=CertificateRecord.Status.AUTHORIZED,
+            authorized_by=self.report_officer,
+            authorized_at=timezone.now(),
         )
         self.client.force_login(self.report_officer)
 

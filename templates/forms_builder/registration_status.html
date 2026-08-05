@@ -122,7 +122,7 @@
                                     {% translate "View participant badge" %}
                                 </a>
                             {% endif %}
-                            {% if submission.event_form.event.certificate_enabled and submission.check_in and submission.certificate_authorized %}
+                            {% if submission.event_form.event.certificate_enabled and submission.check_in and submission.certificate_record.status == "AUTHORIZED" %}
                                 <a
                                     href="{% url 'forms_builder:participant_certificate' submission.participant_token %}"
                                     class="secondary-button status-badge-link"

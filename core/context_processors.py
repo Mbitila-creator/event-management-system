@@ -4,7 +4,7 @@ from django.utils.translation import gettext as _
 from accounts.models import User
 from checkin.models import ParticipantCheckIn
 from events.models import Event
-from forms_builder.models import EventForm, FormSubmission, Payment
+from forms_builder.models import CertificateRecord, EventForm, FormSubmission, Payment
 
 
 def administration_dashboard(request):
@@ -78,7 +78,7 @@ def administration_dashboard(request):
                 event_form__event__certificate_enabled=True,
                 review_status=FormSubmission.ReviewStatus.APPROVED,
                 check_in__isnull=False,
-                certificate_authorized=True,
+                certificate_record__status=CertificateRecord.Status.AUTHORIZED,
                 is_active=True,
                 is_complete=True,
             ).count(),

@@ -1,6 +1,9 @@
 import uuid
+from itertools import combinations
 
 from django.db import models
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 from django.utils.text import slugify
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -8,6 +11,16 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import BaseModel
 from events.models import Event
+
+
+ANSWER_SCALAR_VALUE_TESTS = (
+    ~models.Q(text_value=""),
+    models.Q(number_value__isnull=False),
+    models.Q(date_value__isnull=False),
+    models.Q(datetime_value__isnull=False),
+    models.Q(boolean_value__isnull=False),
+    models.Q(uploaded_file__isnull=False) & ~models.Q(uploaded_file=""),
+)
 
 
 class EventForm(BaseModel):
@@ -512,19 +525,6 @@ class FormSubmission(BaseModel):
         blank=True,
     )
 
-    certificate_authorized = models.BooleanField(
-        _("certificate issuance authorized"), default=False, db_index=True,
-    )
-    certificate_authorized_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        verbose_name=_("certificate authorized by"),
-        related_name="authorized_participant_certificates",
-        on_delete=models.SET_NULL, null=True, blank=True, editable=False,
-    )
-    certificate_authorized_at = models.DateTimeField(
-        _("certificate authorized at"), null=True, blank=True, editable=False,
-    )
-
     class Meta:
         verbose_name = _("form submission")
         verbose_name_plural = _("form submissions")
@@ -581,11 +581,87 @@ class Participant(FormSubmission):
         verbose_name_plural = _("participants")
 
 
-class CertificateRecord(FormSubmission):
+class CertificateRecord(BaseModel):
+    class Status(models.TextChoices):
+        AUTHORIZED = "AUTHORIZED", _("Authorized")
+        REVOKED = "REVOKED", _("Revoked")
+
+    submission = models.OneToOneField(
+        FormSubmission,
+        verbose_name=_("participant submission"),
+        related_name="certificate_record",
+        on_delete=models.CASCADE,
+    )
+    certificate_number = models.CharField(
+        _("certificate number"), max_length=50, unique=True,
+    )
+    status = models.CharField(
+        _("certificate status"), max_length=20,
+        choices=Status.choices, default=Status.AUTHORIZED, db_index=True,
+    )
+    authorized_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("authorized by"),
+        related_name="authorized_certificate_records",
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+    )
+    authorized_at = models.DateTimeField(_("authorized at"))
+    revoked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("revoked by"),
+        related_name="revoked_certificate_records",
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+    )
+    revoked_at = models.DateTimeField(_("revoked at"), null=True, blank=True)
+    revocation_reason = models.TextField(_("revocation reason"), blank=True)
+
     class Meta:
-        proxy = True
         verbose_name = _("certificate")
         verbose_name_plural = _("certificates")
+        ordering = ["-authorized_at"]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(
+                        status="AUTHORIZED", revoked_by__isnull=True,
+                        revoked_at__isnull=True,
+                    )
+                    | models.Q(
+                        status="REVOKED", revoked_by__isnull=False,
+                        revoked_at__isnull=False,
+                    )
+                ),
+                name="valid_certificate_lifecycle_state",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.status == self.Status.AUTHORIZED:
+            if self.revoked_by_id or self.revoked_at:
+                raise ValidationError(_("An authorized certificate cannot contain revocation details."))
+            eligible = (
+                not self.submission_id
+                or FormSubmission.objects.filter(
+                    pk=self.submission_id,
+                    review_status=FormSubmission.ReviewStatus.APPROVED,
+                    check_in__isnull=False,
+                    event_form__event__certificate_enabled=True,
+                ).exists()
+            )
+            if not eligible:
+                raise ValidationError(_("Only an approved, checked-in participant may receive a certificate."))
+        elif not self.revoked_by_id or not self.revoked_at:
+            raise ValidationError(_("A revoked certificate requires the officer and revocation time."))
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.certificate_number} — {self.submission.reference_number}"
 
 
 class QuantityPricingRule(BaseModel):
@@ -688,9 +764,21 @@ class Payment(BaseModel):
         verbose_name = _("payment")
         verbose_name_plural = _("payments")
         ordering = ["-paid_at", "-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["method", "transaction_reference"],
+                condition=~models.Q(transaction_reference=""),
+                name="unique_nonempty_payment_reference_per_method",
+            ),
+            models.CheckConstraint(
+                check=models.Q(amount__gte=0),
+                name="payment_amount_not_negative",
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         self.currency = self.currency.strip().upper()
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -1164,7 +1252,71 @@ class FormAnswer(BaseModel):
                 fields=["submission", "question"],
                 name="unique_answer_per_submission_question",
             ),
+        ] + [
+            models.CheckConstraint(
+                check=~(first & second),
+                name=f"answer_scalar_exclusive_{index:02d}",
+            )
+            for index, (first, second) in enumerate(
+                combinations(ANSWER_SCALAR_VALUE_TESTS, 2), start=1,
+            )
         ]
 
     def __str__(self):
         return f"{self.submission.reference_number} - {self.question}"
+
+    def clean(self):
+        super().clean()
+        if (
+            self.submission_id
+            and self.question_id
+            and self.question.section.event_form_id != self.submission.event_form_id
+        ):
+            raise ValidationError({
+                "question": _("The question must belong to the submitted form."),
+            })
+
+        scalar_values = {
+            "text_value": bool(self.text_value),
+            "number_value": self.number_value is not None,
+            "date_value": self.date_value is not None,
+            "datetime_value": self.datetime_value is not None,
+            "boolean_value": self.boolean_value is not None,
+            "uploaded_file": bool(self.uploaded_file),
+        }
+        if sum(scalar_values.values()) > 1:
+            raise ValidationError(_("An answer may contain only one scalar value type."))
+
+        expected_fields = {
+            FormQuestion.QuestionType.SHORT_TEXT: {"text_value"},
+            FormQuestion.QuestionType.LONG_TEXT: {"text_value"},
+            FormQuestion.QuestionType.EMAIL: {"text_value"},
+            FormQuestion.QuestionType.PHONE: {"text_value"},
+            FormQuestion.QuestionType.NUMBER: {"number_value"},
+            FormQuestion.QuestionType.DATE: {"date_value"},
+            FormQuestion.QuestionType.DATETIME: {"datetime_value"},
+            FormQuestion.QuestionType.YES_NO: {"boolean_value"},
+            FormQuestion.QuestionType.FILE: {"uploaded_file"},
+            FormQuestion.QuestionType.IMAGE: {"uploaded_file"},
+            FormQuestion.QuestionType.SINGLE_CHOICE: set(),
+            FormQuestion.QuestionType.MULTIPLE_CHOICE: set(),
+            FormQuestion.QuestionType.DROPDOWN: set(),
+        }
+        populated = {name for name, present in scalar_values.items() if present}
+        if populated - expected_fields.get(self.question.question_type, set()):
+            raise ValidationError(_("The stored answer type does not match the question type."))
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+@receiver(m2m_changed, sender=FormAnswer.selected_options.through)
+def validate_answer_selected_options(sender, instance, action, pk_set, **kwargs):
+    if action != "pre_add" or not pk_set:
+        return
+    invalid = QuestionOption.objects.filter(pk__in=pk_set).exclude(
+        question_id=instance.question_id,
+    ).exists()
+    if invalid:
+        raise ValidationError(_("Selected options must belong to the answered question."))
