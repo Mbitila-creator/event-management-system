@@ -101,6 +101,10 @@ img {
     gap: 8px;
 }
 
+.header-logout-form {
+    margin: 0;
+}
+
 .language-switcher select {
     min-height: 42px;
     max-width: 130px;
@@ -123,7 +127,8 @@ img {
 }
 
 .public-back-button,
-.public-exit-button {
+.public-exit-button,
+.role-access-link {
     display: inline-flex;
     align-items: center;
 }

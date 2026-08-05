@@ -43,7 +43,7 @@ def can_check_in(user):
 
 check_in_required = user_passes_test(
     can_check_in,
-    login_url="admin:login",
+    login_url="accounts:staff_login",
 )
 
 
@@ -66,7 +66,7 @@ def can_view_reports(user):
 
 report_required = user_passes_test(
     can_view_reports,
-    login_url="admin:login",
+    login_url="accounts:staff_login",
 )
 
 

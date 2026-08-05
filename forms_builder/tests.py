@@ -666,7 +666,7 @@ class PublicEvaluationTests(TestCase):
         response = self.client.get("/en/reports/evaluations/")
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/admin/login/", response["Location"])
+        self.assertIn("/staff/login/", response["Location"])
 
 
 class BoothManagementTests(TestCase):

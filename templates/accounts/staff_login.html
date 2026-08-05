@@ -1,0 +1,44 @@
+{% extends "events/base_public.html" %}
+{% load static i18n %}
+
+{% block title %}{% translate "Staff login" %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/accounts-public.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="staff-login-page">
+    <div class="staff-login-card">
+        <div class="staff-login-heading">
+            <span class="section-kicker">{% translate "Authorized personnel" %}</span>
+            <h1>{% translate "Staff login" %}</h1>
+            <p>{% translate "Sign in using the account created for your assigned role." %}</p>
+        </div>
+
+        {% if form.errors %}
+            <div class="login-alert" role="alert">
+                {% translate "The username or password is incorrect. Please try again." %}
+            </div>
+        {% endif %}
+
+        <form method="post" class="staff-login-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <label for="id_username">{% translate "Username" %}</label>
+            <input id="id_username" name="username" type="text" autocomplete="username" required autofocus>
+
+            <label for="id_password">{% translate "Password" %}</label>
+            <input id="id_password" name="password" type="password" autocomplete="current-password" required>
+
+            <button type="submit">{% translate "Sign in" %}</button>
+        </form>
+
+        <div class="role-guidance">
+            <h2>{% translate "Who should use this page?" %}</h2>
+            <p>{% translate "System Administrators, Event Administrators, Registration Officers, Attendance Officers and Report Officers." %}</p>
+            <p>{% translate "Participants do not need a staff account." %} <a href="{% url 'forms_builder:registration_status' %}">{% translate "Check registration status" %}</a>.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

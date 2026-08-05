@@ -115,10 +115,18 @@
 
                 {% if request.user.is_authenticated %}
                     <a
-                        href="{% url 'admin:index' %}"
-                        class="header-link"
+                        href="{% url 'accounts:role_home' %}"
+                        class="header-link role-access-link"
                     >
-                        {% translate "Administration" %}
+                        {% translate "My workspace" %}
+                    </a>
+                    <form method="post" action="{% url 'accounts:staff_logout' %}" class="header-logout-form">
+                        {% csrf_token %}
+                        <button type="submit" class="header-link role-access-link">{% translate "Sign out" %}</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'accounts:staff_login' %}" class="header-link role-access-link">
+                        {% translate "Staff login" %}
                     </a>
                 {% endif %}
             </div>

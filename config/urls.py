@@ -19,6 +19,7 @@ urlpatterns = [
 
 urlpatterns += i18n_patterns(
     path("admin/", admin.site.urls),
+    path("", include("accounts.urls")),
     path("", include("events.urls")),
     path("", include("forms_builder.urls")),
     path("", include("checkin.urls")),

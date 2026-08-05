@@ -6,6 +6,78 @@ from .models import User
 
 
 class RoleAndLanguageTests(TestCase):
+    def test_staff_login_page_is_public_and_bilingual_ready(self):
+        response = self.client.get("/en/staff/login/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Staff login")
+        self.assertContains(response, "Participants do not need a staff account")
+
+    def test_attendance_officer_login_opens_check_in_interface(self):
+        User.objects.create_user(
+            username="login-attendance",
+            email="login-attendance@example.org",
+            password="test-password",
+            role=User.Role.ATTENDANCE_OFFICER,
+            preferred_language="en",
+            is_staff=True,
+        )
+
+        response = self.client.post(
+            "/en/staff/login/",
+            {"username": "login-attendance", "password": "test-password"},
+        )
+
+        self.assertRedirects(
+            response,
+            "/en/staff/",
+            fetch_redirect_response=False,
+        )
+        workspace = self.client.get("/en/staff/")
+        self.assertRedirects(
+            workspace,
+            "/en/check-in/",
+            fetch_redirect_response=False,
+        )
+
+    def test_report_officer_workspace_opens_reports(self):
+        user = User.objects.create_user(
+            username="login-reporter",
+            email="login-reporter@example.org",
+            password="test-password",
+            role=User.Role.REPORT_OFFICER,
+            preferred_language="en",
+            is_staff=True,
+        )
+        self.client.force_login(user)
+
+        response = self.client.get("/en/staff/")
+
+        self.assertRedirects(
+            response,
+            "/en/reports/attendance/",
+            fetch_redirect_response=False,
+        )
+
+    def test_event_administrator_workspace_opens_administration(self):
+        user = User.objects.create_user(
+            username="login-event-admin",
+            email="login-event-admin@example.org",
+            password="test-password",
+            role=User.Role.EVENT_ADMIN,
+            preferred_language="en",
+            is_staff=True,
+        )
+        self.client.force_login(user)
+
+        response = self.client.get("/en/staff/")
+
+        self.assertRedirects(
+            response,
+            "/en/admin/",
+            fetch_redirect_response=False,
+        )
+
     def test_report_officer_has_view_but_not_change_permission(self):
         user = User.objects.create_user(
             username="reporter", email="reporter@example.org",

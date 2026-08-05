@@ -1,0 +1,28 @@
+.staff-login-page {
+    min-height: calc(100vh - 150px);
+    padding: 48px 12px;
+    background: #f1f5f9;
+}
+
+.staff-login-card {
+    width: min(100%, 560px);
+    margin: 0 auto;
+    padding: clamp(24px, 5vw, 42px);
+    border: 1px solid #dbe3ee;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, .09);
+}
+
+.staff-login-heading h1 { margin: 8px 0; color: #17365d; font-size: clamp(30px, 6vw, 44px); }
+.staff-login-heading p, .role-guidance p { color: #56657a; line-height: 1.6; }
+.staff-login-form { display: grid; gap: 10px; margin-top: 28px; }
+.staff-login-form label { margin-top: 8px; color: #24344d; font-weight: 750; }
+.staff-login-form input { min-height: 50px; padding: 11px 14px; border: 1px solid #b8c4d4; border-radius: 9px; font: inherit; }
+.staff-login-form input:focus { outline: 3px solid rgba(37, 99, 235, .16); border-color: #2563eb; }
+.staff-login-form button { min-height: 50px; margin-top: 12px; border: 0; border-radius: 9px; background: #17365d; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.staff-login-form button:hover { background: #244f83; }
+.login-alert { margin-top: 20px; padding: 13px 15px; border: 1px solid #fecaca; border-radius: 9px; background: #fef2f2; color: #991b1b; }
+.role-guidance { margin-top: 30px; padding-top: 22px; border-top: 1px solid #dbe3ee; }
+.role-guidance h2 { margin: 0 0 8px; color: #24344d; font-size: 18px; }
+.role-guidance a { color: #1d5f9f; font-weight: 750; }

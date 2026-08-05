@@ -93,7 +93,7 @@ def can_view_evaluation_reports(user):
 
 evaluation_report_required = user_passes_test(
     can_view_evaluation_reports,
-    login_url="admin:login",
+    login_url="accounts:staff_login",
 )
 
 

@@ -76,7 +76,7 @@ class ParticipantCheckInTests(TestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/admin/login/", response["Location"])
+        self.assertIn("/staff/login/", response["Location"])
 
     def test_attendance_officer_can_check_in_approved_participant(self):
         self.client.force_login(self.officer)
@@ -177,7 +177,7 @@ class ParticipantCheckInTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/admin/login/", response["Location"])
+        self.assertIn("/staff/login/", response["Location"])
 
     def test_certificate_report_csv_is_downloadable_and_safe(self):
         self.submission.badge_name = "=Unsafe Name"

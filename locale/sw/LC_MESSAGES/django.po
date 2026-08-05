@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-05 09:18+0300\n"
+"POT-Creation-Date: 2026-08-05 09:52+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -1872,9 +1872,61 @@ msgid ""
 msgstr ""
 "Kiasi cha malipo hakikuweza kukokotolewa. Wasiliana na mratibu wa tukio."
 
+#: templates/accounts/staff_login.html:4 templates/accounts/staff_login.html:15
+#: templates/events/base_public.html:129
+msgid "Staff login"
+msgstr "Kuingia kwa watumishi"
+
+#: templates/accounts/staff_login.html:14
+msgid "Authorized personnel"
+msgstr "Watumishi walioidhinishwa"
+
+#: templates/accounts/staff_login.html:16
+msgid "Sign in using the account created for your assigned role."
+msgstr "Ingia kwa kutumia akaunti iliyoundwa kwa ajili ya jukumu ulilopewa."
+
+#: templates/accounts/staff_login.html:21
+msgid "The username or password is incorrect. Please try again."
+msgstr "Jina la mtumiaji au nenosiri si sahihi. Tafadhali jaribu tena."
+
+#: templates/accounts/staff_login.html:28
+msgid "Username"
+msgstr "Jina la mtumiaji"
+
+#: templates/accounts/staff_login.html:31
+msgid "Password"
+msgstr "Nenosiri"
+
+#: templates/accounts/staff_login.html:34
+msgid "Sign in"
+msgstr "Ingia"
+
+#: templates/accounts/staff_login.html:38
+msgid "Who should use this page?"
+msgstr "Nani anapaswa kutumia ukurasa huu?"
+
+#: templates/accounts/staff_login.html:39
+msgid ""
+"System Administrators, Event Administrators, Registration Officers, "
+"Attendance Officers and Report Officers."
+msgstr ""
+"Wasimamizi wa Mfumo, Wasimamizi wa Matukio, Maafisa wa Usajili, Maafisa wa "
+"Mahudhurio na Maafisa wa Ripoti."
+
+#: templates/accounts/staff_login.html:40
+msgid "Participants do not need a staff account."
+msgstr "Washiriki hawahitaji akaunti ya mtumishi."
+
+#: templates/accounts/staff_login.html:40 templates/events/base_public.html:66
+#: templates/forms_builder/registration_status.html:6
+#: templates/forms_builder/registration_status.html:24
+#: templates/forms_builder/submission_success.html:105
+msgid "Check registration status"
+msgstr "Angalia hali ya usajili"
+
 #: templates/admin/base_site.html:4 templates/admin/base_site.html:15
 #: templates/events/base_public.html:16 templates/events/base_public.html:21
-#: templates/events/base_public.html:49 templates/events/base_public.html:136
+#: templates/events/base_public.html:49 templates/events/base_public.html:144
 #: templates/events/home.html:6 templates/events/home.html:18
 #: templates/forms_builder/public_event_form.html:58
 #: templates/forms_builder/submission_success.html:39
@@ -2210,13 +2262,6 @@ msgstr "Hakuna matukio yanayopatikana kwa ajili ya ripoti."
 msgid "Back"
 msgstr "Rudi"
 
-#: templates/events/base_public.html:66
-#: templates/forms_builder/registration_status.html:6
-#: templates/forms_builder/registration_status.html:24
-#: templates/forms_builder/submission_success.html:105
-msgid "Check registration status"
-msgstr "Angalia hali ya usajili"
-
 #: templates/events/base_public.html:70
 #: templates/forms_builder/public_event_form.html:60
 #: templates/forms_builder/submission_success.html:41
@@ -2224,8 +2269,12 @@ msgid "Exit"
 msgstr "Toka"
 
 #: templates/events/base_public.html:121
-msgid "Administration"
-msgstr "Usimamizi"
+msgid "My workspace"
+msgstr "Eneo langu la kazi"
+
+#: templates/events/base_public.html:125
+msgid "Sign out"
+msgstr "Ondoka"
 
 #: templates/events/event_detail.html:73
 msgid "About the event"
