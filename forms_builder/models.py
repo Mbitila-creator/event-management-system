@@ -512,6 +512,19 @@ class FormSubmission(BaseModel):
         blank=True,
     )
 
+    certificate_authorized = models.BooleanField(
+        _("certificate issuance authorized"), default=False, db_index=True,
+    )
+    certificate_authorized_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("certificate authorized by"),
+        related_name="authorized_participant_certificates",
+        on_delete=models.SET_NULL, null=True, blank=True, editable=False,
+    )
+    certificate_authorized_at = models.DateTimeField(
+        _("certificate authorized at"), null=True, blank=True, editable=False,
+    )
+
     class Meta:
         verbose_name = _("form submission")
         verbose_name_plural = _("form submissions")
@@ -1015,6 +1028,9 @@ class NotificationLog(BaseModel):
         PAYMENT_RECEIVED = "PAYMENT_RECEIVED", _("Payment received")
         PAYMENT_VERIFIED = "PAYMENT_VERIFIED", _("Payment verified")
         PAYMENT_REJECTED = "PAYMENT_REJECTED", _("Payment rejected")
+        CERTIFICATE_AUTHORIZED = (
+            "CERTIFICATE_AUTHORIZED", _("Certificate authorized")
+        )
 
     class DeliveryStatus(models.TextChoices):
         SENT = "SENT", _("Sent")

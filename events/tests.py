@@ -9,3 +9,5 @@ class PublicNavigationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Check registration status")
         self.assertContains(response, "/en/registration-status/")
+        self.assertContains(response, "← Back")
+        self.assertContains(response, "Exit")

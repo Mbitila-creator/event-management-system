@@ -151,6 +151,11 @@ def attendance_reports(request):
             review_status=FormSubmission.ReviewStatus.APPROVED,
             check_in__isnull=False,
         ).count()
+        certificate_authorized = rows.filter(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            check_in__isnull=False,
+            certificate_authorized=True,
+        ).count()
         approved_not_checked_in = rows.filter(
             review_status=FormSubmission.ReviewStatus.APPROVED,
             check_in__isnull=True,
@@ -167,7 +172,7 @@ def attendance_reports(request):
             "checked_in": checked_in,
             "not_checked_in": approved_not_checked_in,
             "certificate_eligible": (
-                approved_checked_in
+                certificate_authorized
                 if selected_event.certificate_enabled
                 else 0
             ),
@@ -202,6 +207,7 @@ def attendance_reports(request):
                 rows.filter(
                     review_status=FormSubmission.ReviewStatus.APPROVED,
                     check_in__isnull=False,
+                    certificate_authorized=True,
                 )
                 if selected_event.certificate_enabled
                 else rows.none()
@@ -239,6 +245,7 @@ def attendance_report_csv(request):
         rows = rows.filter(
             review_status=FormSubmission.ReviewStatus.APPROVED,
             check_in__isnull=False,
+            certificate_authorized=True,
         )
 
     response = HttpResponse(content_type="text/csv; charset=utf-8")
@@ -400,7 +407,11 @@ def participant_check_in(request, participant_token):
                     submission,
                     language=request.LANGUAGE_CODE,
                 )
-                if check_in and submission.event_form.event.certificate_enabled
+                if (
+                    check_in
+                    and submission.certificate_authorized
+                    and submission.event_form.event.certificate_enabled
+                )
                 else ""
             ),
             "evaluation_path": (

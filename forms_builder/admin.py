@@ -8,6 +8,8 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
+from accounts.models import User
+
 from .models import (
     Booth,
     BoothInterest,
@@ -639,6 +641,7 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "booth_assignment_display",
         "badge_tools",
         "certificate_tools",
+        "certificate_authorized",
         "submitted_on",
     )
 
@@ -672,6 +675,9 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "is_complete",
         "reviewed_by",
         "reviewed_at",
+        "certificate_authorized",
+        "certificate_authorized_by",
+        "certificate_authorized_at",
         "participant_token",
         "badge_tools",
         "certificate_tools",
@@ -694,6 +700,8 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "reject_submissions",
         "reset_submissions_to_pending",
         "export_submissions_csv",
+        "authorize_certificates",
+        "revoke_certificate_authorization",
     )
 
     inlines = [
@@ -702,6 +710,19 @@ class FormSubmissionAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if not (
+            request.user.is_superuser
+            or request.user.role in {
+                User.Role.SYSTEM_ADMIN,
+                User.Role.EVENT_ADMIN,
+            }
+        ):
+            actions.pop("authorize_certificates", None)
+            actions.pop("revoke_certificate_authorization", None)
+        return actions
 
     @admin.display(description="Event", ordering="event_form__event__code")
     def event_name(self, obj):
@@ -781,6 +802,8 @@ class FormSubmissionAdmin(admin.ModelAdmin):
 
         if not hasattr(obj, "check_in"):
             return "Available after participant check-in."
+        if not obj.certificate_authorized:
+            return "Waiting for certificate authorization."
 
         certificate_url = participant_certificate_path(
             obj,
@@ -796,6 +819,66 @@ class FormSubmissionAdmin(admin.ModelAdmin):
             '<a href="{}">Download PDF</a>',
             certificate_url,
             certificate_pdf_url,
+        )
+
+    @admin.action(description=_("Authorize certificates for selected participants"))
+    def authorize_certificates(self, request, queryset):
+        if not (
+            request.user.is_superuser
+            or request.user.role in {
+                User.Role.SYSTEM_ADMIN,
+                User.Role.EVENT_ADMIN,
+            }
+        ):
+            self.message_user(
+                request, _("You cannot authorize certificates."), messages.ERROR,
+            )
+            return
+        eligible = list(queryset.filter(
+            event_form__event__certificate_enabled=True,
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            check_in__isnull=False,
+            certificate_authorized=False,
+        ).select_related("event_form__event"))
+        now = timezone.now()
+        FormSubmission.objects.filter(
+            pk__in=[item.pk for item in eligible]
+        ).update(
+            certificate_authorized=True,
+            certificate_authorized_by=request.user,
+            certificate_authorized_at=now,
+            updated_by=request.user,
+            updated_at=now,
+        )
+        for submission in eligible:
+            submission.certificate_authorized = True
+            send_submission_notification(
+                submission,
+                NotificationLog.NotificationType.CERTIFICATE_AUTHORIZED,
+                request=request,
+            )
+        self.message_user(
+            request,
+            _("Certificates authorized: %(count)s") % {"count": len(eligible)},
+            messages.SUCCESS,
+        )
+
+    @admin.action(description=_("Revoke certificate authorization"))
+    def revoke_certificate_authorization(self, request, queryset):
+        if not (
+            request.user.is_superuser
+            or request.user.role in {
+                User.Role.SYSTEM_ADMIN,
+                User.Role.EVENT_ADMIN,
+            }
+        ):
+            return
+        queryset.update(
+            certificate_authorized=False,
+            certificate_authorized_by=None,
+            certificate_authorized_at=None,
+            updated_by=request.user,
+            updated_at=timezone.now(),
         )
 
     def save_model(self, request, obj, form, change):
@@ -953,6 +1036,7 @@ class CertificateRecordAdmin(FormSubmissionAdmin):
             event_form__event__certificate_enabled=True,
             review_status=FormSubmission.ReviewStatus.APPROVED,
             check_in__isnull=False,
+            certificate_authorized=True,
         )
 
     def has_add_permission(self, request):

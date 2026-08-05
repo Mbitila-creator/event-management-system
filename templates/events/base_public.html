@@ -51,11 +51,23 @@
             </a>
 
             <div class="header-actions">
+                <button
+                    type="button"
+                    class="header-link public-back-button"
+                    data-fallback-url="{% url 'events:home' %}"
+                >
+                    ← {% translate "Back" %}
+                </button>
+
                 <a
                     href="{% url 'forms_builder:registration_status' %}"
                     class="header-link"
                 >
                     {% translate "Check registration status" %}
+                </a>
+
+                <a href="{% url 'events:home' %}" class="header-link public-exit-button">
+                    {% translate "Exit" %}
                 </a>
 
                 <form
@@ -130,6 +142,15 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".public-back-button").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else {
+                        window.location.assign(button.dataset.fallbackUrl);
+                    }
+                });
+            });
             const languageForm = document.getElementById(
                 "language-switcher-form"
             );

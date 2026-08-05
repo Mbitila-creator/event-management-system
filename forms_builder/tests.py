@@ -1243,6 +1243,14 @@ class SubmissionReviewAdminTests(TestCase):
         self.request = RequestFactory().post("/admin/")
         self.request.user = self.reviewer
 
+        self.event_admin = get_user_model().objects.create_user(
+            username="event-administrator",
+            email="event-admin@example.org",
+            password="test-password",
+            is_staff=True,
+            role=get_user_model().Role.EVENT_ADMIN,
+        )
+
     def test_approve_action_records_reviewer_and_time(self):
         self.model_admin.approve_submissions(
             self.request,
@@ -1302,6 +1310,49 @@ class SubmissionReviewAdminTests(TestCase):
         )
         self.assertIsNone(self.submission.reviewed_by)
         self.assertIsNone(self.submission.reviewed_at)
+
+    def test_event_administrator_can_authorize_checked_in_certificate(self):
+        event = self.submission.event_form.event
+        event.certificate_enabled = True
+        event.save(update_fields=["certificate_enabled"])
+        self.submission.review_status = FormSubmission.ReviewStatus.APPROVED
+        self.submission.save(update_fields=["review_status"])
+        ParticipantCheckIn.objects.create(
+            submission=self.submission,
+            checked_in_by=self.event_admin,
+        )
+        self.request.user = self.event_admin
+
+        self.model_admin.authorize_certificates(
+            self.request,
+            FormSubmission.objects.filter(pk=self.submission.pk),
+        )
+
+        self.submission.refresh_from_db()
+        self.assertTrue(self.submission.certificate_authorized)
+        self.assertEqual(
+            self.submission.certificate_authorized_by,
+            self.event_admin,
+        )
+        self.assertIsNotNone(self.submission.certificate_authorized_at)
+        self.assertTrue(
+            NotificationLog.objects.filter(
+                submission=self.submission,
+                notification_type=(
+                    NotificationLog.NotificationType.CERTIFICATE_AUTHORIZED
+                ),
+                delivery_status=NotificationLog.DeliveryStatus.SENT,
+            ).exists()
+        )
+
+    def test_participant_role_cannot_authorize_certificates(self):
+        self.model_admin.authorize_certificates(
+            self.request,
+            FormSubmission.objects.filter(pk=self.submission.pk),
+        )
+
+        self.submission.refresh_from_db()
+        self.assertFalse(self.submission.certificate_authorized)
 
     def test_status_lookup_accepts_matching_email(self):
         FormSubmission.objects.filter(pk=self.submission.pk).update(
@@ -1413,7 +1464,7 @@ class SubmissionReviewAdminTests(TestCase):
         self.assertEqual(response["Content-Type"], "image/png")
         self.assertTrue(response.content.startswith(b"\x89PNG\r\n\x1a\n"))
 
-    def test_checked_in_participant_can_open_certificate(self):
+    def test_authorized_checked_in_participant_can_open_certificate(self):
         event = self.submission.event_form.event
         event.certificate_enabled = True
         event.save(update_fields=["certificate_enabled"])
@@ -1423,6 +1474,9 @@ class SubmissionReviewAdminTests(TestCase):
             reviewed_at=timezone.now(),
             badge_name="Asha Mwangaza",
             badge_organization="Innovation Institute",
+            certificate_authorized=True,
+            certificate_authorized_by=self.reviewer,
+            certificate_authorized_at=timezone.now(),
         )
         ParticipantCheckIn.objects.create(
             submission=self.submission,
@@ -1467,6 +1521,24 @@ class SubmissionReviewAdminTests(TestCase):
             verification_response,
             expected_certificate_number,
         )
+
+    def test_checked_in_participant_requires_certificate_authorization(self):
+        event = self.submission.event_form.event
+        event.certificate_enabled = True
+        event.save(update_fields=["certificate_enabled"])
+        FormSubmission.objects.filter(pk=self.submission.pk).update(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+        )
+        ParticipantCheckIn.objects.create(
+            submission=self.submission,
+            checked_in_by=self.reviewer,
+        )
+
+        response = self.client.get(
+            f"/en/participants/{self.submission.participant_token}/certificate/"
+        )
+
+        self.assertEqual(response.status_code, 404)
 
     def test_certificate_requires_participant_check_in(self):
         event = self.submission.event_form.event

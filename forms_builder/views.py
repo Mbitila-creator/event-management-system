@@ -1009,6 +1009,7 @@ def participant_portal(request, participant_token):
             "event": event,
             "latest_payment": latest_payment,
             "checked_in": hasattr(submission, "check_in"),
+            "certificate_authorized": submission.certificate_authorized,
             "booth": getattr(submission, "booth_assignment", None),
             "evaluation_form": evaluation_form,
         },
@@ -1225,6 +1226,7 @@ def participant_certificate(request, participant_token):
         is_active=True,
         event_form__event__certificate_enabled=True,
         check_in__isnull=False,
+        certificate_authorized=True,
         event_form__form_type__in=[
             EventForm.FormType.REGISTRATION,
             EventForm.FormType.EXHIBITOR,
@@ -1271,6 +1273,7 @@ def get_certificate_submission(participant_token):
         is_active=True,
         event_form__event__certificate_enabled=True,
         check_in__isnull=False,
+        certificate_authorized=True,
         event_form__form_type__in=[
             EventForm.FormType.REGISTRATION,
             EventForm.FormType.EXHIBITOR,

@@ -78,6 +78,7 @@ def administration_dashboard(request):
                 event_form__event__certificate_enabled=True,
                 review_status=FormSubmission.ReviewStatus.APPROVED,
                 check_in__isnull=False,
+                certificate_authorized=True,
                 is_active=True,
                 is_complete=True,
             ).count(),

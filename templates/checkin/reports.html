@@ -78,6 +78,7 @@
                                     <th>{% translate "Organization" %}</th>
                                     <th>{% translate "Status" %}</th>
                                     <th>{% translate "Attendance" %}</th>
+                                    <th>{% translate "Certificate authorized" %}</th>
                                     <th>{% translate "Checked in at" %}</th>
                                 </tr>
                             </thead>
@@ -95,10 +96,17 @@
                                                 <span class="report-status report-status-muted">{% translate "Not checked in" %}</span>
                                             {% endif %}
                                         </td>
+                                        <td>
+                                            {% if submission.certificate_authorized %}
+                                                <span class="report-status report-status-success">{% translate "Yes" %}</span>
+                                            {% else %}
+                                                <span class="report-status report-status-muted">{% translate "No" %}</span>
+                                            {% endif %}
+                                        </td>
                                         <td>{% if submission.check_in %}{{ submission.check_in.checked_in_at|date:"d M Y, H:i" }}{% else %}—{% endif %}</td>
                                     </tr>
                                 {% empty %}
-                                    <tr><td colspan="6">{% translate "No registrations are available for this event." %}</td></tr>
+                                    <tr><td colspan="7">{% translate "No registrations are available for this event." %}</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>

@@ -112,8 +112,20 @@ img {
 
 .header-link {
     display: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
     text-decoration: none;
     font-weight: 700;
+}
+
+.public-back-button,
+.public-exit-button {
+    display: inline-flex;
+    align-items: center;
 }
 
 .hero-section {

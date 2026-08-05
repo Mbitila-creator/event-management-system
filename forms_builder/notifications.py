@@ -62,17 +62,22 @@ def _notification_content(submission, notification_type, request=None):
                 "reference": submission.reference_number,
                 "status_url": status_url,
             }
+        elif notification_type == NotificationLog.NotificationType.CERTIFICATE_AUTHORIZED:
+            subject = _("Certificate available — %(event)s") % {"event": event_name}
+            certificate_url = _absolute_url(
+                participant_certificate_path(submission, language=language),
+                request=request,
+            )
+            body = _(
+                "Your certificate for %(event)s is now available.\n\n"
+                "Reference number: %(reference)s\nCertificate: %(certificate_url)s"
+            ) % {
+                "event": event_name,
+                "reference": submission.reference_number,
+                "certificate_url": certificate_url,
+            }
         else:
             subject = _("Check-in confirmed — %(event)s") % {"event": event_name}
-            certificate_line = ""
-            if event.certificate_enabled:
-                certificate_url = _absolute_url(
-                    participant_certificate_path(submission, language=language),
-                    request=request,
-                )
-                certificate_line = _("\nCertificate: %(certificate_url)s") % {
-                    "certificate_url": certificate_url,
-                }
             body = _(
                 "Your attendance at %(event)s has been confirmed.\n\n"
                 "Reference number: %(reference)s"
@@ -80,7 +85,6 @@ def _notification_content(submission, notification_type, request=None):
                 "event": event_name,
                 "reference": submission.reference_number,
             }
-            body += certificate_line
 
     return subject, body
 

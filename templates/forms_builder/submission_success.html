@@ -30,12 +30,16 @@
 <body>
     <header class="site-header">
         <div class="header-container">
+            <div class="header-navigation">
+            <button type="button" class="page-back-button" onclick="if(history.length>1){history.back()}else{location.href='{% url 'events:home' %}'}">← {% translate "Back" %}</button>
             <a
                 href="{% url 'events:home' %}"
                 class="system-title"
             >
                 {% translate "Event Management System" %}
             </a>
+            <a href="{% url 'events:home' %}" class="page-back-button">{% translate "Exit" %}</a>
+            </div>
         </div>
     </header>
 
