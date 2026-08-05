@@ -9,7 +9,7 @@
         <span>{% if request.user.is_superuser %}{% translate "System Administrator" %}{% else %}{{ request.user.get_role_display }}{% endif %}</span>
     </header>
 
-    {% if perms.events.add_event or perms.events.add_venue or perms.events.add_eventcategory or perms.forms_builder.add_eventform %}
+    {% if perms.events.add_event or perms.events.add_venue or perms.events.add_eventcategory or perms.forms_builder.add_eventform or perms.accounts.change_user %}
     <section class="ems-quick-actions" aria-label="{% translate 'Quick actions' %}">
         <div class="ems-quick-actions-heading">
             <h2>{% translate "Quick actions" %}</h2>
@@ -20,6 +20,7 @@
             {% if perms.events.add_venue %}<a href="{% url 'admin:events_venue_add' %}">＋ {% translate "Add venue" %}</a>{% endif %}
             {% if perms.events.add_eventcategory %}<a href="{% url 'admin:events_eventcategory_add' %}">＋ {% translate "Add event category" %}</a>{% endif %}
             {% if perms.forms_builder.add_eventform %}<a href="{% url 'admin:forms_builder_eventform_add' %}">＋ {% translate "Create registration form" %}</a>{% endif %}
+            {% if perms.accounts.change_user %}<a href="{% url 'admin:accounts_user_changelist' %}">🔑 {% translate "Manage users and passwords" %}</a>{% endif %}
         </div>
     </section>
     {% endif %}
@@ -37,6 +38,12 @@
     {% endif %}
 
     <div class="ems-groups">
+        {% if perms.accounts.change_user %}
+        <section class="ems-group"><h2>{% translate "Users and access" %}</h2><div class="ems-links">
+            <a class="ems-create-link" href="{% url 'admin:accounts_user_changelist' %}">🔑 {% translate "Manage users and reset passwords" %}</a>
+            {% if perms.accounts.add_user %}<a href="{% url 'admin:accounts_user_add' %}">＋ {% translate "Create staff account" %}</a>{% endif %}
+        </div></section>
+        {% endif %}
         {% if perms.core.view_country or perms.core.view_region or perms.core.view_council or perms.core.view_ward %}
         <section class="ems-group"><h2>{% translate "Reference Data" %}</h2><div class="ems-links">
             {% if perms.core.view_country %}<a href="{% url 'admin:core_country_changelist' %}">{% translate "Countries" %}</a>{% endif %}

@@ -1,5 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 
 from .models import User
 
@@ -32,6 +35,7 @@ class CustomUserAdmin(UserAdmin):
         "preferred_language",
         "is_active",
         "is_staff",
+        "password_reset_link",
     )
 
     list_filter = (
@@ -87,3 +91,14 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
+
+    @admin.display(description=_("Password"))
+    def password_reset_link(self, obj):
+        if not obj.pk:
+            return "—"
+        url = reverse("admin:auth_user_password_change", args=[obj.pk])
+        return format_html(
+            '<a class="button" href="{}">{}</a>',
+            url,
+            _("Reset password"),
+        )

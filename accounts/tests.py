@@ -146,6 +146,33 @@ class RoleAndLanguageTests(TestCase):
         self.assertContains(response, "Pending registrations")
         self.assertContains(response, "Create new event")
         self.assertContains(response, "/en/admin/events/event/add/")
+        self.assertContains(response, "Manage users and passwords")
+        self.assertContains(response, "/en/admin/accounts/user/")
+
+    def test_user_list_provides_direct_password_reset_links(self):
+        administrator = User.objects.create_user(
+            username="password-administrator",
+            email="password-administrator@example.org",
+            password="test-password",
+            role=User.Role.SYSTEM_ADMIN,
+            preferred_language="en",
+        )
+        target = User.objects.create_user(
+            username="password-target",
+            email="password-target@example.org",
+            password="old-password",
+            role=User.Role.ATTENDANCE_OFFICER,
+        )
+        self.client.force_login(administrator)
+
+        response = self.client.get("/en/admin/accounts/user/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Reset password")
+        self.assertContains(
+            response,
+            f"/en/admin/accounts/user/{target.pk}/password/",
+        )
 
     def test_superuser_dashboard_displays_system_administrator_role(self):
         user = User.objects.create_superuser(

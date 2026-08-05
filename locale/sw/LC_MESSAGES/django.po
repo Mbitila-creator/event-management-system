@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-05 11:44+0300\n"
+"POT-Creation-Date: 2026-08-05 17:38+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -16,6 +16,14 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: accounts/admin.py:95 templates/accounts/staff_login.html:31
+msgid "Password"
+msgstr "Nenosiri"
+
+#: accounts/admin.py:103
+msgid "Reset password"
+msgstr "Weka upya nenosiri"
 
 #: accounts/models.py:8 templates/admin/index.html:9
 msgid "System Administrator"
@@ -1900,10 +1908,6 @@ msgstr "Jina la mtumiaji au nenosiri si sahihi. Tafadhali jaribu tena."
 msgid "Username"
 msgstr "Jina la mtumiaji"
 
-#: templates/accounts/staff_login.html:31
-msgid "Password"
-msgstr "Nenosiri"
-
 #: templates/accounts/staff_login.html:34
 msgid "Sign in"
 msgstr "Ingia"
@@ -2023,13 +2027,17 @@ msgstr "Urambazaji wa haraka"
 msgid "Dashboard"
 msgstr "Dashibodi"
 
-#: templates/admin/base_site.html:25 templates/admin/index.html:63
+#: templates/admin/base_site.html:25
+msgid "Users"
+msgstr "Watumiaji"
+
+#: templates/admin/base_site.html:28 templates/admin/index.html:70
 #, fuzzy
 #| msgid "Participant"
 msgid "Participants"
 msgstr "Mshiriki"
 
-#: templates/admin/base_site.html:28
+#: templates/admin/base_site.html:31
 #, fuzzy
 #| msgid "Checked in at"
 msgid "Check-in"
@@ -2048,7 +2056,7 @@ msgid ""
 "Create and configure an event without searching through administration menus."
 msgstr "Unda na sanidi tukio bila kutafuta kwenye menyu za usimamizi."
 
-#: templates/admin/index.html:19 templates/admin/index.html:50
+#: templates/admin/index.html:19 templates/admin/index.html:57
 msgid "Create new event"
 msgstr "Unda tukio jipya"
 
@@ -2064,121 +2072,137 @@ msgstr "Ongeza aina ya tukio"
 msgid "Create registration form"
 msgstr "Unda fomu ya usajili"
 
-#: templates/admin/index.html:28
+#: templates/admin/index.html:23
+msgid "Manage users and passwords"
+msgstr "Simamia watumiaji na manenosiri"
+
+#: templates/admin/index.html:29
 msgid "Operational statistics"
 msgstr "Takwimu za uendeshaji"
 
-#: templates/admin/index.html:33
+#: templates/admin/index.html:34
 msgid "Open records"
 msgstr "Fungua kumbukumbu"
 
-#: templates/admin/index.html:41
+#: templates/admin/index.html:42
+msgid "Users and access"
+msgstr "Watumiaji na ruhusa"
+
+#: templates/admin/index.html:43
+msgid "Manage users and reset passwords"
+msgstr "Simamia watumiaji na kuweka upya manenosiri"
+
+#: templates/admin/index.html:44
+msgid "Create staff account"
+msgstr "Unda akaunti ya mtumishi"
+
+#: templates/admin/index.html:48
 msgid "Reference Data"
 msgstr "Data Rejea"
 
-#: templates/admin/index.html:42
+#: templates/admin/index.html:49
 msgid "Countries"
 msgstr "Nchi"
 
-#: templates/admin/index.html:43
+#: templates/admin/index.html:50
 msgid "Regions"
 msgstr "Mikoa"
 
-#: templates/admin/index.html:44
+#: templates/admin/index.html:51
 msgid "Councils"
 msgstr "Halmashauri"
 
-#: templates/admin/index.html:45
+#: templates/admin/index.html:52
 msgid "Wards"
 msgstr "Kata"
 
-#: templates/admin/index.html:49 templates/admin/index.html:53
+#: templates/admin/index.html:56 templates/admin/index.html:60
 #: templates/events/home.html:5 templates/events/home.html:100
 msgid "Events"
 msgstr "Matukio"
 
-#: templates/admin/index.html:51
+#: templates/admin/index.html:58
 msgid "Categories"
 msgstr "Makundi"
 
-#: templates/admin/index.html:52
+#: templates/admin/index.html:59
 msgid "Venues"
 msgstr "Maeneo"
 
-#: templates/admin/index.html:56
+#: templates/admin/index.html:63
 #: templates/forms_builder/participant_portal.html:15
 #: templates/forms_builder/registration_status.html:21
 msgid "Registration"
 msgstr "Usajili"
 
-#: templates/admin/index.html:57
+#: templates/admin/index.html:64
 msgid "Registration Forms"
 msgstr "Fomu za Usajili"
 
-#: templates/admin/index.html:58
+#: templates/admin/index.html:65
 msgid "Questions"
 msgstr "Maswali"
 
-#: templates/admin/index.html:59
+#: templates/admin/index.html:66
 msgid "Responses"
 msgstr "Majibu"
 
-#: templates/admin/index.html:62
+#: templates/admin/index.html:69
 msgid "Participants and Certificates"
 msgstr "Washiriki na Vyeti"
 
-#: templates/admin/index.html:64
+#: templates/admin/index.html:71
 msgid "QR Codes and Badges"
 msgstr "Misimbo ya QR na Beji"
 
-#: templates/admin/index.html:65
+#: templates/admin/index.html:72
 #, fuzzy
 #| msgid "Certificate number"
 msgid "Certificates"
 msgstr "Namba ya cheti"
 
-#: templates/admin/index.html:68
+#: templates/admin/index.html:75
 #, fuzzy
 #| msgid "payments"
 msgid "Payments"
 msgstr "malipo"
 
-#: templates/admin/index.html:69
+#: templates/admin/index.html:76
 msgid "Payment Records"
 msgstr "Kumbukumbu za Malipo"
 
-#: templates/admin/index.html:70
+#: templates/admin/index.html:77
 msgid "Record Payment"
 msgstr "Weka Malipo"
 
-#: templates/admin/index.html:73 templates/checkin/reports.html:80
+#: templates/admin/index.html:80 templates/checkin/reports.html:80
 #: templates/forms_builder/participant_portal.html:17
 #, fuzzy
 #| msgid "Attendance Officer"
 msgid "Attendance"
 msgstr "Afisa Mahudhurio"
 
-#: templates/admin/index.html:74
+#: templates/admin/index.html:81
 msgid "Check-in Participants"
 msgstr "Thibitisha Mahudhurio ya Washiriki"
 
-#: templates/admin/index.html:75
+#: templates/admin/index.html:82
 msgid "Attendance Records"
 msgstr "Kumbukumbu za Mahudhurio"
 
-#: templates/admin/index.html:76
+#: templates/admin/index.html:83
 msgid "Attendance Reports"
 msgstr "Ripoti za Mahudhurio"
 
-#: templates/admin/index.html:79
+#: templates/admin/index.html:86
 msgid "Evaluation and Reports"
 msgstr "Tathmini na Ripoti"
 
-#: templates/admin/index.html:80
+#: templates/admin/index.html:87
 msgid "Evaluation Reports"
 msgstr "Ripoti za Tathmini"
 
-#: templates/admin/index.html:81
+#: templates/admin/index.html:88
 msgid "Participant Reports"
 msgstr "Ripoti za Washiriki"
 

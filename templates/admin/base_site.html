@@ -21,6 +21,9 @@
 {% block nav-global %}
     <nav class="ems-quick-nav" aria-label="{% translate 'Quick navigation' %}">
         <a href="{% url 'admin:index' %}">{% translate "Dashboard" %}</a>
+        {% if perms.accounts.change_user %}
+            <a href="{% url 'admin:accounts_user_changelist' %}">{% translate "Users" %}</a>
+        {% endif %}
         {% if perms.forms_builder.view_formsubmission %}
             <a href="{% url 'admin:forms_builder_participant_changelist' %}">{% translate "Participants" %}</a>
         {% endif %}
