@@ -6,8 +6,23 @@
     <header class="ems-welcome">
         <p>{% translate "Workspace" %}</p>
         <h1>{% translate "Welcome" %}, {{ request.user.get_full_name|default:request.user.username }}</h1>
-        <span>{{ request.user.get_role_display }}</span>
+        <span>{% if request.user.is_superuser %}{% translate "System Administrator" %}{% else %}{{ request.user.get_role_display }}{% endif %}</span>
     </header>
+
+    {% if perms.events.add_event or perms.events.add_venue or perms.events.add_eventcategory or perms.forms_builder.add_eventform %}
+    <section class="ems-quick-actions" aria-label="{% translate 'Quick actions' %}">
+        <div class="ems-quick-actions-heading">
+            <h2>{% translate "Quick actions" %}</h2>
+            <p>{% translate "Create and configure an event without searching through administration menus." %}</p>
+        </div>
+        <div class="ems-action-buttons">
+            {% if perms.events.add_event %}<a class="ems-action-primary" href="{% url 'admin:events_event_add' %}">＋ {% translate "Create new event" %}</a>{% endif %}
+            {% if perms.events.add_venue %}<a href="{% url 'admin:events_venue_add' %}">＋ {% translate "Add venue" %}</a>{% endif %}
+            {% if perms.events.add_eventcategory %}<a href="{% url 'admin:events_eventcategory_add' %}">＋ {% translate "Add event category" %}</a>{% endif %}
+            {% if perms.forms_builder.add_eventform %}<a href="{% url 'admin:forms_builder_eventform_add' %}">＋ {% translate "Create registration form" %}</a>{% endif %}
+        </div>
+    </section>
+    {% endif %}
 
     {% if operational_dashboard_cards %}
     <section class="ems-statistics" aria-label="{% translate 'Operational statistics' %}">
@@ -32,6 +47,7 @@
         {% endif %}
 
         {% if perms.events.view_event %}<section class="ems-group"><h2>{% translate "Events" %}</h2><div class="ems-links">
+            {% if perms.events.add_event %}<a class="ems-create-link" href="{% url 'admin:events_event_add' %}">＋ {% translate "Create new event" %}</a>{% endif %}
             <a href="{% url 'admin:events_eventcategory_changelist' %}">{% translate "Categories" %}</a>
             <a href="{% url 'admin:events_venue_changelist' %}">{% translate "Venues" %}</a>
             <a href="{% url 'admin:events_event_changelist' %}">{% translate "Events" %}</a>

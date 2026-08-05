@@ -144,6 +144,22 @@ class RoleAndLanguageTests(TestCase):
         self.assertContains(response, "Participants and Certificates")
         self.assertContains(response, "Active events")
         self.assertContains(response, "Pending registrations")
+        self.assertContains(response, "Create new event")
+        self.assertContains(response, "/en/admin/events/event/add/")
+
+    def test_superuser_dashboard_displays_system_administrator_role(self):
+        user = User.objects.create_superuser(
+            username="root-dashboard",
+            email="root-dashboard@example.org",
+            password="test-password",
+            preferred_language="en",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get("/en/admin/")
+
+        self.assertContains(response, "System Administrator")
+        self.assertNotContains(response, "<span>Participant</span>", html=True)
 
     def test_attendance_officer_dashboard_only_shows_attendance_statistics(self):
         user = User.objects.create_user(
