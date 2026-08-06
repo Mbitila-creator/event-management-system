@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.core import mail
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
@@ -247,6 +248,7 @@ class EventAdministratorOperationsTests(TestCase):
             event_form=event_form,
             submitter_email="participant@example.org",
             badge_name="Test Participant",
+            language="en",
         )
         self.payment = Payment.objects.create(
             submission=self.submission,
@@ -351,6 +353,19 @@ class EventAdministratorOperationsTests(TestCase):
             submission=self.submission,
             notification_type=NotificationLog.NotificationType.CERTIFICATE_DENIED,
         ).exists())
+        denial_email = next(
+            message for message in mail.outbox
+            if "Certificate decision" in message.subject
+        )
+        self.assertIn("View certificate status:", denial_email.body)
+        self.assertIn(
+            f"/en/participants/{self.submission.participant_token}/",
+            denial_email.body,
+        )
+        self.assertIn(
+            "The minimum attendance requirement was not met.",
+            denial_email.body,
+        )
 
         workspace = self.client.get("/en/staff/")
         self.assertEqual(workspace.context["certificate_candidate_count"], 0)

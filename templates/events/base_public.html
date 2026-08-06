@@ -61,7 +61,7 @@
 
                 <a
                     href="{% url 'forms_builder:registration_status' %}"
-                    class="header-link"
+                    class="header-link registration-status-link"
                 >
                     {% translate "Check registration status" %}
                 </a>
@@ -116,16 +116,16 @@
                 {% if request.user.is_authenticated %}
                     <a
                         href="{% url 'accounts:role_home' %}"
-                        class="header-link role-access-link"
+                        class="header-link role-access-link workspace-link"
                     >
                         {% translate "My workspace" %}
                     </a>
                     <form method="post" action="{% url 'accounts:staff_logout' %}" class="header-logout-form">
                         {% csrf_token %}
-                        <button type="submit" class="header-link role-access-link">{% translate "Sign out" %}</button>
+                        <button type="submit" class="header-link role-access-link sign-out-button">{% translate "Sign out" %}</button>
                     </form>
                 {% else %}
-                    <a href="{% url 'accounts:staff_login' %}" class="header-link role-access-link">
+                    <a href="{% url 'accounts:staff_login' %}" class="header-link role-access-link staff-login-link">
                         {% translate "Staff login" %}
                     </a>
                 {% endif %}

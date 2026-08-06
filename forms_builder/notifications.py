@@ -89,7 +89,7 @@ def _notification_content(submission, notification_type, request=None):
                 "Event: %(event)s\n"
                 "Reference number: %(reference)s\n"
                 "Reason: %(reason)s\n"
-                "View your participant page: %(portal_url)s"
+                "View certificate status: %(portal_url)s"
             ) % {
                 "event": event_name,
                 "reference": submission.reference_number,
