@@ -1,4 +1,7 @@
-from django.test import TestCase
+from datetime import timedelta
+
+from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from .models import User
 
@@ -94,8 +97,18 @@ class RoleAndLanguageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Staff workspace")
-        self.assertContains(response, "Advanced administration")
+        self.assertContains(response, "Certificate authorization")
+        self.assertContains(response, "Attendance reports")
+        self.assertContains(response, "Evaluation reports")
+        self.assertNotContains(response, "Advanced administration")
         self.assertNotContains(response, "Start typing to filter")
+
+        administration = self.client.get("/en/admin/")
+        self.assertRedirects(
+            administration,
+            "/en/staff/",
+            fetch_redirect_response=False,
+        )
 
     def test_registration_officer_workspace_has_no_django_admin_sidebar(self):
         user = User.objects.create_user(
@@ -198,6 +211,104 @@ class RoleAndLanguageTests(TestCase):
         self.assertFalse(user.has_perm("forms_builder.change_certificaterecord"))
         self.assertFalse(user.has_perm("events.change_event"))
 
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class EventAdministratorOperationsTests(TestCase):
+    def setUp(self):
+        from events.models import Event, EventCategory
+        from forms_builder.models import EventForm, FormSubmission, Payment
+
+        self.event_admin = User.objects.create_user(
+            username="event-operations",
+            email="event-operations@example.org",
+            role=User.Role.EVENT_ADMIN,
+            preferred_language="en",
+        )
+        category = EventCategory.objects.create(
+            name_sw="Maonesho", name_en="Exhibition", code="EXHIBITION",
+        )
+        start = timezone.now() + timedelta(days=10)
+        event = Event.objects.create(
+            category=category,
+            code="OPERATIONS-2026",
+            title_sw="Tukio la Uendeshaji",
+            title_en="Operations Event",
+            starts_at=start,
+            ends_at=start + timedelta(days=2),
+            certificate_enabled=True,
+        )
+        event_form = EventForm.objects.create(
+            event=event,
+            name_sw="Fomu ya Usajili",
+            name_en="Registration Form",
+            is_published=True,
+        )
+        self.submission = FormSubmission.objects.create(
+            event_form=event_form,
+            submitter_email="participant@example.org",
+            badge_name="Test Participant",
+        )
+        self.payment = Payment.objects.create(
+            submission=self.submission,
+            amount="2000000.00",
+            transaction_reference="OPERATIONS-PAYMENT-1",
+        )
+        self.client.force_login(self.event_admin)
+
+    def test_event_administrator_can_approve_registration_and_verify_payment(self):
+        from forms_builder.models import FormSubmission, Payment
+
+        response = self.client.post(
+            f"/en/staff/registrations/{self.submission.pk}/approve/",
+        )
+        self.assertRedirects(response, "/en/staff/", fetch_redirect_response=False)
+        self.submission.refresh_from_db()
+        self.assertEqual(
+            self.submission.review_status,
+            FormSubmission.ReviewStatus.APPROVED,
+        )
+        self.assertEqual(self.submission.reviewed_by, self.event_admin)
+
+        response = self.client.post(
+            f"/en/staff/payments/{self.payment.pk}/verify/",
+        )
+        self.assertRedirects(response, "/en/staff/", fetch_redirect_response=False)
+        self.payment.refresh_from_db()
+        self.assertEqual(self.payment.status, Payment.Status.VERIFIED)
+        self.assertEqual(self.payment.verified_by, self.event_admin)
+
+    def test_event_administrator_can_authorize_checked_in_certificate(self):
+        from checkin.models import ParticipantCheckIn
+        from forms_builder.models import CertificateRecord, FormSubmission
+
+        self.submission.review_status = FormSubmission.ReviewStatus.APPROVED
+        self.submission.save(update_fields=("review_status", "updated_at"))
+        ParticipantCheckIn.objects.create(
+            submission=self.submission,
+            checked_in_by=self.event_admin,
+        )
+        response = self.client.post(
+            f"/en/staff/certificates/{self.submission.pk}/authorize/",
+        )
+        self.assertRedirects(response, "/en/staff/", fetch_redirect_response=False)
+        certificate = CertificateRecord.objects.get(submission=self.submission)
+        self.assertEqual(certificate.status, CertificateRecord.Status.AUTHORIZED)
+        self.assertEqual(certificate.authorized_by, self.event_admin)
+
+    def test_registration_officer_cannot_authorize_certificate(self):
+        officer = User.objects.create_user(
+            username="registration-no-certificate",
+            email="registration-no-certificate@example.org",
+            role=User.Role.REGISTRATION_OFFICER,
+        )
+        self.client.force_login(officer)
+        response = self.client.post(
+            f"/en/staff/certificates/{self.submission.pk}/authorize/",
+        )
+        self.assertEqual(response.status_code, 403)
+
+
+class RoleAndLanguageContinuationTests(TestCase):
     def test_system_administrator_sees_operational_dashboard(self):
         user = User.objects.create_user(
             username="system-admin", email="system@example.org",
@@ -255,7 +366,7 @@ class RoleAndLanguageTests(TestCase):
         self.assertContains(response, "System Administrator")
         self.assertNotContains(response, "<span>Participant</span>", html=True)
 
-    def test_attendance_officer_dashboard_only_shows_attendance_statistics(self):
+    def test_attendance_officer_is_kept_out_of_system_administration(self):
         user = User.objects.create_user(
             username="attendance-dashboard", email="attendance@example.org",
             role=User.Role.ATTENDANCE_OFFICER,
@@ -263,9 +374,11 @@ class RoleAndLanguageTests(TestCase):
         )
         self.client.force_login(user)
         response = self.client.get("/en/admin/")
-        self.assertContains(response, "Participants checked in")
-        self.assertNotContains(response, "Pending registrations")
-        self.assertNotContains(response, "Payments awaiting verification")
+        self.assertRedirects(
+            response,
+            "/en/staff/",
+            fetch_redirect_response=False,
+        )
 
 
 class RoleAccessMatrixTests(TestCase):
@@ -300,25 +413,20 @@ class RoleAccessMatrixTests(TestCase):
                     self.assertNotEqual(response.status_code, 200)
                 self.client.logout()
 
-    def test_administration_dashboard_excludes_participants(self):
+    def test_system_administration_is_reserved_for_system_administrator(self):
         self.assert_role_access(
             "/en/admin/",
-            set(self.roles) - {User.Role.PARTICIPANT},
+            {User.Role.SYSTEM_ADMIN},
         )
 
     def test_event_management_access(self):
         self.assert_role_access(
             "/en/admin/events/event/",
-            {User.Role.SYSTEM_ADMIN, User.Role.EVENT_ADMIN},
+            {User.Role.SYSTEM_ADMIN},
         )
 
     def test_registration_and_payment_access(self):
-        allowed = {
-            User.Role.SYSTEM_ADMIN,
-            User.Role.EVENT_ADMIN,
-            User.Role.REGISTRATION_OFFICER,
-            User.Role.REPORT_OFFICER,
-        }
+        allowed = {User.Role.SYSTEM_ADMIN}
         self.assert_role_access(
             "/en/admin/forms_builder/formsubmission/", allowed,
         )

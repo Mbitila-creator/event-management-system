@@ -16,9 +16,10 @@
                 <h1>{% translate "Welcome" %}, {{ request.user.get_full_name|default:request.user.username }}</h1>
                 <p>{{ request.user.get_role_display }}</p>
             </div>
-            {% if is_event_admin %}
-                <a href="{% url 'admin:index' %}" class="workspace-secondary-button">{% translate "Advanced administration" %}</a>
-            {% endif %}
+            <form method="post" action="{% url 'accounts:staff_logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="workspace-secondary-button">{% translate "Sign out" %}</button>
+            </form>
         </header>
 
         <div class="workspace-statistics">
@@ -44,11 +45,17 @@
                 </div>
                 <div class="workspace-table-scroll">
                     <table>
-                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Participant" %}</th><th>{% translate "Event" %}</th><th>{% translate "Submitted on" %}</th></tr></thead>
+                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Participant" %}</th><th>{% translate "Event" %}</th><th>{% translate "Submitted on" %}</th><th>{% translate "Actions" %}</th></tr></thead>
                         <tbody>
                         {% for submission in recent_submissions %}
-                            <tr><td>{{ submission.reference_number }}</td><td>{{ submission.badge_display_name }}</td><td>{{ submission.event_form.event }}</td><td>{{ submission.created_at|date:"d M Y, H:i" }}</td></tr>
-                        {% empty %}<tr><td colspan="4">{% translate "No registrations are awaiting review." %}</td></tr>{% endfor %}
+                            <tr>
+                                <td>{{ submission.reference_number }}</td><td>{{ submission.badge_display_name }}</td><td>{{ submission.event_form.event }}</td><td>{{ submission.created_at|date:"d M Y, H:i" }}</td>
+                                <td><div class="workspace-row-actions">
+                                    <form method="post" action="{% url 'accounts:review_registration' submission.pk 'approve' %}">{% csrf_token %}<button class="workspace-action-success" type="submit">{% translate "Approve" %}</button></form>
+                                    <form method="post" action="{% url 'accounts:review_registration' submission.pk 'reject' %}">{% csrf_token %}<button class="workspace-action-danger" type="submit">{% translate "Reject" %}</button></form>
+                                </div></td>
+                            </tr>
+                        {% empty %}<tr><td colspan="5">{% translate "No registrations are awaiting review." %}</td></tr>{% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -61,15 +68,50 @@
                 </div>
                 <div class="workspace-table-scroll">
                     <table>
-                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Amount" %}</th><th>{% translate "Transaction reference" %}</th><th>{% translate "Submitted on" %}</th></tr></thead>
+                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Amount" %}</th><th>{% translate "Transaction reference" %}</th><th>{% translate "Submitted on" %}</th><th>{% translate "Actions" %}</th></tr></thead>
                         <tbody>
                         {% for payment in recent_payments %}
-                            <tr><td>{{ payment.submission.reference_number }}</td><td>{{ payment.currency }} {{ payment.amount }}</td><td>{{ payment.transaction_reference|default:"—" }}</td><td>{{ payment.created_at|date:"d M Y, H:i" }}</td></tr>
-                        {% empty %}<tr><td colspan="4">{% translate "No payments are awaiting verification." %}</td></tr>{% endfor %}
+                            <tr>
+                                <td>{{ payment.submission.reference_number }}</td><td>{{ payment.currency }} {{ payment.amount }}</td><td>{{ payment.transaction_reference|default:"—" }}</td><td>{{ payment.created_at|date:"d M Y, H:i" }}</td>
+                                <td><div class="workspace-row-actions">
+                                    <form method="post" action="{% url 'accounts:review_payment' payment.pk 'verify' %}">{% csrf_token %}<button class="workspace-action-success" type="submit">{% translate "Verify" %}</button></form>
+                                    <form method="post" action="{% url 'accounts:review_payment' payment.pk 'reject' %}">{% csrf_token %}<button class="workspace-action-danger" type="submit">{% translate "Reject" %}</button></form>
+                                </div></td>
+                            </tr>
+                        {% empty %}<tr><td colspan="5">{% translate "No payments are awaiting verification." %}</td></tr>{% endfor %}
                         </tbody>
                     </table>
                 </div>
             </section>
+
+            {% if is_event_admin %}
+            <section class="workspace-panel">
+                <div class="workspace-panel-heading">
+                    <h2>{% translate "Certificate authorization" %}</h2>
+                    <span>{{ certificate_candidate_count }}</span>
+                </div>
+                <div class="workspace-table-scroll">
+                    <table>
+                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Participant" %}</th><th>{% translate "Event" %}</th><th>{% translate "Status" %}</th><th>{% translate "Actions" %}</th></tr></thead>
+                        <tbody>
+                        {% for submission in certificate_candidates %}
+                            <tr>
+                                <td>{{ submission.reference_number }}</td><td>{{ submission.badge_display_name }}</td><td>{{ submission.event_form.event }}</td>
+                                <td>{% if submission.certificate_record.status == "AUTHORIZED" %}<span class="workspace-status-success">{% translate "Authorized" %}</span>{% else %}<span class="workspace-status-pending">{% translate "Awaiting authorization" %}</span>{% endif %}</td>
+                                <td><div class="workspace-row-actions">
+                                    {% if submission.certificate_record.status == "AUTHORIZED" %}
+                                        <form method="post" action="{% url 'accounts:update_certificate_authorization' submission.pk 'revoke' %}">{% csrf_token %}<button class="workspace-action-danger" type="submit">{% translate "Revoke" %}</button></form>
+                                    {% else %}
+                                        <form method="post" action="{% url 'accounts:update_certificate_authorization' submission.pk 'authorize' %}">{% csrf_token %}<button class="workspace-action-success" type="submit">{% translate "Authorize certificate" %}</button></form>
+                                    {% endif %}
+                                </div></td>
+                            </tr>
+                        {% empty %}<tr><td colspan="5">{% translate "No checked-in participants are awaiting certificate authorization." %}</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            {% endif %}
         </div>
     </div>
 </section>

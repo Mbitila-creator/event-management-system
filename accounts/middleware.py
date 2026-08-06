@@ -1,5 +1,35 @@
 from django.shortcuts import redirect
 
+from .models import User
+
+
+class SystemAdministrationBoundaryMiddleware:
+    """Keep operational staff out of Django's system administration area."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        parts = request.path.split("/")
+        is_admin_path = (
+            len(parts) > 2
+            and parts[1] in {"sw", "en"}
+            and parts[2] == "admin"
+        )
+        is_system_administrator = (
+            user
+            and user.is_authenticated
+            and user.is_active
+            and (
+                user.is_superuser
+                or user.role == User.Role.SYSTEM_ADMIN
+            )
+        )
+        if is_admin_path and user and user.is_authenticated and not is_system_administrator:
+            return redirect("accounts:role_home")
+        return self.get_response(request)
+
 
 class UserPreferredLanguageMiddleware:
     """Apply a staff member's preference once, then permit manual switching."""

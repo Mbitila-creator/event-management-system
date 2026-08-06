@@ -1,10 +1,41 @@
+from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect
-from django.shortcuts import render
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from .models import User
+
+
+OPERATIONS_ROLES = {
+    User.Role.SYSTEM_ADMIN,
+    User.Role.EVENT_ADMIN,
+    User.Role.REGISTRATION_OFFICER,
+}
+
+
+def _require_operations_role(user):
+    if not (
+        user.is_authenticated
+        and user.is_active
+        and (user.is_superuser or user.role in OPERATIONS_ROLES)
+    ):
+        raise PermissionDenied
+
+
+def _require_event_administrator(user):
+    if not (
+        user.is_authenticated
+        and user.is_active
+        and (
+            user.is_superuser
+            or user.role in {User.Role.SYSTEM_ADMIN, User.Role.EVENT_ADMIN}
+        )
+    ):
+        raise PermissionDenied
 
 
 @login_required(login_url="accounts:staff_login")
@@ -18,7 +49,9 @@ def role_home(request):
     }:
         from checkin.models import ParticipantCheckIn
         from events.models import Event
-        from forms_builder.models import EventForm, FormSubmission, Payment
+        from forms_builder.models import (
+            CertificateRecord, EventForm, FormSubmission, Payment,
+        )
 
         submissions = FormSubmission.objects.exclude(
             event_form__form_type=EventForm.FormType.EVALUATION,
@@ -31,6 +64,11 @@ def role_home(request):
         pending_payments = Payment.objects.filter(
             status=Payment.Status.PENDING,
         ).select_related("submission", "submission__event_form__event")
+        certificate_candidates = submissions.filter(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            event_form__event__certificate_enabled=True,
+            check_in__isnull=False,
+        ).select_related("certificate_record").order_by("-created_at")
         return render(request, "accounts/staff_workspace.html", {
             "active_events": Event.objects.filter(is_active=True).count(),
             "pending_registration_count": pending_submissions.count(),
@@ -40,6 +78,10 @@ def role_home(request):
                 "-created_at",
             )[:8],
             "recent_payments": pending_payments.order_by("-created_at")[:8],
+            "certificate_candidates": certificate_candidates[:8],
+            "certificate_candidate_count": certificate_candidates.exclude(
+                certificate_record__status=CertificateRecord.Status.AUTHORIZED,
+            ).count(),
             "is_event_admin": request.user.role == User.Role.EVENT_ADMIN,
         })
     if request.user.role == User.Role.ATTENDANCE_OFFICER:
@@ -53,3 +95,139 @@ def role_home(request):
 def staff_logout(request):
     logout(request)
     return redirect("accounts:staff_login")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def review_registration(request, submission_id, decision):
+    from forms_builder.models import EventForm, FormSubmission, NotificationLog
+    from forms_builder.notifications import send_submission_notification
+
+    _require_operations_role(request.user)
+    statuses = {
+        "approve": FormSubmission.ReviewStatus.APPROVED,
+        "reject": FormSubmission.ReviewStatus.REJECTED,
+    }
+    status = statuses.get(decision)
+    if status is None:
+        raise PermissionDenied
+    submission = get_object_or_404(
+        FormSubmission.objects.exclude(
+            event_form__form_type=EventForm.FormType.EVALUATION,
+        ),
+        pk=submission_id,
+        is_active=True,
+        is_complete=True,
+    )
+    submission.review_status = status
+    submission.reviewed_by = request.user
+    submission.reviewed_at = timezone.now()
+    submission.updated_by = request.user
+    submission.save(update_fields=(
+        "review_status", "reviewed_by", "reviewed_at", "updated_by",
+        "updated_at",
+    ))
+    notification_type = (
+        NotificationLog.NotificationType.REGISTRATION_APPROVED
+        if status == FormSubmission.ReviewStatus.APPROVED
+        else NotificationLog.NotificationType.REGISTRATION_REJECTED
+    )
+    send_submission_notification(submission, notification_type, request=request)
+    messages.success(request, _("Registration status updated successfully."))
+    return redirect("accounts:role_home")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def review_payment(request, payment_id, decision):
+    from forms_builder.models import NotificationLog, Payment
+    from forms_builder.notifications import send_payment_notification
+
+    _require_operations_role(request.user)
+    statuses = {
+        "verify": Payment.Status.VERIFIED,
+        "reject": Payment.Status.REJECTED,
+    }
+    status = statuses.get(decision)
+    if status is None:
+        raise PermissionDenied
+    payment = get_object_or_404(Payment, pk=payment_id)
+    payment.status = status
+    payment.verified_by = request.user if status == Payment.Status.VERIFIED else None
+    payment.verified_at = timezone.now() if status == Payment.Status.VERIFIED else None
+    payment.updated_by = request.user
+    payment.save(update_fields=(
+        "status", "verified_by", "verified_at", "updated_by", "updated_at",
+    ))
+    notification_type = (
+        NotificationLog.NotificationType.PAYMENT_VERIFIED
+        if status == Payment.Status.VERIFIED
+        else NotificationLog.NotificationType.PAYMENT_REJECTED
+    )
+    send_payment_notification(payment, notification_type, request=request)
+    messages.success(request, _("Payment status updated successfully."))
+    return redirect("accounts:role_home")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def update_certificate_authorization(request, submission_id, decision):
+    from forms_builder.models import CertificateRecord, FormSubmission, NotificationLog
+    from forms_builder.notifications import send_submission_notification
+    from forms_builder.services import certificate_number
+
+    _require_event_administrator(request.user)
+    submission = get_object_or_404(
+        FormSubmission.objects.filter(
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            event_form__event__certificate_enabled=True,
+            check_in__isnull=False,
+        ),
+        pk=submission_id,
+    )
+    now = timezone.now()
+    if decision == "authorize":
+        certificate, created = CertificateRecord.objects.get_or_create(
+            submission=submission,
+            defaults={
+                "certificate_number": certificate_number(submission),
+                "status": CertificateRecord.Status.AUTHORIZED,
+                "authorized_by": request.user,
+                "authorized_at": now,
+                "created_by": request.user,
+                "updated_by": request.user,
+            },
+        )
+        if not created:
+            certificate.certificate_number = certificate_number(submission)
+            certificate.status = CertificateRecord.Status.AUTHORIZED
+            certificate.authorized_by = request.user
+            certificate.authorized_at = now
+            certificate.revoked_by = None
+            certificate.revoked_at = None
+            certificate.revocation_reason = ""
+            certificate.updated_by = request.user
+            certificate.save()
+        send_submission_notification(
+            submission,
+            NotificationLog.NotificationType.CERTIFICATE_AUTHORIZED,
+            request=request,
+        )
+        messages.success(request, _("Certificate authorized successfully."))
+    elif decision == "revoke":
+        certificate = get_object_or_404(
+            CertificateRecord,
+            submission=submission,
+            status=CertificateRecord.Status.AUTHORIZED,
+        )
+        certificate.status = CertificateRecord.Status.REVOKED
+        certificate.revoked_by = request.user
+        certificate.revoked_at = now
+        certificate.updated_by = request.user
+        certificate.save(update_fields=(
+            "status", "revoked_by", "revoked_at", "updated_by", "updated_at",
+        ))
+        messages.success(request, _("Certificate authorization revoked."))
+    else:
+        raise PermissionDenied
+    return redirect("accounts:role_home")
