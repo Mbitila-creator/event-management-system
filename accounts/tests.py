@@ -279,6 +279,31 @@ class EventAdministratorOperationsTests(TestCase):
         self.assertEqual(self.payment.status, Payment.Status.VERIFIED)
         self.assertEqual(self.payment.verified_by, self.event_admin)
 
+    def test_event_administrator_can_review_participant_and_payment_details(self):
+        workspace = self.client.get("/en/staff/")
+        detail_url = (
+            f"/en/staff/participants/{self.submission.pk}/review/"
+        )
+        self.assertContains(workspace, detail_url)
+
+        details = self.client.get(detail_url)
+        self.assertEqual(details.status_code, 200)
+        self.assertContains(details, "Participant contact information")
+        self.assertContains(details, "participant@example.org")
+        self.assertContains(details, "OPERATIONS-PAYMENT-1")
+        self.assertContains(details, "Approve registration")
+        self.assertContains(details, "Verify payment")
+
+        participant = User.objects.create_user(
+            username="participant-no-review",
+            email="participant-no-review@example.org",
+            role=User.Role.PARTICIPANT,
+            preferred_language="en",
+        )
+        self.client.force_login(participant)
+        forbidden = self.client.get(detail_url)
+        self.assertEqual(forbidden.status_code, 403)
+
     def test_event_administrator_can_authorize_checked_in_certificate(self):
         from checkin.models import ParticipantCheckIn
         from forms_builder.models import CertificateRecord, FormSubmission

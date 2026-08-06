@@ -42,6 +42,8 @@
 .workspace-status-pending { background: #fff2ce; color: #795b00; }
 .workspace-status-denied { background: #fbe4e6; color: #962d36; }
 .workspace-decision-reason { display: block; max-width: 300px; margin-top: 6px; color: #66758b; white-space: normal; }
+.workspace-details-button { display: inline-flex; align-items: center; min-height: 38px; padding: 8px 12px; border-radius: 7px; background: #2f75b5; color: #fff; font-weight: 750; text-decoration: none; }
+.workspace-details-button:hover { background: #245f98; }
 .workspace-view-details { min-width: 120px; }
 .workspace-view-details summary { color: #245f98; font-weight: 750; cursor: pointer; }
 .workspace-view-details dl { width: 300px; margin: 9px 0 0; padding: 12px; border: 1px solid #d8e2ef; border-radius: 9px; background: #f8fafc; white-space: normal; }

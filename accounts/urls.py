@@ -18,6 +18,11 @@ urlpatterns = [
     ),
     path("staff/", views.role_home, name="role_home"),
     path(
+        "staff/participants/<int:submission_id>/review/",
+        views.participant_review_details,
+        name="participant_review_details",
+    ),
+    path(
         "staff/registrations/<int:submission_id>/<str:decision>/",
         views.review_registration,
         name="review_registration",

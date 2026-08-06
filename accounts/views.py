@@ -91,6 +91,74 @@ def role_home(request):
     return redirect("forms_builder:registration_status")
 
 
+@login_required(login_url="accounts:staff_login")
+def participant_review_details(request, submission_id):
+    """Show the complete evidence needed for registration and payment decisions."""
+    from forms_builder.models import EventForm, FormSubmission
+
+    _require_operations_role(request.user)
+    submission = get_object_or_404(
+        FormSubmission.objects.exclude(
+            event_form__form_type=EventForm.FormType.EVALUATION,
+        ).select_related(
+            "event_form__event",
+            "reviewed_by",
+        ).prefetch_related(
+            "answers__question__section",
+            "answers__selected_options",
+            "payments",
+        ),
+        pk=submission_id,
+        is_active=True,
+        is_complete=True,
+    )
+    language = request.LANGUAGE_CODE
+    sections = []
+    section_lookup = {}
+    for answer in submission.answers.all():
+        question = answer.question
+        section = question.section
+        section_id = section.pk
+        if section_id not in section_lookup:
+            section_data = {
+                "title": section.title_en if language == "en" else section.title_sw,
+                "answers": [],
+            }
+            section_lookup[section_id] = section_data
+            sections.append(section_data)
+        selected_options = list(answer.selected_options.all())
+        if selected_options:
+            value = ", ".join(
+                option.label_en if language == "en" else option.label_sw
+                for option in selected_options
+            )
+        elif answer.uploaded_file:
+            value = answer.uploaded_file.name.rsplit("/", 1)[-1]
+        elif answer.text_value:
+            value = answer.text_value
+        elif answer.number_value is not None:
+            value = str(answer.number_value)
+        elif answer.date_value:
+            value = answer.date_value.isoformat()
+        elif answer.datetime_value:
+            value = answer.datetime_value.strftime("%d %b %Y, %H:%M")
+        elif answer.boolean_value is not None:
+            value = _("Yes") if answer.boolean_value else _("No")
+        else:
+            value = "—"
+        section_lookup[section_id]["answers"].append({
+            "label": question.label_en if language == "en" else question.label_sw,
+            "value": value,
+            "file_url": answer.uploaded_file.url if answer.uploaded_file else "",
+        })
+    return render(request, "accounts/participant_review_details.html", {
+        "submission": submission,
+        "event": submission.event_form.event,
+        "sections": sections,
+        "payments": submission.payments.all().order_by("-created_at"),
+    })
+
+
 @require_POST
 def staff_logout(request):
     logout(request)

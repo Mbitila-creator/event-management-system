@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-06 12:24+0300\n"
+"POT-Creation-Date: 2026-08-06 13:00+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -96,39 +96,51 @@ msgstr "mtumiaji"
 msgid "users"
 msgstr "watumiaji"
 
-#: accounts/views.py:124
+#: accounts/views.py:146 checkin/views.py:278 forms_builder/views.py:119
+#: templates/checkin/reports.html:101
+#: templates/forms_builder/partials/question_input.html:188
+msgid "Yes"
+msgstr "Ndiyo"
+
+#: accounts/views.py:146 checkin/views.py:278 forms_builder/views.py:119
+#: templates/checkin/reports.html:103
+#: templates/forms_builder/partials/question_input.html:203
+msgid "No"
+msgstr "Hapana"
+
+#: accounts/views.py:192
 msgid "Enter a reason before rejecting the registration."
 msgstr "Weka sababu kabla ya kukataa usajili."
 
-#: accounts/views.py:142
+#: accounts/views.py:210
 msgid "Registration status updated successfully."
 msgstr "Hali ya usajili imesasishwa kwa mafanikio."
 
-#: accounts/views.py:163
+#: accounts/views.py:231
 msgid "Enter a reason before rejecting the payment."
 msgstr "Weka sababu kabla ya kukataa malipo."
 
-#: accounts/views.py:181
+#: accounts/views.py:249
 msgid "Payment status updated successfully."
 msgstr "Hali ya malipo imesasishwa kwa mafanikio."
 
-#: accounts/views.py:236
+#: accounts/views.py:304
 msgid "Certificate authorized successfully."
 msgstr "Cheti kimeidhinishwa kwa mafanikio."
 
-#: accounts/views.py:239
+#: accounts/views.py:307
 msgid "Enter a reason for not authorizing the certificate."
 msgstr "Weka sababu ya kutokuidhinisha cheti."
 
-#: accounts/views.py:272
+#: accounts/views.py:340
 msgid "Certificate decision recorded successfully."
 msgstr "Uamuzi wa cheti umehifadhiwa kwa mafanikio."
 
-#: accounts/views.py:275
+#: accounts/views.py:343
 msgid "Enter a reason before revoking the certificate."
 msgstr "Weka sababu kabla ya kubatilisha cheti."
 
-#: accounts/views.py:291
+#: accounts/views.py:359
 msgid "Certificate authorization revoked."
 msgstr "Idhini ya cheti imebatilishwa."
 
@@ -188,7 +200,8 @@ msgstr "Namba ya kumbukumbu"
 msgid "Representative"
 msgstr "Mwakilishi"
 
-#: checkin/views.py:261 templates/checkin/participant_check_in.html:84
+#: checkin/views.py:261 templates/accounts/participant_review_details.html:16
+#: templates/checkin/participant_check_in.html:84
 #: templates/checkin/reports.html:78
 #: templates/forms_builder/certificate_verification.html:26
 msgid "Organization"
@@ -222,18 +235,6 @@ msgstr "Mahudhurio yamethibitishwa na"
 #: templates/forms_builder/participant_certificate.html:70
 msgid "Certificate number"
 msgstr "Namba ya cheti"
-
-#: checkin/views.py:278 forms_builder/views.py:119
-#: templates/checkin/reports.html:101
-#: templates/forms_builder/partials/question_input.html:188
-msgid "Yes"
-msgstr "Ndiyo"
-
-#: checkin/views.py:278 forms_builder/views.py:119
-#: templates/checkin/reports.html:103
-#: templates/forms_builder/partials/question_input.html:203
-msgid "No"
-msgstr "Hapana"
 
 #: core/context_processors.py:18 templates/accounts/staff_workspace.html:26
 msgid "Active events"
@@ -742,6 +743,7 @@ msgid "Message"
 msgstr "Ujumbe"
 
 #: forms_builder/admin.py:359 forms_builder/views.py:424
+#: templates/accounts/participant_review_details.html:19
 #: templates/accounts/staff_workspace.html:48
 #: templates/accounts/staff_workspace.html:71
 #: templates/forms_builder/evaluation_reports.html:58
@@ -756,6 +758,7 @@ msgid "Registration record"
 msgstr "Taarifa ya usajili"
 
 #: forms_builder/admin.py:696
+#: templates/accounts/participant_review_details.html:14
 msgid "Participant contact information"
 msgstr "Mawasiliano ya mshiriki"
 
@@ -980,11 +983,13 @@ msgid "Long text"
 msgstr "Maandishi marefu"
 
 #: forms_builder/models.py:255 forms_builder/views.py:426
+#: templates/accounts/participant_review_details.html:17
 #: templates/forms_builder/booth_detail.html:73
 msgid "Email address"
 msgstr "Anwani ya baruapepe"
 
 #: forms_builder/models.py:256 forms_builder/views.py:427
+#: templates/accounts/participant_review_details.html:18
 #: templates/forms_builder/booth_detail.html:74
 msgid "Phone number"
 msgstr "Namba ya simu"
@@ -2057,6 +2062,106 @@ msgstr "Malipo ya usajili huu tayari yanasubiri au yamethibitishwa."
 msgid "The payment amount could not be calculated. Contact the event organizer."
 msgstr "Kiasi cha malipo hakikuweza kukokotolewa. Wasiliana na mratibu wa tukio."
 
+#: templates/accounts/participant_review_details.html:4
+#: templates/accounts/participant_review_details.html:10
+msgid "Participant review"
+msgstr "Mapitio ya mshiriki"
+
+#: templates/accounts/participant_review_details.html:11
+#: templates/checkin/reports.html:21
+#: templates/forms_builder/evaluation_reports.html:20
+msgid "Return to workspace"
+msgstr "Rudi kwenye eneo la kazi"
+
+#: templates/accounts/participant_review_details.html:15
+msgid "Name"
+msgstr "Jina"
+
+#: templates/accounts/participant_review_details.html:20
+msgid "Registration status"
+msgstr "Hali ya usajili"
+
+#: templates/accounts/participant_review_details.html:23
+msgid "Open uploaded file"
+msgstr "Fungua faili lililopakiwa"
+
+#: templates/accounts/participant_review_details.html:23
+msgid "No form answers were recorded."
+msgstr "Hakuna majibu ya fomu yaliyohifadhiwa."
+
+#: templates/accounts/participant_review_details.html:25
+msgid "Registration decision"
+msgstr "Uamuzi wa usajili"
+
+#: templates/accounts/participant_review_details.html:25
+msgid "Approve registration"
+msgstr "Idhinisha usajili"
+
+#: templates/accounts/participant_review_details.html:25
+#: templates/accounts/participant_review_details.html:27
+#: templates/accounts/staff_workspace.html:55
+#: templates/accounts/staff_workspace.html:78
+msgid "Reason for rejection"
+msgstr "Sababu ya kukataa"
+
+#: templates/accounts/participant_review_details.html:25
+msgid "Reject registration"
+msgstr "Kataa usajili"
+
+#: templates/accounts/participant_review_details.html:27
+msgid "Payment information"
+msgstr "Taarifa za malipo"
+
+#: templates/accounts/participant_review_details.html:27
+#: templates/accounts/staff_workspace.html:71
+msgid "Amount"
+msgstr "Kiasi"
+
+#: templates/accounts/participant_review_details.html:27
+msgid "Method"
+msgstr "Njia"
+
+#: templates/accounts/participant_review_details.html:27
+#: templates/accounts/staff_workspace.html:71
+#: templates/forms_builder/participant_payment.html:24
+#: templates/forms_builder/participant_payment.html:35
+#: templates/forms_builder/payment_receipt.html:16
+msgid "Transaction reference"
+msgstr "Kumbukumbu ya muamala"
+
+#: templates/accounts/participant_review_details.html:27
+#: templates/forms_builder/participant_payment.html:22
+msgid "Payment status"
+msgstr "Hali ya malipo"
+
+#: templates/accounts/participant_review_details.html:27
+msgid "Payment date"
+msgstr "Tarehe ya malipo"
+
+#: templates/accounts/participant_review_details.html:27
+msgid "Proof of payment"
+msgstr "Uthibitisho wa malipo"
+
+#: templates/accounts/participant_review_details.html:27
+msgid "Open proof of payment"
+msgstr "Fungua uthibitisho wa malipo"
+
+#: templates/accounts/participant_review_details.html:27
+msgid "Not provided"
+msgstr "Haijatolewa"
+
+#: templates/accounts/participant_review_details.html:27
+msgid "Verify payment"
+msgstr "Thibitisha malipo"
+
+#: templates/accounts/participant_review_details.html:27
+msgid "Reject payment"
+msgstr "Kataa malipo"
+
+#: templates/accounts/participant_review_details.html:27
+msgid "No payment information has been submitted."
+msgstr "Hakuna taarifa za malipo zilizowasilishwa."
+
 #: templates/accounts/staff_login.html:4 templates/accounts/staff_login.html:15
 #: templates/events/base_public.html:129
 msgid "Staff login"
@@ -2156,9 +2261,21 @@ msgstr "Usajili unaosubiri kukaguliwa"
 
 #: templates/accounts/staff_workspace.html:48
 #: templates/accounts/staff_workspace.html:71
+msgid "Details"
+msgstr "Maelezo"
+
+#: templates/accounts/staff_workspace.html:48
+#: templates/accounts/staff_workspace.html:71
 #: templates/accounts/staff_workspace.html:95
 msgid "Actions"
 msgstr "Vitendo"
+
+#: templates/accounts/staff_workspace.html:52
+#: templates/accounts/staff_workspace.html:75
+#: templates/accounts/staff_workspace.html:95
+#: templates/accounts/staff_workspace.html:104 templates/events/home.html:198
+msgid "View details"
+msgstr "Angalia maelezo"
 
 #: templates/accounts/staff_workspace.html:54
 msgid "Approve"
@@ -2171,28 +2288,12 @@ msgstr "Kataa"
 
 #: templates/accounts/staff_workspace.html:55
 #: templates/accounts/staff_workspace.html:78
-msgid "Reason for rejection"
-msgstr "Sababu ya kukataa"
-
-#: templates/accounts/staff_workspace.html:55
-#: templates/accounts/staff_workspace.html:78
 msgid "Confirm rejection"
 msgstr "Thibitisha kukataa"
 
 #: templates/accounts/staff_workspace.html:58
 msgid "No registrations are awaiting review."
 msgstr "Hakuna usajili unaosubiri kukaguliwa."
-
-#: templates/accounts/staff_workspace.html:71
-msgid "Amount"
-msgstr "Kiasi"
-
-#: templates/accounts/staff_workspace.html:71
-#: templates/forms_builder/participant_payment.html:24
-#: templates/forms_builder/participant_payment.html:35
-#: templates/forms_builder/payment_receipt.html:16
-msgid "Transaction reference"
-msgstr "Kumbukumbu ya muamala"
 
 #: templates/accounts/staff_workspace.html:77
 msgid "Verify"
@@ -2209,11 +2310,6 @@ msgstr "Idhini ya vyeti"
 #: templates/accounts/staff_workspace.html:95 templates/checkin/reports.html:79
 msgid "Status"
 msgstr "Hali"
-
-#: templates/accounts/staff_workspace.html:95
-#: templates/accounts/staff_workspace.html:104 templates/events/home.html:198
-msgid "View details"
-msgstr "Angalia maelezo"
 
 #: templates/accounts/staff_workspace.html:100
 #: templates/forms_builder/participant_portal.html:18
@@ -2573,11 +2669,6 @@ msgstr "Ripoti za tukio"
 #: templates/checkin/reports.html:18
 msgid "Review event participation and download spreadsheet-ready reports."
 msgstr "Kagua ushiriki wa tukio na pakua ripoti zilizo tayari kwa lahajedwali."
-
-#: templates/checkin/reports.html:21
-#: templates/forms_builder/evaluation_reports.html:20
-msgid "Return to workspace"
-msgstr "Rudi kwenye eneo la kazi"
 
 #: templates/checkin/reports.html:26
 msgid "Select event"
@@ -2969,12 +3060,6 @@ msgstr "Malipo ya usajili"
 #: templates/forms_builder/participant_payment.html:13
 msgid "Amount payable"
 msgstr "Kiasi cha kulipa"
-
-#: templates/forms_builder/participant_payment.html:22
-#, fuzzy
-#| msgid "payment status"
-msgid "Payment status"
-msgstr "hali ya malipo"
 
 #: templates/forms_builder/participant_payment.html:26
 msgid "Open payment receipt"

@@ -1,0 +1,29 @@
+{% extends "events/base_public.html" %}
+{% load i18n static humanize %}
+
+{% block title %}{% translate "Participant review" %} — {{ submission.reference_number }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/staff-review-details.css' %}">{% endblock %}
+
+{% block content %}
+<section class="review-details-page"><div class="review-details-container">
+    <header class="review-details-header">
+        <div><span>{% translate "Participant review" %}</span><h1>{{ submission.badge_display_name }}</h1><p>{{ submission.reference_number }} · {% if request.LANGUAGE_CODE == 'en' %}{{ event.title_en }}{% else %}{{ event.title_sw }}{% endif %}</p></div>
+        <a href="{% url 'accounts:role_home' %}" class="review-back-button">← {% translate "Return to workspace" %}</a>
+    </header>
+
+    <section class="review-card"><h2>{% translate "Participant contact information" %}</h2><dl class="review-summary-grid">
+        <div><dt>{% translate "Name" %}</dt><dd>{{ submission.badge_display_name }}</dd></div>
+        <div><dt>{% translate "Organization" %}</dt><dd>{{ submission.badge_organization|default:"—" }}</dd></div>
+        <div><dt>{% translate "Email address" %}</dt><dd>{{ submission.submitter_email|default:"—" }}</dd></div>
+        <div><dt>{% translate "Phone number" %}</dt><dd>{{ submission.submitter_phone|default:"—" }}</dd></div>
+        <div><dt>{% translate "Submitted on" %}</dt><dd>{{ submission.created_at|date:"d M Y, H:i" }}</dd></div>
+        <div><dt>{% translate "Registration status" %}</dt><dd>{{ submission.get_review_status_display }}</dd></div>
+    </dl></section>
+
+    {% for section in sections %}<section class="review-card"><h2>{{ section.title }}</h2><dl class="review-answer-list">{% for answer in section.answers %}<div><dt>{{ answer.label }}</dt><dd>{% if answer.file_url %}<a href="{{ answer.file_url }}" target="_blank" rel="noopener">{% translate "Open uploaded file" %}: {{ answer.value }}</a>{% else %}{{ answer.value|linebreaksbr }}{% endif %}</dd></div>{% endfor %}</dl></section>{% empty %}<section class="review-card"><p>{% translate "No form answers were recorded." %}</p></section>{% endfor %}
+
+    {% if submission.review_status == 'PENDING' %}<section class="review-decision-card"><h2>{% translate "Registration decision" %}</h2><div class="review-actions"><form method="post" action="{% url 'accounts:review_registration' submission.pk 'approve' %}">{% csrf_token %}<button class="review-approve" type="submit">{% translate "Approve registration" %}</button></form><form method="post" action="{% url 'accounts:review_registration' submission.pk 'reject' %}">{% csrf_token %}<label>{% translate "Reason for rejection" %}<textarea name="reason" rows="3" required></textarea></label><button class="review-reject" type="submit">{% translate "Reject registration" %}</button></form></div></section>{% endif %}
+
+    <section class="review-card" id="payments"><h2>{% translate "Payment information" %}</h2>{% for payment in payments %}<article class="review-payment"><dl class="review-summary-grid"><div><dt>{% translate "Amount" %}</dt><dd>{{ payment.currency }} {{ payment.amount|floatformat:2|intcomma }}</dd></div><div><dt>{% translate "Method" %}</dt><dd>{{ payment.get_method_display }}</dd></div><div><dt>{% translate "Transaction reference" %}</dt><dd>{{ payment.transaction_reference|default:"—" }}</dd></div><div><dt>{% translate "Payment status" %}</dt><dd>{{ payment.get_status_display }}</dd></div><div><dt>{% translate "Payment date" %}</dt><dd>{{ payment.paid_at|date:"d M Y, H:i"|default:"—" }}</dd></div><div><dt>{% translate "Proof of payment" %}</dt><dd>{% if payment.proof %}<a href="{{ payment.proof.url }}" target="_blank" rel="noopener">{% translate "Open proof of payment" %}</a>{% else %}{% translate "Not provided" %}{% endif %}</dd></div></dl>{% if payment.status == 'PENDING' %}<div class="review-actions"><form method="post" action="{% url 'accounts:review_payment' payment.pk 'verify' %}">{% csrf_token %}<button class="review-approve" type="submit">{% translate "Verify payment" %}</button></form><form method="post" action="{% url 'accounts:review_payment' payment.pk 'reject' %}">{% csrf_token %}<label>{% translate "Reason for rejection" %}<textarea name="reason" rows="3" required></textarea></label><button class="review-reject" type="submit">{% translate "Reject payment" %}</button></form></div>{% endif %}</article>{% empty %}<p>{% translate "No payment information has been submitted." %}</p>{% endfor %}</section>
+</div></section>
+{% endblock %}

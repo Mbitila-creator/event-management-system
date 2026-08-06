@@ -45,17 +45,17 @@
                 </div>
                 <div class="workspace-table-scroll">
                     <table>
-                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Participant" %}</th><th>{% translate "Event" %}</th><th>{% translate "Submitted on" %}</th><th>{% translate "Actions" %}</th></tr></thead>
+                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Participant" %}</th><th>{% translate "Event" %}</th><th>{% translate "Submitted on" %}</th><th>{% translate "Details" %}</th><th>{% translate "Actions" %}</th></tr></thead>
                         <tbody>
                         {% for submission in recent_submissions %}
                             <tr>
-                                <td>{{ submission.reference_number }}</td><td>{{ submission.badge_display_name }}</td><td>{{ submission.event_form.event }}</td><td>{{ submission.created_at|date:"d M Y, H:i" }}</td>
+                                <td>{{ submission.reference_number }}</td><td>{{ submission.badge_display_name }}</td><td>{{ submission.event_form.event }}</td><td>{{ submission.created_at|date:"d M Y, H:i" }}</td><td><a class="workspace-details-button" href="{% url 'accounts:participant_review_details' submission.pk %}">{% translate "View details" %}</a></td>
                                 <td><div class="workspace-row-actions">
                                     <form method="post" action="{% url 'accounts:review_registration' submission.pk 'approve' %}">{% csrf_token %}<button class="workspace-action-success" type="submit">{% translate "Approve" %}</button></form>
                                     <details class="workspace-reason-menu"><summary>{% translate "Reject" %}</summary><form method="post" action="{% url 'accounts:review_registration' submission.pk 'reject' %}">{% csrf_token %}<label>{% translate "Reason for rejection" %}<textarea name="reason" rows="3" required></textarea></label><button class="workspace-action-danger" type="submit">{% translate "Confirm rejection" %}</button></form></details>
                                 </div></td>
                             </tr>
-                        {% empty %}<tr><td colspan="5">{% translate "No registrations are awaiting review." %}</td></tr>{% endfor %}
+                        {% empty %}<tr><td colspan="6">{% translate "No registrations are awaiting review." %}</td></tr>{% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -68,17 +68,17 @@
                 </div>
                 <div class="workspace-table-scroll">
                     <table>
-                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Amount" %}</th><th>{% translate "Transaction reference" %}</th><th>{% translate "Submitted on" %}</th><th>{% translate "Actions" %}</th></tr></thead>
+                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Amount" %}</th><th>{% translate "Transaction reference" %}</th><th>{% translate "Submitted on" %}</th><th>{% translate "Details" %}</th><th>{% translate "Actions" %}</th></tr></thead>
                         <tbody>
                         {% for payment in recent_payments %}
                             <tr>
-                                <td>{{ payment.submission.reference_number }}</td><td>{{ payment.currency }} {{ payment.amount }}</td><td>{{ payment.transaction_reference|default:"—" }}</td><td>{{ payment.created_at|date:"d M Y, H:i" }}</td>
+                                <td>{{ payment.submission.reference_number }}</td><td>{{ payment.currency }} {{ payment.amount }}</td><td>{{ payment.transaction_reference|default:"—" }}</td><td>{{ payment.created_at|date:"d M Y, H:i" }}</td><td><a class="workspace-details-button" href="{% url 'accounts:participant_review_details' payment.submission.pk %}#payments">{% translate "View details" %}</a></td>
                                 <td><div class="workspace-row-actions">
                                     <form method="post" action="{% url 'accounts:review_payment' payment.pk 'verify' %}">{% csrf_token %}<button class="workspace-action-success" type="submit">{% translate "Verify" %}</button></form>
                                     <details class="workspace-reason-menu"><summary>{% translate "Reject" %}</summary><form method="post" action="{% url 'accounts:review_payment' payment.pk 'reject' %}">{% csrf_token %}<label>{% translate "Reason for rejection" %}<textarea name="reason" rows="3" required></textarea></label><button class="workspace-action-danger" type="submit">{% translate "Confirm rejection" %}</button></form></details>
                                 </div></td>
                             </tr>
-                        {% empty %}<tr><td colspan="5">{% translate "No payments are awaiting verification." %}</td></tr>{% endfor %}
+                        {% empty %}<tr><td colspan="6">{% translate "No payments are awaiting verification." %}</td></tr>{% endfor %}
                         </tbody>
                     </table>
                 </div>
