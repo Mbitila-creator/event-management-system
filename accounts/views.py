@@ -2,7 +2,10 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
@@ -171,6 +174,108 @@ def participant_review_details(request, submission_id):
         "sections": sections,
         "payments": submission.payments.all().order_by("-created_at"),
     })
+
+
+@login_required(login_url="accounts:staff_login")
+def booth_assignments(request):
+    from events.models import Event
+    from forms_builder.models import Booth, EventForm, FormSubmission
+
+    _require_event_administrator(request.user)
+    events = Event.objects.filter(
+        is_active=True,
+        booth_enabled=True,
+    ).order_by("starts_at")
+    selected_event = None
+    event_id = request.GET.get("event")
+    if event_id:
+        selected_event = events.filter(pk=event_id).first()
+    if selected_event is None:
+        selected_event = events.first()
+
+    booths = []
+    if selected_event:
+        booths = list(Booth.objects.filter(
+            event=selected_event,
+            is_active=True,
+        ).select_related("assigned_submission").order_by("zone_en", "code"))
+        eligible = FormSubmission.objects.filter(
+            event_form__event=selected_event,
+            event_form__form_type__in={
+                EventForm.FormType.REGISTRATION,
+                EventForm.FormType.EXHIBITOR,
+            },
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            is_active=True,
+            is_complete=True,
+        ).select_related("event_form").order_by("badge_organization", "badge_name")
+        for booth in booths:
+            booth.eligible_submissions = eligible.filter(
+                Q(booth_assignment__isnull=True) | Q(booth_assignment=booth)
+            )
+    return render(request, "accounts/booth_assignments.html", {
+        "events": events,
+        "selected_event": selected_event,
+        "booths": booths,
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def update_booth_assignment(request, booth_id):
+    from forms_builder.models import Booth, EventForm, FormSubmission
+
+    _require_event_administrator(request.user)
+    action = request.POST.get("action", "")
+    try:
+        with transaction.atomic():
+            booth = get_object_or_404(
+                Booth.objects.select_for_update().select_related("event"),
+                pk=booth_id,
+                is_active=True,
+                event__booth_enabled=True,
+            )
+            if action == "assign":
+                submission = get_object_or_404(
+                    FormSubmission.objects.filter(
+                        Q(booth_assignment__isnull=True)
+                        | Q(booth_assignment=booth),
+                        event_form__event=booth.event,
+                        event_form__form_type__in={
+                            EventForm.FormType.REGISTRATION,
+                            EventForm.FormType.EXHIBITOR,
+                        },
+                        review_status=FormSubmission.ReviewStatus.APPROVED,
+                        is_active=True,
+                        is_complete=True,
+                    ),
+                    pk=request.POST.get("submission_id"),
+                )
+                booth.assigned_submission = submission
+                booth.status = Booth.Status.ASSIGNED
+                success_message = _("Booth assigned successfully.")
+            elif action == "ready":
+                if not booth.assigned_submission_id:
+                    messages.error(request, _("Assign an exhibitor before marking the booth ready."))
+                    return redirect("accounts:booth_assignments")
+                booth.status = Booth.Status.READY
+                success_message = _("Booth marked as ready.")
+            elif action == "release":
+                booth.assigned_submission = None
+                booth.status = Booth.Status.UNASSIGNED
+                success_message = _("Booth assignment released.")
+            else:
+                raise PermissionDenied
+            booth.updated_by = request.user
+            booth.save()
+    except IntegrityError:
+        messages.error(
+            request,
+            _("This exhibitor is already assigned to another booth."),
+        )
+        return redirect("accounts:booth_assignments")
+    messages.success(request, success_message)
+    return redirect(f"{reverse('accounts:booth_assignments')}?event={booth.event_id}")
 
 
 @require_POST

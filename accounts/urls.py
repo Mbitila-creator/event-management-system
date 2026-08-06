@@ -22,6 +22,12 @@ urlpatterns = [
         views.participant_review_details,
         name="participant_review_details",
     ),
+    path("staff/booths/", views.booth_assignments, name="booth_assignments"),
+    path(
+        "staff/booths/<int:booth_id>/update/",
+        views.update_booth_assignment,
+        name="update_booth_assignment",
+    ),
     path(
         "staff/registrations/<int:submission_id>/<str:decision>/",
         views.review_registration,

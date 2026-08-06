@@ -237,6 +237,7 @@ class EventAdministratorOperationsTests(TestCase):
             starts_at=start,
             ends_at=start + timedelta(days=2),
             certificate_enabled=True,
+            booth_enabled=True,
         )
         event_form = EventForm.objects.create(
             event=event,
@@ -254,6 +255,15 @@ class EventAdministratorOperationsTests(TestCase):
             submission=self.submission,
             amount="2000000.00",
             transaction_reference="OPERATIONS-PAYMENT-1",
+        )
+        from forms_builder.models import Booth
+        self.booth = Booth.objects.create(
+            event=event,
+            code="A-01",
+            name_sw="Banda A-01",
+            name_en="Booth A-01",
+            zone_sw="Eneo A",
+            zone_en="Zone A",
         )
         self.client.force_login(self.event_admin)
 
@@ -319,6 +329,57 @@ class EventAdministratorOperationsTests(TestCase):
         payments_view = self.client.get("/en/staff/?view=payments")
         self.assertContains(payments_view, 'id="payments"')
         self.assertNotContains(payments_view, 'id="registrations"')
+
+    def test_event_administrator_can_assign_ready_and_release_booth(self):
+        from forms_builder.models import Booth, FormSubmission
+
+        self.submission.review_status = FormSubmission.ReviewStatus.APPROVED
+        self.submission.save(update_fields=("review_status", "updated_at"))
+
+        page = self.client.get("/en/staff/booths/")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Booth assignments")
+        self.assertContains(page, self.submission.reference_number)
+
+        response = self.client.post(
+            f"/en/staff/booths/{self.booth.pk}/update/",
+            {"action": "assign", "submission_id": self.submission.pk},
+        )
+        self.assertRedirects(
+            response,
+            f"/en/staff/booths/?event={self.booth.event_id}",
+            fetch_redirect_response=False,
+        )
+        self.booth.refresh_from_db()
+        self.assertEqual(self.booth.assigned_submission, self.submission)
+        self.assertEqual(self.booth.status, Booth.Status.ASSIGNED)
+        self.assertEqual(self.booth.updated_by, self.event_admin)
+
+        self.client.post(
+            f"/en/staff/booths/{self.booth.pk}/update/",
+            {"action": "ready"},
+        )
+        self.booth.refresh_from_db()
+        self.assertEqual(self.booth.status, Booth.Status.READY)
+
+        self.client.post(
+            f"/en/staff/booths/{self.booth.pk}/update/",
+            {"action": "release"},
+        )
+        self.booth.refresh_from_db()
+        self.assertIsNone(self.booth.assigned_submission)
+        self.assertEqual(self.booth.status, Booth.Status.UNASSIGNED)
+
+    def test_registration_officer_cannot_open_booth_assignment_workspace(self):
+        officer = User.objects.create_user(
+            username="registration-no-booths",
+            email="registration-no-booths@example.org",
+            role=User.Role.REGISTRATION_OFFICER,
+            preferred_language="en",
+        )
+        self.client.force_login(officer)
+        response = self.client.get("/en/staff/booths/")
+        self.assertEqual(response.status_code, 403)
 
     def test_event_administrator_can_authorize_checked_in_certificate(self):
         from checkin.models import ParticipantCheckIn

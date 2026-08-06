@@ -35,6 +35,7 @@
             {% if is_event_admin %}
                 <a href="{% url 'checkin:reports' %}"><strong>{% translate "Attendance reports" %}</strong><span>{% translate "Review attendance and certificate authorization" %}</span></a>
                 <a href="{% url 'forms_builder:evaluation_reports' %}"><strong>{% translate "Evaluation reports" %}</strong><span>{% translate "Review visitor and participant feedback" %}</span></a>
+                <a href="{% url 'accounts:booth_assignments' %}"><strong>{% translate "Booth assignments" %}</strong><span>{% translate "Assign approved exhibitors and manage booth readiness" %}</span></a>
             {% endif %}
         </nav>
 
