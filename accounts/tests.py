@@ -1,4 +1,5 @@
 from datetime import timedelta
+import re
 
 from django.core import mail
 from django.test import TestCase, override_settings
@@ -36,6 +37,8 @@ class RoleAndLanguageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Staff login")
         self.assertContains(response, "Participants do not need a staff account")
+        self.assertContains(response, "Forgot password?")
+        self.assertContains(response, "password-visibility-toggle")
 
     def test_attendance_officer_login_opens_check_in_interface(self):
         User.objects.create_user(
@@ -717,3 +720,83 @@ class RoleAccessMatrixTests(TestCase):
                 with self.subTest(role=role, path=path):
                     self.assertEqual(self.client.post(path).status_code, 403)
             self.client.logout()
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="EMS <noreply@example.org>",
+)
+class PasswordSelfServiceTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="password-user",
+            email="password-user@example.org",
+            password="Current-Password-2026!",
+            role=User.Role.EVENT_ADMIN,
+            preferred_language="en",
+        )
+
+    def test_authenticated_user_can_change_own_password(self):
+        self.client.force_login(self.user)
+        page = self.client.get("/en/staff/password/change/")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Change password")
+
+        response = self.client.post(
+            "/en/staff/password/change/",
+            {
+                "old_password": "Current-Password-2026!",
+                "new_password1": "New-Secure-Password-2026!",
+                "new_password2": "New-Secure-Password-2026!",
+            },
+        )
+        self.assertRedirects(response, "/en/staff/password/change/done/")
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("New-Secure-Password-2026!"))
+
+    def test_anonymous_user_is_sent_to_staff_login_before_password_change(self):
+        response = self.client.get("/en/staff/password/change/")
+        self.assertRedirects(
+            response,
+            "/en/staff/login/?next=/en/staff/password/change/",
+            fetch_redirect_response=False,
+        )
+
+    def test_forgot_password_email_resets_password_securely(self):
+        response = self.client.post(
+            "/en/staff/password/reset/",
+            {"email": self.user.email},
+        )
+        self.assertRedirects(response, "/en/staff/password/reset/done/")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Reset your Event Management System password", mail.outbox[0].subject)
+
+        match = re.search(
+            r"http://testserver(/en/staff/password/reset/[^\s]+/)",
+            mail.outbox[0].body,
+        )
+        self.assertIsNotNone(match)
+        token_response = self.client.get(match.group(1))
+        self.assertEqual(token_response.status_code, 302)
+        reset_path = token_response.url
+        reset_response = self.client.post(
+            reset_path,
+            {
+                "new_password1": "Recovered-Password-2026!",
+                "new_password2": "Recovered-Password-2026!",
+            },
+        )
+        self.assertRedirects(
+            reset_response,
+            "/en/staff/password/reset/complete/",
+        )
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("Recovered-Password-2026!"))
+
+    def test_unknown_email_does_not_disclose_account_existence(self):
+        response = self.client.post(
+            "/en/staff/password/reset/",
+            {"email": "unknown@example.org"},
+        )
+        self.assertRedirects(response, "/en/staff/password/reset/done/")
+        self.assertEqual(len(mail.outbox), 0)

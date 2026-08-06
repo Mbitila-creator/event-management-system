@@ -114,6 +114,9 @@
 </form>
 
                 {% if request.user.is_authenticated %}
+                    <a href="{% url 'accounts:password_change' %}" class="header-link role-access-link password-change-link">
+                        {% translate "Change password" %}
+                    </a>
                     <a
                         href="{% url 'accounts:role_home' %}"
                         class="header-link role-access-link workspace-link"

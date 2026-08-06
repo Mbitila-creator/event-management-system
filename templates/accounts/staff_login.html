@@ -29,16 +29,25 @@
             <input id="id_username" name="username" type="text" autocomplete="username" required autofocus>
 
             <label for="id_password">{% translate "Password" %}</label>
-            <input id="id_password" name="password" type="password" autocomplete="current-password" required>
+            <div class="password-input-wrap">
+                <input id="id_password" name="password" type="password" autocomplete="current-password" required>
+                <button type="button" class="password-visibility-toggle" data-password-target="id_password" data-show-label="{% translate 'Show password' %}" data-hide-label="{% translate 'Hide password' %}" aria-label="{% translate 'Show password' %}" aria-pressed="false"><span aria-hidden="true">👁</span></button>
+            </div>
+
+            <a class="forgot-password-link" href="{% url 'accounts:password_reset' %}">{% translate "Forgot password?" %}</a>
 
             <button type="submit">{% translate "Sign in" %}</button>
         </form>
 
         <div class="role-guidance">
             <h2>{% translate "Who should use this page?" %}</h2>
-            <p>{% translate "System Administrators, Event Administrators, Registration Officers, Attendance Officers and Report Officers." %}</p>
+            <p>{% translate "Directors, Assistant Directors, System Administrators, Event Administrators, Registration Officers, Attendance Officers and Report Officers." %}</p>
             <p>{% translate "Participants do not need a staff account." %} <a href="{% url 'forms_builder:registration_status' %}">{% translate "Check registration status" %}</a>.</p>
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/password-visibility.js' %}" defer></script>
 {% endblock %}

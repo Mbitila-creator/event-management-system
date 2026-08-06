@@ -63,6 +63,10 @@ CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 # Leave empty during local development to use the current request address.
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
 
+# All authentication-protected interfaces use the dedicated staff login page.
+LOGIN_URL = "accounts:staff_login"
+PASSWORD_RESET_TIMEOUT = int(os.getenv("PASSWORD_RESET_TIMEOUT", "3600"))
+
 # Email notifications. The console backend prints messages in the development
 # terminal. Production hosting can override these values with environment
 # variables without changing source code.
