@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-06 10:23+0300\n"
+"POT-Creation-Date: 2026-08-06 10:43+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -120,15 +120,15 @@ msgstr "Cheti kimeidhinishwa kwa mafanikio."
 msgid "Enter a reason for not authorizing the certificate."
 msgstr "Weka sababu ya kutokuidhinisha cheti."
 
-#: accounts/views.py:267
+#: accounts/views.py:272
 msgid "Certificate decision recorded successfully."
 msgstr "Uamuzi wa cheti umehifadhiwa kwa mafanikio."
 
-#: accounts/views.py:270
+#: accounts/views.py:275
 msgid "Enter a reason before revoking the certificate."
 msgstr "Weka sababu kabla ya kubatilisha cheti."
 
-#: accounts/views.py:286
+#: accounts/views.py:291
 msgid "Certificate authorization revoked."
 msgstr "Idhini ya cheti imebatilishwa."
 
@@ -774,12 +774,13 @@ msgstr "Kimebatilishwa kupitia usimamizi wa mfumo."
 
 #: forms_builder/admin.py:1086
 #: templates/forms_builder/participant_portal.html:18
-#: templates/forms_builder/participant_portal.html:25
+#: templates/forms_builder/participant_portal.html:47
 msgid "Certificate"
 msgstr "Cheti"
 
 #: forms_builder/admin.py:1089 forms_builder/models.py:588
 #: templates/accounts/staff_workspace.html:100
+#: templates/forms_builder/participant_portal.html:18
 msgid "Revoked"
 msgstr "Kimebatilishwa"
 
@@ -1056,7 +1057,7 @@ msgstr "swali la fomu"
 msgid "form questions"
 msgstr "maswali ya fomu"
 
-#: forms_builder/models.py:365 forms_builder/models.py:1217
+#: forms_builder/models.py:365 forms_builder/models.py:1220
 msgid "question"
 msgstr "swali"
 
@@ -1165,7 +1166,7 @@ msgstr "taasisi kwenye beji"
 msgid "badge title or role"
 msgstr "cheo au jukumu kwenye beji"
 
-#: forms_builder/models.py:529 forms_builder/models.py:1152
+#: forms_builder/models.py:529 forms_builder/models.py:1155
 msgid "form submission"
 msgstr "uwasilishaji wa fomu"
 
@@ -1188,6 +1189,7 @@ msgid "Authorized"
 msgstr "Kimeidhinishwa"
 
 #: forms_builder/models.py:587 templates/accounts/staff_workspace.html:100
+#: templates/forms_builder/participant_portal.html:18
 msgid "Not authorized"
 msgstr "Hakijaidhinishwa"
 
@@ -1615,7 +1617,7 @@ msgstr "idadi iliyoshindikana"
 msgid "processed at"
 msgstr "ilichakatwa tarehe"
 
-#: forms_builder/models.py:1123 forms_builder/models.py:1158
+#: forms_builder/models.py:1123 forms_builder/models.py:1161
 msgid "event reminder"
 msgstr "kikumbusho cha tukio"
 
@@ -1660,103 +1662,108 @@ msgstr "Malipo yamekataliwa"
 msgid "Certificate authorized"
 msgstr "Cheti kimeidhinishwa"
 
-#: forms_builder/models.py:1146
+#: forms_builder/models.py:1145
+#: templates/forms_builder/participant_portal.html:25
+msgid "Certificate not authorized"
+msgstr "Cheti hakijaidhinishwa"
+
+#: forms_builder/models.py:1149
 msgid "Sent"
 msgstr "Imetumwa"
 
-#: forms_builder/models.py:1147
+#: forms_builder/models.py:1150
 msgid "Failed"
 msgstr "Imeshindikana"
 
-#: forms_builder/models.py:1148
+#: forms_builder/models.py:1151
 msgid "Skipped"
 msgstr "Imerukwa"
 
-#: forms_builder/models.py:1165
+#: forms_builder/models.py:1168
 msgid "notification type"
 msgstr "aina ya taarifa"
 
-#: forms_builder/models.py:1170
+#: forms_builder/models.py:1173
 msgid "recipient email"
 msgstr "baruapepe ya mpokeaji"
 
-#: forms_builder/models.py:1174
+#: forms_builder/models.py:1177
 msgid "email subject"
 msgstr "kichwa cha baruapepe"
 
-#: forms_builder/models.py:1179
+#: forms_builder/models.py:1182
 msgid "delivery status"
 msgstr "hali ya utumaji"
 
-#: forms_builder/models.py:1185
+#: forms_builder/models.py:1188
 msgid "delivery error"
 msgstr "kosa la utumaji"
 
-#: forms_builder/models.py:1189
+#: forms_builder/models.py:1192
 msgid "sent at"
 msgstr "imetumwa tarehe"
 
-#: forms_builder/models.py:1195
+#: forms_builder/models.py:1198
 msgid "notification log"
 msgstr "kumbukumbu ya taarifa"
 
-#: forms_builder/models.py:1196
+#: forms_builder/models.py:1199
 msgid "notification logs"
 msgstr "kumbukumbu za taarifa"
 
-#: forms_builder/models.py:1210
+#: forms_builder/models.py:1213
 msgid "submission"
 msgstr "uwasilishaji"
 
-#: forms_builder/models.py:1223
+#: forms_builder/models.py:1226
 msgid "text value"
 msgstr "thamani ya maandishi"
 
-#: forms_builder/models.py:1228
+#: forms_builder/models.py:1231
 msgid "number value"
 msgstr "thamani ya namba"
 
-#: forms_builder/models.py:1236
+#: forms_builder/models.py:1239
 msgid "date value"
 msgstr "thamani ya tarehe"
 
-#: forms_builder/models.py:1242
+#: forms_builder/models.py:1245
 msgid "date and time value"
 msgstr "thamani ya tarehe na muda"
 
-#: forms_builder/models.py:1248
+#: forms_builder/models.py:1251
 msgid "boolean value"
 msgstr "thamani ya ndiyo/hapana"
 
-#: forms_builder/models.py:1255
+#: forms_builder/models.py:1258
 msgid "selected options"
 msgstr "chaguo zilizochaguliwa"
 
-#: forms_builder/models.py:1261
+#: forms_builder/models.py:1264
 msgid "uploaded file"
 msgstr "faili lililopakiwa"
 
-#: forms_builder/models.py:1268
+#: forms_builder/models.py:1271
 msgid "form answer"
 msgstr "jibu la fomu"
 
-#: forms_builder/models.py:1269
+#: forms_builder/models.py:1272
 msgid "form answers"
 msgstr "majibu ya fomu"
 
-#: forms_builder/models.py:1298
+#: forms_builder/models.py:1301
 msgid "The question must belong to the submitted form."
 msgstr "Swali lazima liwe katika fomu iliyowasilishwa."
 
-#: forms_builder/models.py:1310
+#: forms_builder/models.py:1313
 msgid "An answer may contain only one scalar value type."
 msgstr "Jibu linaweza kuwa na aina moja tu ya thamani."
 
-#: forms_builder/models.py:1329
+#: forms_builder/models.py:1332
 msgid "The stored answer type does not match the question type."
 msgstr "Aina ya jibu lililohifadhiwa hailingani na aina ya swali."
 
-#: forms_builder/models.py:1344
+#: forms_builder/models.py:1347
 msgid "Selected options must belong to the answered question."
 msgstr "Chaguo zilizoteuliwa lazima ziwe za swali lililojibiwa."
 
@@ -1834,10 +1841,32 @@ msgstr ""
 
 #: forms_builder/notifications.py:80
 #, python-format
+msgid "Certificate decision — %(event)s"
+msgstr "Uamuzi wa cheti — %(event)s"
+
+#: forms_builder/notifications.py:88
+#, python-format
+msgid ""
+"Your certificate was not authorized.\n"
+"\n"
+"Event: %(event)s\n"
+"Reference number: %(reference)s\n"
+"Reason: %(reason)s\n"
+"View your participant page: %(portal_url)s"
+msgstr ""
+"Cheti chako hakijaidhinishwa.\n"
+"\n"
+"Tukio: %(event)s\n"
+"Namba ya kumbukumbu: %(reference)s\n"
+"Sababu: %(reason)s\n"
+"Angalia ukurasa wako wa mshiriki: %(portal_url)s"
+
+#: forms_builder/notifications.py:100
+#, python-format
 msgid "Check-in confirmed — %(event)s"
 msgstr "Mahudhurio yamethibitishwa — %(event)s"
 
-#: forms_builder/notifications.py:82
+#: forms_builder/notifications.py:102
 #, python-format
 msgid ""
 "Your attendance at %(event)s has been confirmed.\n"
@@ -1848,49 +1877,49 @@ msgstr ""
 "\n"
 "Namba ya kumbukumbu: %(reference)s"
 
-#: forms_builder/notifications.py:111 forms_builder/notifications.py:180
-#: forms_builder/notifications.py:231
+#: forms_builder/notifications.py:131 forms_builder/notifications.py:200
+#: forms_builder/notifications.py:251
 msgid "No participant email address was provided."
 msgstr "Hakuna anwani ya baruapepe ya mshiriki iliyotolewa."
 
-#: forms_builder/notifications.py:128 forms_builder/notifications.py:194
-#: forms_builder/notifications.py:248
+#: forms_builder/notifications.py:148 forms_builder/notifications.py:214
+#: forms_builder/notifications.py:268
 msgid "The email backend did not confirm delivery."
 msgstr "Mfumo wa baruapepe haukuthibitisha utumaji."
 
-#: forms_builder/notifications.py:156
+#: forms_builder/notifications.py:176
 #, fuzzy, python-format
 #| msgid "Payment verified"
 msgid "Payment verified — %(event)s"
 msgstr "Malipo yamethibitishwa"
 
-#: forms_builder/notifications.py:157
+#: forms_builder/notifications.py:177
 #: templates/forms_builder/participant_payment.html:26
 msgid "Your payment has been verified successfully."
 msgstr "Malipo yako yamethibitishwa kwa mafanikio."
 
-#: forms_builder/notifications.py:159
+#: forms_builder/notifications.py:179
 #, fuzzy, python-format
 #| msgid "Registration update — %(event)s"
 msgid "Payment update — %(event)s"
 msgstr "Taarifa ya usajili — %(event)s"
 
-#: forms_builder/notifications.py:160
+#: forms_builder/notifications.py:180
 msgid "Your payment was rejected. Review the payment details and submit again."
 msgstr "Malipo yako yamekataliwa. Hakiki taarifa za malipo na uwasilishe tena."
 
-#: forms_builder/notifications.py:162
+#: forms_builder/notifications.py:182
 #, fuzzy, python-format
 #| msgid "Registration received — %(event)s"
 msgid "Payment received — %(event)s"
 msgstr "Usajili umepokelewa — %(event)s"
 
-#: forms_builder/notifications.py:163
+#: forms_builder/notifications.py:183
 #: templates/forms_builder/participant_payment.html:25
 msgid "Your payment information has been received and is awaiting verification."
 msgstr "Taarifa zako za malipo zimepokelewa na zinasubiri uthibitisho."
 
-#: forms_builder/notifications.py:165
+#: forms_builder/notifications.py:185
 #, fuzzy, python-format
 #| msgid ""
 #| "%(message)s\n"
@@ -1910,7 +1939,7 @@ msgstr ""
 "Tukio: %(event)s\n"
 "Namba ya kumbukumbu: %(reference)s"
 
-#: forms_builder/notifications.py:213
+#: forms_builder/notifications.py:233
 #, python-format
 msgid ""
 "%(message)s\n"
@@ -1987,19 +2016,19 @@ msgstr "Lugha"
 msgid "You have already submitted this evaluation."
 msgstr "Tayari umewasilisha tathmini hii."
 
-#: forms_builder/views.py:1057
+#: forms_builder/views.py:1060
 msgid "Select a valid payment method."
 msgstr "Chagua njia sahihi ya malipo."
 
-#: forms_builder/views.py:1060
+#: forms_builder/views.py:1063
 msgid "Enter the transaction reference."
 msgstr "Weka kumbukumbu ya muamala."
 
-#: forms_builder/views.py:1067
+#: forms_builder/views.py:1070
 msgid "A payment is already pending or verified for this registration."
 msgstr "Malipo ya usajili huu tayari yanasubiri au yamethibitishwa."
 
-#: forms_builder/views.py:1071
+#: forms_builder/views.py:1074
 #: templates/forms_builder/participant_payment.html:19
 msgid "The payment amount could not be calculated. Contact the event organizer."
 msgstr "Kiasi cha malipo hakikuweza kukokotolewa. Wasiliana na mratibu wa tukio."
@@ -2185,6 +2214,8 @@ msgstr "Imeamuliwa na"
 #: templates/accounts/staff_workspace.html:110
 #: templates/accounts/staff_workspace.html:114
 #: templates/accounts/staff_workspace.html:117
+#: templates/forms_builder/participant_portal.html:28
+#: templates/forms_builder/participant_portal.html:38
 msgid "Decision date"
 msgstr "Tarehe ya uamuzi"
 
@@ -2623,7 +2654,7 @@ msgid "End date"
 msgstr "Tarehe ya kumalizika"
 
 #: templates/events/event_detail.html:152 templates/events/home.html:183
-#: templates/forms_builder/participant_portal.html:31
+#: templates/forms_builder/participant_portal.html:53
 #: templates/forms_builder/public_event_form.html:183
 msgid "Venue"
 msgstr "Mahali"
@@ -2862,7 +2893,7 @@ msgstr "Hakuna chaguo zilizowekwa kwa swali hili."
 #: templates/forms_builder/participant_badge.html:6
 #: templates/forms_builder/participant_badge.html:21
 #: templates/forms_builder/participant_badge.html:35
-#: templates/forms_builder/participant_portal.html:24
+#: templates/forms_builder/participant_portal.html:46
 msgid "Participant badge"
 msgstr "Beji ya mshiriki"
 
@@ -2947,7 +2978,7 @@ msgid "Payment proof"
 msgstr "uthibitisho wa malipo"
 
 #: templates/forms_builder/participant_payment.html:38
-#: templates/forms_builder/participant_portal.html:23
+#: templates/forms_builder/participant_portal.html:45
 msgid "Submit payment information"
 msgstr "Wasilisha taarifa za malipo"
 
@@ -2978,49 +3009,61 @@ msgstr "Kinapatikana"
 msgid "Not available"
 msgstr "Hakipatikani"
 
-#: templates/forms_builder/participant_portal.html:22
+#: templates/forms_builder/participant_portal.html:26
+msgid "Your certificate is not currently available for the following reason:"
+msgstr "Cheti chako hakipatikani kwa sasa kwa sababu ifuatayo:"
+
+#: templates/forms_builder/participant_portal.html:35
+msgid "Certificate revoked"
+msgstr "Cheti kimebatilishwa"
+
+#: templates/forms_builder/participant_portal.html:36
+msgid "Your certificate is no longer available for the following reason:"
+msgstr "Cheti chako hakipatikani tena kwa sababu ifuatayo:"
+
+#: templates/forms_builder/participant_portal.html:44
 msgid "Your services"
 msgstr "Huduma zako"
 
-#: templates/forms_builder/participant_portal.html:23
+#: templates/forms_builder/participant_portal.html:45
 msgid "Payment and receipt"
 msgstr "Malipo na risiti"
 
-#: templates/forms_builder/participant_portal.html:24
+#: templates/forms_builder/participant_portal.html:46
 msgid "View or print your badge and QR code"
 msgstr "Tazama au chapisha beji na msimbo wako wa QR"
 
-#: templates/forms_builder/participant_portal.html:25
+#: templates/forms_builder/participant_portal.html:47
 msgid "View and download your certificate"
 msgstr "Tazama na pakua cheti chako"
 
-#: templates/forms_builder/participant_portal.html:26
+#: templates/forms_builder/participant_portal.html:48
 msgid "Assigned booth"
 msgstr "Banda ulilopangiwa"
 
-#: templates/forms_builder/participant_portal.html:27
+#: templates/forms_builder/participant_portal.html:49
 msgid "Event evaluation"
 msgstr "Tathmini ya tukio"
 
-#: templates/forms_builder/participant_portal.html:27
+#: templates/forms_builder/participant_portal.html:49
 msgid "Share your experience and suggestions"
 msgstr "Toa uzoefu na mapendekezo yako"
 
-#: templates/forms_builder/participant_portal.html:31
+#: templates/forms_builder/participant_portal.html:53
 msgid "Event information"
 msgstr "Taarifa za tukio"
 
-#: templates/forms_builder/participant_portal.html:31
+#: templates/forms_builder/participant_portal.html:53
 msgid "Event dates"
 msgstr "Tarehe za tukio"
 
-#: templates/forms_builder/participant_portal.html:31
+#: templates/forms_builder/participant_portal.html:53
 #, fuzzy
 #| msgid "contact phone"
 msgid "Contact phone"
 msgstr "simu ya mawasiliano"
 
-#: templates/forms_builder/participant_portal.html:31
+#: templates/forms_builder/participant_portal.html:53
 #, fuzzy
 #| msgid "contact email"
 msgid "Contact email"

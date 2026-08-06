@@ -76,6 +76,26 @@ def _notification_content(submission, notification_type, request=None):
                 "reference": submission.reference_number,
                 "certificate_url": certificate_url,
             }
+        elif notification_type == NotificationLog.NotificationType.CERTIFICATE_DENIED:
+            subject = _("Certificate decision — %(event)s") % {"event": event_name}
+            portal_path = reverse(
+                "forms_builder:participant_portal",
+                kwargs={"participant_token": submission.participant_token},
+            )
+            portal_url = _absolute_url(portal_path, request=request)
+            reason = submission.certificate_record.denial_reason
+            body = _(
+                "Your certificate was not authorized.\n\n"
+                "Event: %(event)s\n"
+                "Reference number: %(reference)s\n"
+                "Reason: %(reason)s\n"
+                "View your participant page: %(portal_url)s"
+            ) % {
+                "event": event_name,
+                "reference": submission.reference_number,
+                "reason": reason,
+                "portal_url": portal_url,
+            }
         else:
             subject = _("Check-in confirmed — %(event)s") % {"event": event_name}
             body = _(

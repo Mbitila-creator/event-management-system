@@ -982,6 +982,7 @@ def participant_portal(request, participant_token):
             "event_form__event__venue",
             "check_in",
             "booth_assignment",
+            "certificate_record",
         ),
         participant_token=participant_token,
         is_active=True,
@@ -993,6 +994,7 @@ def participant_portal(request, participant_token):
         ],
     )
     event = submission.event_form.event
+    certificate_record = getattr(submission, "certificate_record", None)
     latest_payment = submission.payments.order_by("-created_at").first()
     evaluation_form = None
     if event.evaluation_enabled:
@@ -1011,10 +1013,11 @@ def participant_portal(request, participant_token):
             "latest_payment": latest_payment,
             "checked_in": hasattr(submission, "check_in"),
             "certificate_authorized": (
-                hasattr(submission, "certificate_record")
-                and submission.certificate_record.status
+                certificate_record is not None
+                and certificate_record.status
                 == CertificateRecord.Status.AUTHORIZED
             ),
+            "certificate_record": certificate_record,
             "booth": getattr(submission, "booth_assignment", None),
             "evaluation_form": evaluation_form,
         },

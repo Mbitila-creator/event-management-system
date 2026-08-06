@@ -337,6 +337,21 @@ class EventAdministratorOperationsTests(TestCase):
         )
         self.assertEqual(certificate.denied_by, self.event_admin)
 
+        participant_page = self.client.get(
+            f"/en/participants/{self.submission.participant_token}/",
+        )
+        self.assertContains(participant_page, "Certificate not authorized")
+        self.assertContains(
+            participant_page,
+            "The minimum attendance requirement was not met.",
+        )
+
+        from forms_builder.models import NotificationLog
+        self.assertTrue(NotificationLog.objects.filter(
+            submission=self.submission,
+            notification_type=NotificationLog.NotificationType.CERTIFICATE_DENIED,
+        ).exists())
+
         workspace = self.client.get("/en/staff/")
         self.assertEqual(workspace.context["certificate_candidate_count"], 0)
         self.assertContains(workspace, "View details")

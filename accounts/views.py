@@ -264,6 +264,11 @@ def update_certificate_authorization(request, submission_id, decision):
             certificate.revocation_reason = ""
             certificate.updated_by = request.user
             certificate.save()
+        send_submission_notification(
+            submission,
+            NotificationLog.NotificationType.CERTIFICATE_DENIED,
+            request=request,
+        )
         messages.success(request, _("Certificate decision recorded successfully."))
     elif decision == "revoke":
         if not reason:

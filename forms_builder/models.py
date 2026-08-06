@@ -1141,6 +1141,9 @@ class NotificationLog(BaseModel):
         CERTIFICATE_AUTHORIZED = (
             "CERTIFICATE_AUTHORIZED", _("Certificate authorized")
         )
+        CERTIFICATE_DENIED = (
+            "CERTIFICATE_DENIED", _("Certificate not authorized")
+        )
 
     class DeliveryStatus(models.TextChoices):
         SENT = "SENT", _("Sent")
