@@ -92,12 +92,34 @@
                 </div>
                 <div class="workspace-table-scroll">
                     <table>
-                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Participant" %}</th><th>{% translate "Event" %}</th><th>{% translate "Status" %}</th><th>{% translate "Actions" %}</th></tr></thead>
+                        <thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Participant" %}</th><th>{% translate "Event" %}</th><th>{% translate "Status" %}</th><th>{% translate "View details" %}</th><th>{% translate "Actions" %}</th></tr></thead>
                         <tbody>
                         {% for submission in certificate_candidates %}
                             <tr>
                                 <td>{{ submission.reference_number }}</td><td>{{ submission.badge_display_name }}</td><td>{{ submission.event_form.event }}</td>
-                                <td>{% if submission.certificate_record.status == "AUTHORIZED" %}<span class="workspace-status-success">{% translate "Authorized" %}</span>{% elif submission.certificate_record.status == "DENIED" %}<span class="workspace-status-denied">{% translate "Not authorized" %}</span><small class="workspace-decision-reason">{{ submission.certificate_record.denial_reason }}</small>{% else %}<span class="workspace-status-pending">{% translate "Awaiting authorization" %}</span>{% endif %}</td>
+                                <td>{% if submission.certificate_record.status == "AUTHORIZED" %}<span class="workspace-status-success">{% translate "Authorized" %}</span>{% elif submission.certificate_record.status == "DENIED" %}<span class="workspace-status-denied">{% translate "Not authorized" %}</span>{% elif submission.certificate_record.status == "REVOKED" %}<span class="workspace-status-denied">{% translate "Revoked" %}</span>{% else %}<span class="workspace-status-pending">{% translate "Awaiting authorization" %}</span>{% endif %}</td>
+                                <td>
+                                    {% if submission.certificate_record %}
+                                    <details class="workspace-view-details">
+                                        <summary>{% translate "View details" %}</summary>
+                                        <dl>
+                                            <div><dt>{% translate "Decision" %}</dt><dd>{{ submission.certificate_record.get_status_display }}</dd></div>
+                                            {% if submission.certificate_record.status == "DENIED" %}
+                                                <div><dt>{% translate "Reason" %}</dt><dd>{{ submission.certificate_record.denial_reason }}</dd></div>
+                                                <div><dt>{% translate "Decided by" %}</dt><dd>{{ submission.certificate_record.denied_by.get_full_name|default:submission.certificate_record.denied_by.username }}</dd></div>
+                                                <div><dt>{% translate "Decision date" %}</dt><dd>{{ submission.certificate_record.denied_at|date:"d M Y, H:i" }}</dd></div>
+                                            {% elif submission.certificate_record.status == "REVOKED" %}
+                                                <div><dt>{% translate "Reason" %}</dt><dd>{{ submission.certificate_record.revocation_reason }}</dd></div>
+                                                <div><dt>{% translate "Decided by" %}</dt><dd>{{ submission.certificate_record.revoked_by.get_full_name|default:submission.certificate_record.revoked_by.username }}</dd></div>
+                                                <div><dt>{% translate "Decision date" %}</dt><dd>{{ submission.certificate_record.revoked_at|date:"d M Y, H:i" }}</dd></div>
+                                            {% else %}
+                                                <div><dt>{% translate "Decided by" %}</dt><dd>{{ submission.certificate_record.authorized_by.get_full_name|default:submission.certificate_record.authorized_by.username }}</dd></div>
+                                                <div><dt>{% translate "Decision date" %}</dt><dd>{{ submission.certificate_record.authorized_at|date:"d M Y, H:i" }}</dd></div>
+                                            {% endif %}
+                                        </dl>
+                                    </details>
+                                    {% else %}—{% endif %}
+                                </td>
                                 <td><div class="workspace-row-actions">
                                     {% if submission.certificate_record.status == "AUTHORIZED" %}
                                         <details class="workspace-reason-menu"><summary>{% translate "Revoke" %}</summary><form method="post" action="{% url 'accounts:update_certificate_authorization' submission.pk 'revoke' %}">{% csrf_token %}<label>{% translate "Reason for revocation" %}<textarea name="reason" rows="3" required></textarea></label><button class="workspace-action-danger" type="submit">{% translate "Confirm revocation" %}</button></form></details>
@@ -107,7 +129,7 @@
                                     {% endif %}
                                 </div></td>
                             </tr>
-                        {% empty %}<tr><td colspan="5">{% translate "No checked-in participants are awaiting certificate authorization." %}</td></tr>{% endfor %}
+                        {% empty %}<tr><td colspan="6">{% translate "No checked-in participants are awaiting certificate authorization." %}</td></tr>{% endfor %}
                         </tbody>
                     </table>
                 </div>

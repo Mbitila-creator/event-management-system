@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-06 10:08+0300\n"
+"POT-Creation-Date: 2026-08-06 10:23+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -779,6 +779,7 @@ msgid "Certificate"
 msgstr "Cheti"
 
 #: forms_builder/admin.py:1089 forms_builder/models.py:588
+#: templates/accounts/staff_workspace.html:100
 msgid "Revoked"
 msgstr "Kimebatilishwa"
 
@@ -2156,44 +2157,70 @@ msgstr "Idhini ya vyeti"
 msgid "Status"
 msgstr "Hali"
 
+#: templates/accounts/staff_workspace.html:95
+#: templates/accounts/staff_workspace.html:104 templates/events/home.html:198
+msgid "View details"
+msgstr "Angalia maelezo"
+
 #: templates/accounts/staff_workspace.html:100
 #: templates/forms_builder/participant_portal.html:18
 msgid "Awaiting authorization"
 msgstr "Inasubiri idhini"
 
-#: templates/accounts/staff_workspace.html:103
+#: templates/accounts/staff_workspace.html:106
+msgid "Decision"
+msgstr "Uamuzi"
+
+#: templates/accounts/staff_workspace.html:108
+#: templates/accounts/staff_workspace.html:112
+msgid "Reason"
+msgstr "Sababu"
+
+#: templates/accounts/staff_workspace.html:109
+#: templates/accounts/staff_workspace.html:113
+#: templates/accounts/staff_workspace.html:116
+msgid "Decided by"
+msgstr "Imeamuliwa na"
+
+#: templates/accounts/staff_workspace.html:110
+#: templates/accounts/staff_workspace.html:114
+#: templates/accounts/staff_workspace.html:117
+msgid "Decision date"
+msgstr "Tarehe ya uamuzi"
+
+#: templates/accounts/staff_workspace.html:125
 msgid "Revoke"
 msgstr "Batilisha"
 
-#: templates/accounts/staff_workspace.html:103
+#: templates/accounts/staff_workspace.html:125
 msgid "Reason for revocation"
 msgstr "Sababu ya kubatilisha"
 
-#: templates/accounts/staff_workspace.html:103
+#: templates/accounts/staff_workspace.html:125
 msgid "Confirm revocation"
 msgstr "Thibitisha kubatilisha"
 
-#: templates/accounts/staff_workspace.html:105
+#: templates/accounts/staff_workspace.html:127
 msgid "Authorize certificate"
 msgstr "Idhinisha cheti"
 
-#: templates/accounts/staff_workspace.html:106
+#: templates/accounts/staff_workspace.html:128
 msgid "Do not authorize"
 msgstr "Usiidhinishe"
 
-#: templates/accounts/staff_workspace.html:106
+#: templates/accounts/staff_workspace.html:128
 msgid "Reason for not authorizing"
 msgstr "Sababu ya kutokuidhinisha"
 
-#: templates/accounts/staff_workspace.html:106
+#: templates/accounts/staff_workspace.html:128
 msgid "For example: attendance requirement was not met"
 msgstr "Kwa mfano: hakutimiza kiwango cha mahudhurio"
 
-#: templates/accounts/staff_workspace.html:106
+#: templates/accounts/staff_workspace.html:128
 msgid "Record decision"
 msgstr "Hifadhi uamuzi"
 
-#: templates/accounts/staff_workspace.html:110
+#: templates/accounts/staff_workspace.html:132
 msgid "No checked-in participants are awaiting certificate authorization."
 msgstr "Hakuna washiriki walioingia wanaosubiri idhini ya cheti."
 
@@ -2665,10 +2692,6 @@ msgstr "Matukio yanayopatikana"
 #: templates/events/home.html:110
 msgid "found"
 msgstr "yamepatikana"
-
-#: templates/events/home.html:198
-msgid "View details"
-msgstr "Angalia maelezo"
 
 #: templates/events/home.html:206
 msgid "No events were found"

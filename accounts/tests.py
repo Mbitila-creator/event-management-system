@@ -337,6 +337,14 @@ class EventAdministratorOperationsTests(TestCase):
         )
         self.assertEqual(certificate.denied_by, self.event_admin)
 
+        workspace = self.client.get("/en/staff/")
+        self.assertEqual(workspace.context["certificate_candidate_count"], 0)
+        self.assertContains(workspace, "View details")
+        self.assertContains(
+            workspace,
+            "The minimum attendance requirement was not met.",
+        )
+
     def test_registration_officer_cannot_authorize_certificate(self):
         officer = User.objects.create_user(
             username="registration-no-certificate",

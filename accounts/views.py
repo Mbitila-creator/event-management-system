@@ -79,8 +79,8 @@ def role_home(request):
             )[:8],
             "recent_payments": pending_payments.order_by("-created_at")[:8],
             "certificate_candidates": certificate_candidates[:8],
-            "certificate_candidate_count": certificate_candidates.exclude(
-                certificate_record__status=CertificateRecord.Status.AUTHORIZED,
+            "certificate_candidate_count": certificate_candidates.filter(
+                certificate_record__isnull=True,
             ).count(),
             "is_event_admin": request.user.role == User.Role.EVENT_ADMIN,
         })
