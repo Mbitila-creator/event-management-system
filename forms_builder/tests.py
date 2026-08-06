@@ -1070,15 +1070,22 @@ class SubmissionNotificationTests(TestCase):
         self.assertIn("Usajili umeidhinishwa", mail.outbox[0].subject)
         self.assertIn("Namba ya kumbukumbu", mail.outbox[0].body)
 
-    def test_approval_email_uses_status_link_without_badge_link(self):
+    def test_approval_email_uses_secure_direct_status_link_without_badge_link(self):
         send_submission_notification(
             self.submission,
             NotificationLog.NotificationType.REGISTRATION_APPROVED,
         )
         self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("registration-status", mail.outbox[0].body)
+        expected_path = f"/en/participants/{self.submission.participant_token}/"
+        self.assertIn(expected_path, mail.outbox[0].body)
+        self.assertNotIn("registration-status", mail.outbox[0].body)
         self.assertNotIn("Participant badge:", mail.outbox[0].body)
         self.assertNotIn("/badge/", mail.outbox[0].body)
+
+        direct_status = self.client.get(expected_path)
+        self.assertEqual(direct_status.status_code, 200)
+        self.assertContains(direct_status, self.submission.reference_number)
+        self.assertNotContains(direct_status, "Registered email or phone number")
 
     def test_email_backend_failure_is_logged_without_raising(self):
         with patch(

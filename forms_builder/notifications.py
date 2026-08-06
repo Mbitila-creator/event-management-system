@@ -21,13 +21,12 @@ def _notification_content(submission, notification_type, request=None):
     language = submission.language if submission.language in {"sw", "en"} else "sw"
     event = submission.event_form.event
     event_name = event.title_en if language == "en" else event.title_sw
-    status_path = reverse("forms_builder:registration_status")
-    status_url = _absolute_url(
-        f"{status_path}?reference={submission.reference_number}",
-        request=request,
-    )
-
     with translation.override(language):
+        status_path = reverse(
+            "forms_builder:participant_portal",
+            kwargs={"participant_token": submission.participant_token},
+        )
+        status_url = _absolute_url(status_path, request=request)
         if notification_type == NotificationLog.NotificationType.REGISTRATION_RECEIVED:
             subject = _("Registration received — %(event)s") % {"event": event_name}
             body = _(
