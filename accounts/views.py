@@ -46,7 +46,11 @@ def role_home(request):
     """Send each signed-in user to the interface intended for their role."""
     if (
         request.user.is_superuser
-        or request.user.role in {User.Role.SYSTEM_ADMIN, User.Role.DIRECTOR}
+        or request.user.role in {
+            User.Role.SYSTEM_ADMIN,
+            User.Role.DIRECTOR,
+            User.Role.ASSISTANT_DIRECTOR,
+        }
     ):
         return redirect("admin:index")
     if request.user.role in {

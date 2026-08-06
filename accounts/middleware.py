@@ -23,7 +23,11 @@ class SystemAdministrationBoundaryMiddleware:
             and user.is_active
             and (
                 user.is_superuser
-                or user.role in {User.Role.SYSTEM_ADMIN, User.Role.DIRECTOR}
+                or user.role in {
+                    User.Role.SYSTEM_ADMIN,
+                    User.Role.DIRECTOR,
+                    User.Role.ASSISTANT_DIRECTOR,
+                }
             )
         )
         if is_admin_path and user and user.is_authenticated and not has_administration_access:

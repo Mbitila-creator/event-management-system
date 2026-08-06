@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='user',
             name='role',
-            field=models.CharField(choices=[('SYSTEM_ADMIN', 'System Administrator'), ('EVENT_ADMIN', 'Event Administrator'), ('REGISTRATION_OFFICER', 'Registration Officer'), ('ATTENDANCE_OFFICER', 'Attendance Officer'), ('REPORT_OFFICER', 'Report Officer'), ('DIRECTOR', 'Director'), ('PARTICIPANT', 'Participant')], default='PARTICIPANT', max_length=30, verbose_name='role'),
+            field=models.CharField(choices=[('SYSTEM_ADMIN', 'System Administrator'), ('EVENT_ADMIN', 'Event Administrator'), ('REGISTRATION_OFFICER', 'Registration Officer'), ('ATTENDANCE_OFFICER', 'Attendance Officer'), ('REPORT_OFFICER', 'Report Officer'), ('DIRECTOR', 'Director'), ('ASSISTANT_DIRECTOR', 'Assistant Director'), ('PARTICIPANT', 'Participant')], default='PARTICIPANT', max_length=30, verbose_name='role'),
         ),
     ]

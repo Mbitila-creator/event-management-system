@@ -17,6 +17,7 @@ class User(AbstractUser):
         )
         REPORT_OFFICER = "REPORT_OFFICER", _("Report Officer")
         DIRECTOR = "DIRECTOR", _("Director")
+        ASSISTANT_DIRECTOR = "ASSISTANT_DIRECTOR", _("Assistant Director")
         PARTICIPANT = "PARTICIPANT", _("Participant")
 
     class PreferredLanguage(models.TextChoices):
@@ -82,6 +83,9 @@ class User(AbstractUser):
         Role.ATTENDANCE_OFFICER: {"checkin"},
         Role.REPORT_OFFICER: {"forms_builder", "checkin"},
         Role.DIRECTOR: {"accounts", "events", "forms_builder", "checkin", "core"},
+        Role.ASSISTANT_DIRECTOR: {
+            "accounts", "events", "forms_builder", "checkin", "core",
+        },
         Role.PARTICIPANT: set(),
     }
 
@@ -111,6 +115,7 @@ class User(AbstractUser):
         Role.ATTENDANCE_OFFICER,
         Role.REPORT_OFFICER,
         Role.DIRECTOR,
+        Role.ASSISTANT_DIRECTOR,
     }
 
     def save(self, *args, **kwargs):
@@ -132,7 +137,11 @@ class User(AbstractUser):
         codename = perm.partition(".")[2]
         if self.role == self.Role.REGISTRATION_OFFICER:
             return perm in self.REGISTRATION_OFFICER_PERMISSIONS
-        if self.role in {self.Role.REPORT_OFFICER, self.Role.DIRECTOR}:
+        if self.role in {
+            self.Role.REPORT_OFFICER,
+            self.Role.DIRECTOR,
+            self.Role.ASSISTANT_DIRECTOR,
+        }:
             return app_label in allowed and codename.startswith("view_")
         if "*" in allowed or app_label in allowed:
             return True

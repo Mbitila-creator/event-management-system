@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-06 18:51+0300\n"
+"POT-Creation-Date: 2026-08-06 19:06+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -17,11 +17,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: accounts/admin.py:95 templates/accounts/staff_login.html:31
+#: accounts/admin.py:99 templates/accounts/staff_login.html:31
 msgid "Password"
 msgstr "Nenosiri"
 
-#: accounts/admin.py:103
+#: accounts/admin.py:107
 msgid "Reset password"
 msgstr "Weka upya nenosiri"
 
@@ -49,7 +49,11 @@ msgstr "Afisa Ripoti"
 msgid "Director"
 msgstr "Mkurugenzi"
 
-#: accounts/models.py:20 forms_builder/admin.py:1130
+#: accounts/models.py:20
+msgid "Assistant Director"
+msgstr "Mkurugenzi Msaidizi"
+
+#: accounts/models.py:21 forms_builder/admin.py:1130
 #: templates/accounts/staff_workspace.html:58
 #: templates/accounts/staff_workspace.html:103
 #: templates/accounts/staff_workspace.html:115
@@ -58,115 +62,115 @@ msgstr "Mkurugenzi"
 msgid "Participant"
 msgstr "Mshiriki"
 
-#: accounts/models.py:23 forms_builder/models.py:438
+#: accounts/models.py:24 forms_builder/models.py:438
 msgid "Kiswahili"
 msgstr "Kiswahili"
 
-#: accounts/models.py:24 forms_builder/models.py:439
+#: accounts/models.py:25 forms_builder/models.py:439
 msgid "English"
 msgstr "Kiingereza"
 
-#: accounts/models.py:27
+#: accounts/models.py:28
 msgid "email address"
 msgstr "anwani ya baruapepe"
 
-#: accounts/models.py:32
+#: accounts/models.py:33
 msgid "employee number"
 msgstr "namba ya mfanyakazi"
 
-#: accounts/models.py:40
+#: accounts/models.py:41
 msgid "phone number"
 msgstr "namba ya simu"
 
-#: accounts/models.py:46
+#: accounts/models.py:47
 msgid "role"
 msgstr "jukumu"
 
-#: accounts/models.py:53
+#: accounts/models.py:54
 msgid "preferred language"
 msgstr "lugha inayopendelewa"
 
-#: accounts/models.py:60 core/models.py:45
+#: accounts/models.py:61 core/models.py:45
 msgid "created at"
 msgstr "iliundwa tarehe"
 
-#: accounts/models.py:65 core/models.py:50
+#: accounts/models.py:66 core/models.py:50
 msgid "updated at"
 msgstr "ilisasishwa tarehe"
 
-#: accounts/models.py:70
+#: accounts/models.py:71
 msgid "user"
 msgstr "mtumiaji"
 
-#: accounts/models.py:71
+#: accounts/models.py:72
 msgid "users"
 msgstr "watumiaji"
 
-#: accounts/views.py:166 checkin/views.py:279 forms_builder/views.py:121
+#: accounts/views.py:170 checkin/views.py:280 forms_builder/views.py:122
 #: templates/checkin/reports.html:101
 #: templates/forms_builder/partials/question_input.html:188
 msgid "Yes"
 msgstr "Ndiyo"
 
-#: accounts/views.py:166 checkin/views.py:279 forms_builder/views.py:121
+#: accounts/views.py:170 checkin/views.py:280 forms_builder/views.py:122
 #: templates/checkin/reports.html:103
 #: templates/forms_builder/partials/question_input.html:203
 msgid "No"
 msgstr "Hapana"
 
-#: accounts/views.py:259
+#: accounts/views.py:263
 msgid "Booth assigned successfully."
 msgstr "Banda limepangwa kwa mafanikio."
 
-#: accounts/views.py:262
+#: accounts/views.py:266
 msgid "Assign an exhibitor before marking the booth ready."
 msgstr "Mpangie mwoneshaji kabla ya kuweka banda kuwa tayari."
 
-#: accounts/views.py:265
+#: accounts/views.py:269
 msgid "Booth marked as ready."
 msgstr "Banda limewekwa kuwa tayari."
 
-#: accounts/views.py:269
+#: accounts/views.py:273
 msgid "Booth assignment released."
 msgstr "Mpangilio wa banda umeondolewa."
 
-#: accounts/views.py:277
+#: accounts/views.py:281
 msgid "This exhibitor is already assigned to another booth."
 msgstr "Mwoneshaji huyu tayari amepangiwa banda jingine."
 
-#: accounts/views.py:314
+#: accounts/views.py:318
 msgid "Enter a reason before rejecting the registration."
 msgstr "Weka sababu kabla ya kukataa usajili."
 
-#: accounts/views.py:332
+#: accounts/views.py:336
 msgid "Registration status updated successfully."
 msgstr "Hali ya usajili imesasishwa kwa mafanikio."
 
-#: accounts/views.py:353
+#: accounts/views.py:357
 msgid "Enter a reason before rejecting the payment."
 msgstr "Weka sababu kabla ya kukataa malipo."
 
-#: accounts/views.py:371
+#: accounts/views.py:375
 msgid "Payment status updated successfully."
 msgstr "Hali ya malipo imesasishwa kwa mafanikio."
 
-#: accounts/views.py:426
+#: accounts/views.py:430
 msgid "Certificate authorized successfully."
 msgstr "Cheti kimeidhinishwa kwa mafanikio."
 
-#: accounts/views.py:429
+#: accounts/views.py:433
 msgid "Enter a reason for not authorizing the certificate."
 msgstr "Weka sababu ya kutokuidhinisha cheti."
 
-#: accounts/views.py:462
+#: accounts/views.py:466
 msgid "Certificate decision recorded successfully."
 msgstr "Uamuzi wa cheti umehifadhiwa kwa mafanikio."
 
-#: accounts/views.py:465
+#: accounts/views.py:469
 msgid "Enter a reason before revoking the certificate."
 msgstr "Weka sababu kabla ya kubatilisha cheti."
 
-#: accounts/views.py:481
+#: accounts/views.py:485
 msgid "Certificate authorization revoked."
 msgstr "Idhini ya cheti imebatilishwa."
 
@@ -206,7 +210,7 @@ msgstr "uthibitishaji wa mahudhurio ya mshiriki"
 msgid "participant check-ins"
 msgstr "uthibitishaji wa mahudhurio ya washiriki"
 
-#: checkin/views.py:260 forms_builder/admin.py:1122
+#: checkin/views.py:261 forms_builder/admin.py:1122
 #: templates/accounts/booth_assignments.html:15
 #: templates/accounts/staff_workspace.html:58
 #: templates/accounts/staff_workspace.html:83
@@ -222,13 +226,13 @@ msgstr "uthibitishaji wa mahudhurio ya washiriki"
 msgid "Reference number"
 msgstr "Namba ya kumbukumbu"
 
-#: checkin/views.py:261 templates/checkin/reports.html:77
+#: checkin/views.py:262 templates/checkin/reports.html:77
 #: templates/forms_builder/booth_detail.html:24
 #: templates/forms_builder/certificate_verification.html:21
 msgid "Representative"
 msgstr "Mwakilishi"
 
-#: checkin/views.py:262 templates/accounts/booth_assignments.html:15
+#: checkin/views.py:263 templates/accounts/booth_assignments.html:15
 #: templates/accounts/participant_review_details.html:16
 #: templates/checkin/participant_check_in.html:84
 #: templates/checkin/reports.html:78
@@ -236,13 +240,13 @@ msgstr "Mwakilishi"
 msgid "Organization"
 msgstr "Taasisi"
 
-#: checkin/views.py:263
+#: checkin/views.py:264
 #, fuzzy
 #| msgid "review status"
 msgid "Review status"
 msgstr "hali ya ukaguzi"
 
-#: checkin/views.py:264 templates/checkin/reports.html:46
+#: checkin/views.py:265 templates/checkin/reports.html:46
 #: templates/checkin/reports.html:94
 #: templates/forms_builder/participant_portal.html:17
 #, fuzzy
@@ -250,18 +254,18 @@ msgstr "hali ya ukaguzi"
 msgid "Checked in"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: checkin/views.py:265 templates/accounts/staff_workspace.html:103
+#: checkin/views.py:266 templates/accounts/staff_workspace.html:103
 #: templates/checkin/participant_check_in.html:115
 #: templates/checkin/reports.html:82
 msgid "Checked in at"
 msgstr "Mahudhurio yamethibitishwa tarehe"
 
-#: checkin/views.py:266 templates/accounts/staff_workspace.html:103
+#: checkin/views.py:267 templates/accounts/staff_workspace.html:103
 #: templates/checkin/participant_check_in.html:117
 msgid "Checked in by"
 msgstr "Mahudhurio yamethibitishwa na"
 
-#: checkin/views.py:269 forms_builder/services.py:302
+#: checkin/views.py:270 forms_builder/services.py:302
 #: templates/forms_builder/certificate_verification.html:41
 #: templates/forms_builder/participant_certificate.html:70
 msgid "Certificate number"
@@ -778,7 +782,7 @@ msgstr "Simu"
 msgid "Message"
 msgstr "Ujumbe"
 
-#: forms_builder/admin.py:359 forms_builder/views.py:426
+#: forms_builder/admin.py:359 forms_builder/views.py:427
 #: templates/accounts/participant_review_details.html:19
 #: templates/accounts/staff_workspace.html:58
 #: templates/accounts/staff_workspace.html:83
@@ -1018,13 +1022,13 @@ msgstr "Maandishi mafupi"
 msgid "Long text"
 msgstr "Maandishi marefu"
 
-#: forms_builder/models.py:255 forms_builder/views.py:428
+#: forms_builder/models.py:255 forms_builder/views.py:429
 #: templates/accounts/participant_review_details.html:17
 #: templates/forms_builder/booth_detail.html:73
 msgid "Email address"
 msgstr "Anwani ya baruapepe"
 
-#: forms_builder/models.py:256 forms_builder/views.py:429
+#: forms_builder/models.py:256 forms_builder/views.py:430
 #: templates/accounts/participant_review_details.html:18
 #: templates/forms_builder/booth_detail.html:74
 msgid "Phone number"
@@ -1626,7 +1630,7 @@ msgid "booth visitor interests"
 msgstr "nia za wageni wa banda"
 
 #: forms_builder/models.py:1045 forms_builder/models.py:1046
-#: forms_builder/views.py:208
+#: forms_builder/views.py:209
 msgid "Enter an email address or phone number."
 msgstr "Weka anwani ya baruapepe au namba ya simu."
 
@@ -2053,47 +2057,47 @@ msgstr "Tarehe ya tukio"
 msgid "Scan to verify this certificate"
 msgstr "Changanua ili kuthibitisha cheti hiki"
 
-#: forms_builder/views.py:211
+#: forms_builder/views.py:212
 #, fuzzy
 #| msgid "email address"
 msgid "Enter a valid email address."
 msgstr "anwani ya baruapepe"
 
-#: forms_builder/views.py:224
+#: forms_builder/views.py:225
 #, fuzzy
 #| msgid "Select an option"
 msgid "Select a valid option."
 msgstr "Chagua"
 
-#: forms_builder/views.py:425
+#: forms_builder/views.py:426
 #: templates/forms_builder/submission_success.html:66
 msgid "Evaluation reference"
 msgstr "Kumbukumbu ya tathmini"
 
-#: forms_builder/views.py:427 templates/admin/base_site.html:41
+#: forms_builder/views.py:428 templates/admin/base_site.html:41
 #: templates/events/base_public.html:92 templates/events/base_public.html:98
 #: templates/forms_builder/public_event_form.html:65
 #: templates/forms_builder/public_event_form.html:68
 msgid "Language"
 msgstr "Lugha"
 
-#: forms_builder/views.py:748
+#: forms_builder/views.py:749
 msgid "You have already submitted this evaluation."
 msgstr "Tayari umewasilisha tathmini hii."
 
-#: forms_builder/views.py:1062
+#: forms_builder/views.py:1063
 msgid "Select a valid payment method."
 msgstr "Chagua njia sahihi ya malipo."
 
-#: forms_builder/views.py:1065
+#: forms_builder/views.py:1066
 msgid "Enter the transaction reference."
 msgstr "Weka kumbukumbu ya muamala."
 
-#: forms_builder/views.py:1072
+#: forms_builder/views.py:1073
 msgid "A payment is already pending or verified for this registration."
 msgstr "Malipo ya usajili huu tayari yanasubiri au yamethibitishwa."
 
-#: forms_builder/views.py:1076
+#: forms_builder/views.py:1077
 #: templates/forms_builder/participant_payment.html:19
 msgid "The payment amount could not be calculated. Contact the event organizer."
 msgstr "Kiasi cha malipo hakikuweza kukokotolewa. Wasiliana na mratibu wa tukio."

@@ -571,6 +571,7 @@ class RoleAccessMatrixTests(TestCase):
         User.Role.ATTENDANCE_OFFICER,
         User.Role.REPORT_OFFICER,
         User.Role.DIRECTOR,
+        User.Role.ASSISTANT_DIRECTOR,
         User.Role.PARTICIPANT,
     )
 
@@ -599,17 +600,29 @@ class RoleAccessMatrixTests(TestCase):
     def test_system_administration_is_reserved_for_system_administrator(self):
         self.assert_role_access(
             "/en/admin/",
-            {User.Role.SYSTEM_ADMIN, User.Role.DIRECTOR},
+            {
+                User.Role.SYSTEM_ADMIN,
+                User.Role.DIRECTOR,
+                User.Role.ASSISTANT_DIRECTOR,
+            },
         )
 
     def test_event_management_access(self):
         self.assert_role_access(
             "/en/admin/events/event/",
-            {User.Role.SYSTEM_ADMIN, User.Role.DIRECTOR},
+            {
+                User.Role.SYSTEM_ADMIN,
+                User.Role.DIRECTOR,
+                User.Role.ASSISTANT_DIRECTOR,
+            },
         )
 
     def test_registration_and_payment_access(self):
-        allowed = {User.Role.SYSTEM_ADMIN, User.Role.DIRECTOR}
+        allowed = {
+            User.Role.SYSTEM_ADMIN,
+            User.Role.DIRECTOR,
+            User.Role.ASSISTANT_DIRECTOR,
+        }
         self.assert_role_access(
             "/en/admin/forms_builder/formsubmission/", allowed,
         )
@@ -634,13 +647,12 @@ class RoleAccessMatrixTests(TestCase):
             User.Role.EVENT_ADMIN,
             User.Role.REPORT_OFFICER,
             User.Role.DIRECTOR,
+            User.Role.ASSISTANT_DIRECTOR,
         }
         self.assert_role_access("/en/reports/attendance/", allowed)
         self.assert_role_access("/en/reports/evaluations/", allowed)
 
-    def test_director_has_system_wide_view_permissions_only(self):
-        director = self.users[User.Role.DIRECTOR]
-        self.assertTrue(director.is_staff)
+    def test_directors_have_system_wide_view_permissions_only(self):
         view_permissions = {
             "accounts.view_user",
             "core.view_region",
@@ -650,10 +662,6 @@ class RoleAccessMatrixTests(TestCase):
             "forms_builder.view_certificaterecord",
             "checkin.view_participantcheckin",
         }
-        for permission in view_permissions:
-            with self.subTest(permission=permission):
-                self.assertTrue(director.has_perm(permission))
-
         forbidden_permissions = {
             "accounts.change_user",
             "events.add_event",
@@ -666,37 +674,46 @@ class RoleAccessMatrixTests(TestCase):
             "checkin.change_participantcheckin",
             "checkin.delete_participantcheckin",
         }
-        for permission in forbidden_permissions:
-            with self.subTest(permission=permission):
-                self.assertFalse(director.has_perm(permission))
+        for role in {User.Role.DIRECTOR, User.Role.ASSISTANT_DIRECTOR}:
+            executive = self.users[role]
+            self.assertTrue(executive.is_staff)
+            for permission in view_permissions:
+                with self.subTest(role=role, permission=permission):
+                    self.assertTrue(executive.has_perm(permission))
+            for permission in forbidden_permissions:
+                with self.subTest(role=role, permission=permission):
+                    self.assertFalse(executive.has_perm(permission))
 
-        self.client.force_login(director)
-        dashboard = self.client.get("/en/admin/")
-        self.assertEqual(dashboard.status_code, 200)
-        self.assertNotContains(dashboard, "Check-in Participants")
-        self.assertNotContains(dashboard, "Manage users and reset passwords")
+            self.client.force_login(executive)
+            dashboard = self.client.get("/en/admin/")
+            self.assertEqual(dashboard.status_code, 200)
+            self.assertNotContains(dashboard, "Check-in Participants")
+            self.assertNotContains(dashboard, "Manage users and reset passwords")
 
-        user_details = self.client.get(
-            f"/en/admin/accounts/user/{director.pk}/change/",
-        )
-        self.assertEqual(user_details.status_code, 200)
-        self.assertNotContains(user_details, 'name="_save"')
-        self.assertEqual(
-            self.client.post(
-                f"/en/admin/accounts/user/{director.pk}/change/",
-                {"username": "unauthorized-change"},
-            ).status_code,
-            403,
-        )
+            user_details = self.client.get(
+                f"/en/admin/accounts/user/{executive.pk}/change/",
+            )
+            self.assertEqual(user_details.status_code, 200)
+            self.assertNotContains(user_details, 'name="_save"')
+            self.assertEqual(
+                self.client.post(
+                    f"/en/admin/accounts/user/{executive.pk}/change/",
+                    {"username": "unauthorized-change"},
+                ).status_code,
+                403,
+            )
+            self.client.logout()
 
-    def test_director_cannot_use_operational_endpoints(self):
-        self.client.force_login(self.users[User.Role.DIRECTOR])
+    def test_directors_cannot_use_operational_endpoints(self):
         paths = (
             "/en/staff/registrations/999/approve/",
             "/en/staff/payments/999/verify/",
             "/en/staff/certificates/999/authorize/",
             "/en/staff/booths/999/update/",
         )
-        for path in paths:
-            with self.subTest(path=path):
-                self.assertEqual(self.client.post(path).status_code, 403)
+        for role in {User.Role.DIRECTOR, User.Role.ASSISTANT_DIRECTOR}:
+            self.client.force_login(self.users[role])
+            for path in paths:
+                with self.subTest(role=role, path=path):
+                    self.assertEqual(self.client.post(path).status_code, 403)
+            self.client.logout()

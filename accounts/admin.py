@@ -14,7 +14,11 @@ def event_admin_permission(request):
         and request.user.is_staff
         and (
             request.user.is_superuser
-            or request.user.role in {User.Role.SYSTEM_ADMIN, User.Role.DIRECTOR}
+            or request.user.role in {
+                User.Role.SYSTEM_ADMIN,
+                User.Role.DIRECTOR,
+                User.Role.ASSISTANT_DIRECTOR,
+            }
         )
     )
 
@@ -105,6 +109,9 @@ class CustomUserAdmin(UserAdmin):
 
     def get_list_display(self, request):
         fields = list(super().get_list_display(request))
-        if request.user.role == User.Role.DIRECTOR:
+        if request.user.role in {
+            User.Role.DIRECTOR,
+            User.Role.ASSISTANT_DIRECTOR,
+        }:
             fields.remove("password_reset_link")
         return fields
