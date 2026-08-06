@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-06 14:09+0300\n"
+"POT-Creation-Date: 2026-08-06 15:06+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -49,7 +49,8 @@ msgstr "Afisa Ripoti"
 #: templates/accounts/staff_workspace.html:58
 #: templates/accounts/staff_workspace.html:103
 #: templates/accounts/staff_workspace.html:115
-#: templates/forms_builder/payment_receipt.html:12
+#: templates/forms_builder/payment_receipt.html:13
+#: templates/forms_builder/payment_receipt_verification.html:5
 msgid "Participant"
 msgstr "Mshiriki"
 
@@ -97,13 +98,13 @@ msgstr "mtumiaji"
 msgid "users"
 msgstr "watumiaji"
 
-#: accounts/views.py:163 checkin/views.py:278 forms_builder/views.py:119
+#: accounts/views.py:163 checkin/views.py:278 forms_builder/views.py:120
 #: templates/checkin/reports.html:101
 #: templates/forms_builder/partials/question_input.html:188
 msgid "Yes"
 msgstr "Ndiyo"
 
-#: accounts/views.py:163 checkin/views.py:278 forms_builder/views.py:119
+#: accounts/views.py:163 checkin/views.py:278 forms_builder/views.py:120
 #: templates/checkin/reports.html:103
 #: templates/forms_builder/partials/question_input.html:203
 msgid "No"
@@ -209,7 +210,7 @@ msgstr "uthibitishaji wa mahudhurio ya washiriki"
 #: templates/accounts/staff_workspace.html:115
 #: templates/checkin/participant_check_in.html:97
 #: templates/checkin/reports.html:76
-#: templates/forms_builder/participant_badge.html:75
+#: templates/forms_builder/participant_badge.html:76
 #: templates/forms_builder/participant_portal.html:11
 #: templates/forms_builder/registration_status.html:42
 #: templates/forms_builder/registration_status.html:79
@@ -743,6 +744,7 @@ msgstr "Hamisha nia za wageni zilizochaguliwa kwenda CSV"
 #: templates/checkin/participant_check_in.html:102
 #: templates/forms_builder/booth_detail.html:26
 #: templates/forms_builder/certificate_verification.html:31
+#: templates/forms_builder/payment_receipt_verification.html:5
 #: templates/forms_builder/registration_status.html:90
 #: templates/forms_builder/submission_success.html:76
 msgid "Event"
@@ -772,7 +774,7 @@ msgstr "Simu"
 msgid "Message"
 msgstr "Ujumbe"
 
-#: forms_builder/admin.py:359 forms_builder/views.py:424
+#: forms_builder/admin.py:359 forms_builder/views.py:425
 #: templates/accounts/participant_review_details.html:19
 #: templates/accounts/staff_workspace.html:58
 #: templates/accounts/staff_workspace.html:83
@@ -1012,13 +1014,13 @@ msgstr "Maandishi mafupi"
 msgid "Long text"
 msgstr "Maandishi marefu"
 
-#: forms_builder/models.py:255 forms_builder/views.py:426
+#: forms_builder/models.py:255 forms_builder/views.py:427
 #: templates/accounts/participant_review_details.html:17
 #: templates/forms_builder/booth_detail.html:73
 msgid "Email address"
 msgstr "Anwani ya baruapepe"
 
-#: forms_builder/models.py:256 forms_builder/views.py:427
+#: forms_builder/models.py:256 forms_builder/views.py:428
 #: templates/accounts/participant_review_details.html:18
 #: templates/forms_builder/booth_detail.html:74
 msgid "Phone number"
@@ -1620,7 +1622,7 @@ msgid "booth visitor interests"
 msgstr "nia za wageni wa banda"
 
 #: forms_builder/models.py:1045 forms_builder/models.py:1046
-#: forms_builder/views.py:206
+#: forms_builder/views.py:207
 msgid "Enter an email address or phone number."
 msgstr "Weka anwani ya baruapepe au namba ya simu."
 
@@ -1709,7 +1711,7 @@ msgstr "Kikumbusho cha tukio"
 msgid "Payment received"
 msgstr "Malipo yamepokelewa"
 
-#: forms_builder/models.py:1139 templates/forms_builder/payment_receipt.html:10
+#: forms_builder/models.py:1139 templates/forms_builder/payment_receipt.html:11
 msgid "Payment verified"
 msgstr "Malipo yamethibitishwa"
 
@@ -2047,47 +2049,47 @@ msgstr "Tarehe ya tukio"
 msgid "Scan to verify this certificate"
 msgstr "Changanua ili kuthibitisha cheti hiki"
 
-#: forms_builder/views.py:209
+#: forms_builder/views.py:210
 #, fuzzy
 #| msgid "email address"
 msgid "Enter a valid email address."
 msgstr "anwani ya baruapepe"
 
-#: forms_builder/views.py:222
+#: forms_builder/views.py:223
 #, fuzzy
 #| msgid "Select an option"
 msgid "Select a valid option."
 msgstr "Chagua"
 
-#: forms_builder/views.py:423
+#: forms_builder/views.py:424
 #: templates/forms_builder/submission_success.html:66
 msgid "Evaluation reference"
 msgstr "Kumbukumbu ya tathmini"
 
-#: forms_builder/views.py:425 templates/admin/base_site.html:36
+#: forms_builder/views.py:426 templates/admin/base_site.html:41
 #: templates/events/base_public.html:92 templates/events/base_public.html:98
 #: templates/forms_builder/public_event_form.html:65
 #: templates/forms_builder/public_event_form.html:68
 msgid "Language"
 msgstr "Lugha"
 
-#: forms_builder/views.py:746
+#: forms_builder/views.py:747
 msgid "You have already submitted this evaluation."
 msgstr "Tayari umewasilisha tathmini hii."
 
-#: forms_builder/views.py:1060
+#: forms_builder/views.py:1061
 msgid "Select a valid payment method."
 msgstr "Chagua njia sahihi ya malipo."
 
-#: forms_builder/views.py:1063
+#: forms_builder/views.py:1064
 msgid "Enter the transaction reference."
 msgstr "Weka kumbukumbu ya muamala."
 
-#: forms_builder/views.py:1070
+#: forms_builder/views.py:1071
 msgid "A payment is already pending or verified for this registration."
 msgstr "Malipo ya usajili huu tayari yanasubiri au yamethibitishwa."
 
-#: forms_builder/views.py:1074
+#: forms_builder/views.py:1075
 #: templates/forms_builder/participant_payment.html:19
 msgid "The payment amount could not be calculated. Contact the event organizer."
 msgstr "Kiasi cha malipo hakikuweza kukokotolewa. Wasiliana na mratibu wa tukio."
@@ -2223,7 +2225,7 @@ msgstr "Njia"
 #: templates/accounts/staff_workspace.html:83
 #: templates/forms_builder/participant_payment.html:24
 #: templates/forms_builder/participant_payment.html:35
-#: templates/forms_builder/payment_receipt.html:16
+#: templates/forms_builder/payment_receipt.html:17
 msgid "Transaction reference"
 msgstr "Kumbukumbu ya muamala"
 
@@ -2527,7 +2529,7 @@ msgstr "Hifadhi uamuzi"
 msgid "No checked-in participants are awaiting certificate authorization."
 msgstr "Hakuna washiriki walioingia wanaosubiri idhini ya cheti."
 
-#: templates/admin/base_site.html:4 templates/admin/base_site.html:15
+#: templates/admin/base_site.html:4 templates/admin/base_site.html:20
 #: templates/events/base_public.html:16 templates/events/base_public.html:21
 #: templates/events/base_public.html:49 templates/events/base_public.html:144
 #: templates/events/home.html:6 templates/events/home.html:18
@@ -2536,29 +2538,29 @@ msgstr "Hakuna washiriki walioingia wanaosubiri idhini ya cheti."
 msgid "Event Management System"
 msgstr "Mfumo wa Usimamizi wa Matukio"
 
-#: templates/admin/base_site.html:16
+#: templates/admin/base_site.html:21
 msgid "Administration workspace"
 msgstr "Eneo la kazi la usimamizi"
 
-#: templates/admin/base_site.html:22
+#: templates/admin/base_site.html:27
 msgid "Quick navigation"
 msgstr "Urambazaji wa haraka"
 
-#: templates/admin/base_site.html:23
+#: templates/admin/base_site.html:28
 msgid "Dashboard"
 msgstr "Dashibodi"
 
-#: templates/admin/base_site.html:25
+#: templates/admin/base_site.html:30
 msgid "Users"
 msgstr "Watumiaji"
 
-#: templates/admin/base_site.html:28 templates/admin/index.html:70
+#: templates/admin/base_site.html:33 templates/admin/index.html:70
 #, fuzzy
 #| msgid "Participant"
 msgid "Participants"
 msgstr "Mshiriki"
 
-#: templates/admin/base_site.html:31
+#: templates/admin/base_site.html:36
 #, fuzzy
 #| msgid "Checked in at"
 msgid "Check-in"
@@ -3152,15 +3154,15 @@ msgstr "Chapisha beji hii au ihifadhi ipatikane kwenye simu yako."
 msgid "Print badge"
 msgstr "Chapisha beji"
 
-#: templates/forms_builder/participant_badge.html:54
+#: templates/forms_builder/participant_badge.html:55
 msgid "PARTICIPANT"
 msgstr "MSHIRIKI"
 
-#: templates/forms_builder/participant_badge.html:71
+#: templates/forms_builder/participant_badge.html:72
 msgid "Participant verification QR code"
 msgstr "Msimbo wa QR wa kuthibitisha mshiriki"
 
-#: templates/forms_builder/participant_badge.html:79
+#: templates/forms_builder/participant_badge.html:80
 msgid "Approved and verified"
 msgstr "Ameidhinishwa na kuthibitishwa"
 
@@ -3202,7 +3204,7 @@ msgid "The previous payment was rejected. Check the details and submit again."
 msgstr "Malipo ya awali yalikataliwa. Hakiki taarifa na uwasilishe tena."
 
 #: templates/forms_builder/participant_payment.html:33
-#: templates/forms_builder/payment_receipt.html:15
+#: templates/forms_builder/payment_receipt.html:16
 #, fuzzy
 #| msgid "payment method"
 msgid "Payment method"
@@ -3322,25 +3324,60 @@ msgstr "Rudi kwenye hali ya malipo"
 msgid "Print receipt"
 msgstr "Chapisha risiti"
 
-#: templates/forms_builder/payment_receipt.html:9
+#: templates/forms_builder/payment_receipt.html:10
 msgid "Official payment receipt"
 msgstr "Risiti rasmi ya malipo"
 
-#: templates/forms_builder/payment_receipt.html:13
+#: templates/forms_builder/payment_receipt.html:14
+#: templates/forms_builder/payment_receipt_verification.html:5
 msgid "Registration reference"
 msgstr "Kumbukumbu ya usajili"
 
-#: templates/forms_builder/payment_receipt.html:14
+#: templates/forms_builder/payment_receipt.html:15
+#: templates/forms_builder/payment_receipt_verification.html:5
 msgid "Amount paid"
 msgstr "Kiasi kilicholipwa"
 
-#: templates/forms_builder/payment_receipt.html:17
+#: templates/forms_builder/payment_receipt.html:18
+#: templates/forms_builder/payment_receipt_verification.html:5
 msgid "Verification date"
 msgstr "Tarehe ya uthibitisho"
 
-#: templates/forms_builder/payment_receipt.html:19
+#: templates/forms_builder/payment_receipt.html:20
+msgid "Receipt verification QR code"
+msgstr "Msimbo wa QR wa kuthibitisha risiti"
+
+#: templates/forms_builder/payment_receipt.html:20
+msgid "Verify this receipt"
+msgstr "Thibitisha risiti hii"
+
+#: templates/forms_builder/payment_receipt.html:20
+msgid "Scan this QR code to confirm that this payment receipt is authentic and verified."
+msgstr "Changanua msimbo huu wa QR kuthibitisha kuwa risiti hii ya malipo ni halisi na imethibitishwa."
+
+#: templates/forms_builder/payment_receipt.html:21
 msgid "This receipt was generated electronically by the Event Management System."
 msgstr "Risiti hii imetolewa kielektroniki na Mfumo wa Usimamizi wa Matukio."
+
+#: templates/forms_builder/payment_receipt_verification.html:3
+msgid "Receipt verification"
+msgstr "Uthibitishaji wa risiti"
+
+#: templates/forms_builder/payment_receipt_verification.html:5
+msgid "Authentic receipt"
+msgstr "Risiti halisi"
+
+#: templates/forms_builder/payment_receipt_verification.html:5
+msgid "Payment receipt verified"
+msgstr "Risiti ya malipo imethibitishwa"
+
+#: templates/forms_builder/payment_receipt_verification.html:5
+msgid "This receipt was issued by the Event Management System for a verified payment."
+msgstr "Risiti hii imetolewa na Mfumo wa Usimamizi wa Matukio kwa malipo yaliyothibitishwa."
+
+#: templates/forms_builder/payment_receipt_verification.html:5
+msgid "Receipt number"
+msgstr "Namba ya risiti"
 
 #: templates/forms_builder/public_event_form.html:17
 msgid "Complete and submit the event form."

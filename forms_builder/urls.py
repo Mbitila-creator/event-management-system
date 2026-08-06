@@ -72,6 +72,16 @@ urlpatterns = [
         name="payment_receipt",
     ),
     path(
+        "payments/<uuid:participant_token>/<int:payment_id>/verify/",
+        views.payment_receipt_verification,
+        name="payment_receipt_verification",
+    ),
+    path(
+        "payments/<uuid:participant_token>/<int:payment_id>/qr/",
+        views.payment_receipt_qr,
+        name="payment_receipt_qr",
+    ),
+    path(
         "participants/<uuid:participant_token>/badge/qr/",
         views.participant_badge_qr,
         name="participant_badge_qr",

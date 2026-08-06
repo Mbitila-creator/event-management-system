@@ -16,3 +16,11 @@ body { background:var(--ems-bg); }.ems-dashboard { max-width:1280px; margin:auto
 .ems-links .ems-create-link { background:#173b67; color:white; }.ems-links .ems-create-link:hover { background:#2f73b7; color:white; }
 @media(max-width:900px){.ems-quick-actions{align-items:flex-start;flex-direction:column}.ems-action-buttons{justify-content:flex-start}}
 @media(max-width:767px){#header{padding:12px 16px}.ems-quick-nav{margin-top:12px}.ems-welcome{padding:22px}.ems-groups{grid-template-columns:1fr}.ems-action-buttons{display:grid;width:100%}.ems-action-buttons a{text-align:center}}
+
+.messagelist { position: fixed; z-index: 10000; top: 86px; right: 22px; width: min(430px, calc(100vw - 36px)); margin: 0; padding: 0; }
+.messagelist li { position: relative; min-height: 0; margin: 0 0 10px; padding: 14px 44px 14px 42px; border: 1px solid #b8dec8; border-radius: 11px; background-position: 14px 15px; box-shadow: 0 12px 34px rgba(15,41,73,.2); font-size: 15px; line-height: 1.45; transition: opacity .25s ease,transform .25s ease; }
+.messagelist li.warning { border-color: #ead18b; }
+.messagelist li.error { border-color: #e5a6aa; }
+.messagelist li.ems-message-hiding { opacity: 0; transform: translateX(22px); }
+.ems-message-close { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: rgba(23,54,93,.1); color: #17365d; font-size: 19px; line-height: 28px; cursor: pointer; }
+@media(max-width:600px){.messagelist{top:74px;right:10px;width:calc(100vw - 20px)}}

@@ -33,6 +33,7 @@
         </div>
 
         <article class="participant-badge" aria-label="{% translate 'Participant badge' %}">
+            {% if event.logo %}<img class="badge-logo-watermark" src="{{ event.logo.url }}" alt="">{% endif %}
             <header class="badge-header">
                 {% if event.logo %}
                     <img src="{{ event.logo.url }}" alt="{{ event.code }}">

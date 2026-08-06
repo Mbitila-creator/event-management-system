@@ -294,6 +294,36 @@ class ParticipantPaymentTests(TestCase):
         response = self.client.get(receipt_url)
         self.assertContains(response, "Official payment receipt")
         self.assertContains(response, f"PAY-{payment.created_at.year}-")
+        qr_url = (
+            f"/en/payments/{self.submission.participant_token}/"
+            f"{payment.pk}/qr/"
+        )
+        verification_url = (
+            f"/en/payments/{self.submission.participant_token}/"
+            f"{payment.pk}/verify/"
+        )
+        self.assertContains(response, qr_url)
+
+        qr_response = self.client.get(qr_url)
+        self.assertEqual(qr_response.status_code, 200)
+        self.assertEqual(qr_response["Content-Type"], "image/png")
+
+        verification_response = self.client.get(verification_url)
+        self.assertContains(verification_response, "Payment receipt verified")
+        self.assertContains(verification_response, self.submission.reference_number)
+
+    def test_unverified_payment_has_no_public_receipt_verification(self):
+        payment = Payment.objects.create(
+            submission=self.submission, amount=self.event.participation_fee,
+            method=Payment.Method.BANK, transaction_reference="TX-PENDING",
+            status=Payment.Status.PENDING,
+        )
+        base_url = (
+            f"/en/payments/{self.submission.participant_token}/{payment.pk}"
+        )
+
+        self.assertEqual(self.client.get(f"{base_url}/verify/").status_code, 404)
+        self.assertEqual(self.client.get(f"{base_url}/qr/").status_code, 404)
 
     def test_booth_quantity_uses_first_plus_additional_pricing(self):
         section = FormSection.objects.create(

@@ -8,6 +8,7 @@ from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 from django.utils.translation import gettext as _
@@ -1127,6 +1128,53 @@ def payment_receipt(request, participant_token):
         "payment": payment,
         "receipt_number": f"PAY-{payment.created_at.year}-{payment.pk:06d}",
     })
+
+
+def _verified_receipt_payment(participant_token, payment_id):
+    return get_object_or_404(
+        Payment.objects.select_related(
+            "submission__event_form__event",
+            "verified_by",
+        ),
+        pk=payment_id,
+        submission__participant_token=participant_token,
+        submission__is_active=True,
+        status=Payment.Status.VERIFIED,
+    )
+
+
+@require_http_methods(["GET"])
+def payment_receipt_verification(request, participant_token, payment_id):
+    payment = _verified_receipt_payment(participant_token, payment_id)
+    return render(request, "forms_builder/payment_receipt_verification.html", {
+        "payment": payment,
+        "submission": payment.submission,
+        "event": payment.submission.event_form.event,
+        "receipt_number": f"PAY-{payment.created_at.year}-{payment.pk:06d}",
+    })
+
+
+@require_http_methods(["GET"])
+def payment_receipt_qr(request, participant_token, payment_id):
+    payment = _verified_receipt_payment(participant_token, payment_id)
+    path = reverse(
+        "forms_builder:payment_receipt_verification",
+        kwargs={
+            "participant_token": participant_token,
+            "payment_id": payment.pk,
+        },
+    )
+    verification_url = (
+        f"{settings.PUBLIC_BASE_URL.rstrip('/')}{path}"
+        if settings.PUBLIC_BASE_URL
+        else request.build_absolute_uri(path)
+    )
+    response = HttpResponse(
+        generate_qr_png(verification_url),
+        content_type="image/png",
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 @require_http_methods(["GET", "POST"])
 def registration_status(request):

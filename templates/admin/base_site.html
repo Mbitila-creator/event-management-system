@@ -8,6 +8,11 @@
     <link rel="stylesheet" href="{% static 'admin/admin-dashboard.css' %}">
 {% endblock %}
 
+{% block extrahead %}
+    {{ block.super }}
+    <script src="{% static 'admin/admin-messages.js' %}" defer></script>
+{% endblock %}
+
 {% block branding %}
     <div class="ems-brand">
         <span class="ems-brand-mark">EMS</span>
