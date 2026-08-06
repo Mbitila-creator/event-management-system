@@ -2290,7 +2290,7 @@ msgstr "Nenosiri lako limesasishwa kwa mafanikio. Tumia nenosiri jipya utakapoin
 #: templates/accounts/password_change_form.html:5
 #: templates/events/base_public.html:118
 msgid "Change password"
-msgstr "Badilisha nenosiri"
+msgstr "Badilisha Nywila"
 
 #: templates/accounts/password_change_form.html:5
 msgid "Account security"
