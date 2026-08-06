@@ -27,6 +27,7 @@
 .participant-badge {
     position: relative;
     width: min(100%, 620px);
+    box-sizing: border-box;
     overflow: hidden;
     margin: 0 auto;
     border: 1px solid #cdd8e6;
@@ -106,6 +107,7 @@
     color: #17365d;
     font-size: clamp(27px, 8vw, 42px);
     line-height: 1.15;
+    overflow-wrap: anywhere;
 }
 
 .badge-title,
@@ -117,6 +119,7 @@
 
 .badge-organization {
     font-weight: 700;
+    overflow-wrap: anywhere;
 }
 
 .badge-identity {
@@ -179,11 +182,16 @@
 
 @media print {
     @page {
-        size: A5 portrait;
-        margin: 10mm;
+        size: 105mm 148mm;
+        margin: 0;
     }
 
+    html,
     body {
+        width: 105mm;
+        height: 148mm;
+        margin: 0 !important;
+        padding: 0 !important;
         background: white;
     }
 
@@ -194,12 +202,125 @@
     }
 
     .badge-page {
-        width: 100%;
+        width: 105mm;
+        height: 148mm;
+        margin: 0;
         padding: 0;
     }
 
     .participant-badge {
+        display: flex;
+        flex-direction: column;
+        width: 105mm;
+        height: 148mm;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
         box-shadow: none;
         break-inside: avoid;
+        break-after: page;
+        page-break-inside: avoid;
+        page-break-after: always;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .badge-header {
+        min-height: 24mm;
+        box-sizing: border-box;
+        gap: 3mm;
+        padding: 4mm 5mm;
+    }
+
+    .badge-header img {
+        width: 15mm;
+        height: 15mm;
+        box-sizing: border-box;
+        padding: 1mm;
+        border-radius: 2mm;
+    }
+
+    .badge-header h2 {
+        display: -webkit-box;
+        margin-top: 1mm;
+        overflow: hidden;
+        font-size: 15pt;
+        line-height: 1.12;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .badge-event-code {
+        font-size: 7.5pt;
+    }
+
+    .badge-body {
+        display: flex;
+        min-height: 0;
+        flex: 1 1 auto;
+        flex-direction: column;
+        box-sizing: border-box;
+        padding: 5mm;
+    }
+
+    .badge-type {
+        margin-bottom: 2mm;
+        font-size: 8pt;
+    }
+
+    .badge-body h3 {
+        display: -webkit-box;
+        overflow: hidden;
+        font-size: 23pt;
+        line-height: 1.05;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .badge-title,
+    .badge-organization {
+        display: -webkit-box;
+        margin-top: 1.5mm;
+        overflow: hidden;
+        font-size: 10pt;
+        line-height: 1.15;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .badge-identity {
+        grid-template-columns: 34mm minmax(0, 1fr);
+        align-items: center;
+        justify-items: stretch;
+        gap: 5mm;
+        margin-top: auto;
+        padding-top: 4mm;
+        text-align: left;
+    }
+
+    .badge-identity img {
+        width: 34mm;
+        height: 34mm;
+    }
+
+    .badge-identity span {
+        font-size: 7.5pt;
+    }
+
+    .badge-identity strong {
+        font-size: 9.5pt;
+    }
+
+    .badge-identity .verified-label {
+        margin-top: 2mm;
+        font-size: 8pt;
+    }
+
+    .badge-footer {
+        min-height: 11mm;
+        box-sizing: border-box;
+        gap: 1.5mm 5mm;
+        padding: 3mm 4mm;
+        font-size: 7.5pt;
     }
 }
