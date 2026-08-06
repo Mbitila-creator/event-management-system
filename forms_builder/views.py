@@ -50,6 +50,7 @@ EVALUATION_REPORT_ROLES = {
     User.Role.SYSTEM_ADMIN,
     User.Role.EVENT_ADMIN,
     User.Role.REPORT_OFFICER,
+    User.Role.DIRECTOR,
 }
 
 

@@ -8,13 +8,13 @@ from .models import User
 
 
 def event_admin_permission(request):
-    """Reserve Django's technical administration for system administrators."""
+    """Permit system administrators and read-only directors into administration."""
     return bool(
         request.user.is_active
         and request.user.is_staff
         and (
             request.user.is_superuser
-            or request.user.role == User.Role.SYSTEM_ADMIN
+            or request.user.role in {User.Role.SYSTEM_ADMIN, User.Role.DIRECTOR}
         )
     )
 
@@ -102,3 +102,9 @@ class CustomUserAdmin(UserAdmin):
             url,
             _("Reset password"),
         )
+
+    def get_list_display(self, request):
+        fields = list(super().get_list_display(request))
+        if request.user.role == User.Role.DIRECTOR:
+            fields.remove("password_reset_link")
+        return fields

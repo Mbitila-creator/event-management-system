@@ -78,13 +78,13 @@
         </div></section>{% endif %}
 
         {% if perms.checkin.view_participantcheckin %}<section class="ems-group"><h2>{% translate "Attendance" %}</h2><div class="ems-links">
-            <a href="{% url 'checkin:lookup' %}">{% translate "Check-in Participants" %}</a>
+            {% if perms.checkin.add_participantcheckin %}<a href="{% url 'checkin:lookup' %}">{% translate "Check-in Participants" %}</a>{% endif %}
             <a href="{% url 'admin:checkin_participantcheckin_changelist' %}">{% translate "Attendance Records" %}</a>
-            {% if request.user.role == 'REPORT_OFFICER' or request.user.role == 'EVENT_ADMIN' or request.user.role == 'SYSTEM_ADMIN' or request.user.is_superuser %}<a href="{% url 'checkin:reports' %}">{% translate "Attendance Reports" %}</a>{% endif %}
+            {% if request.user.role == 'DIRECTOR' or request.user.role == 'REPORT_OFFICER' or request.user.role == 'EVENT_ADMIN' or request.user.role == 'SYSTEM_ADMIN' or request.user.is_superuser %}<a href="{% url 'checkin:reports' %}">{% translate "Attendance Reports" %}</a>{% endif %}
         </div></section>{% endif %}
 
         {% if perms.forms_builder.view_formsubmission %}<section class="ems-group"><h2>{% translate "Evaluation and Reports" %}</h2><div class="ems-links">
-            {% if request.user.role == 'REPORT_OFFICER' or request.user.role == 'EVENT_ADMIN' or request.user.role == 'SYSTEM_ADMIN' or request.user.is_superuser %}<a href="{% url 'forms_builder:evaluation_reports' %}">{% translate "Evaluation Reports" %}</a>{% endif %}
+            {% if request.user.role == 'DIRECTOR' or request.user.role == 'REPORT_OFFICER' or request.user.role == 'EVENT_ADMIN' or request.user.role == 'SYSTEM_ADMIN' or request.user.is_superuser %}<a href="{% url 'forms_builder:evaluation_reports' %}">{% translate "Evaluation Reports" %}</a>{% endif %}
             {% if perms.checkin.view_participantcheckin %}<a href="{% url 'checkin:reports' %}">{% translate "Participant Reports" %}</a>{% endif %}
         </div></section>{% endif %}
     </div>

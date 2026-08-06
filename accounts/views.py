@@ -44,7 +44,10 @@ def _require_event_administrator(user):
 @login_required(login_url="accounts:staff_login")
 def role_home(request):
     """Send each signed-in user to the interface intended for their role."""
-    if request.user.is_superuser or request.user.role == User.Role.SYSTEM_ADMIN:
+    if (
+        request.user.is_superuser
+        or request.user.role in {User.Role.SYSTEM_ADMIN, User.Role.DIRECTOR}
+    ):
         return redirect("admin:index")
     if request.user.role in {
         User.Role.EVENT_ADMIN,

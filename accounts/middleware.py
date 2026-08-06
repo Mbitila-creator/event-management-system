@@ -17,16 +17,16 @@ class SystemAdministrationBoundaryMiddleware:
             and parts[1] in {"sw", "en"}
             and parts[2] == "admin"
         )
-        is_system_administrator = (
+        has_administration_access = (
             user
             and user.is_authenticated
             and user.is_active
             and (
                 user.is_superuser
-                or user.role == User.Role.SYSTEM_ADMIN
+                or user.role in {User.Role.SYSTEM_ADMIN, User.Role.DIRECTOR}
             )
         )
-        if is_admin_path and user and user.is_authenticated and not is_system_administrator:
+        if is_admin_path and user and user.is_authenticated and not has_administration_access:
             return redirect("accounts:role_home")
         return self.get_response(request)
 

@@ -32,7 +32,7 @@
         {% if perms.forms_builder.view_formsubmission %}
             <a href="{% url 'admin:forms_builder_participant_changelist' %}">{% translate "Participants" %}</a>
         {% endif %}
-        {% if perms.checkin.view_participantcheckin %}
+        {% if perms.checkin.add_participantcheckin %}
             <a href="{% url 'checkin:lookup' %}">{% translate "Check-in" %}</a>
         {% endif %}
         <form action="{% url 'set_language' %}" method="post" class="ems-language-switcher">
