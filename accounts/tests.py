@@ -295,6 +295,48 @@ class EventAdministratorOperationsTests(TestCase):
         self.assertEqual(certificate.status, CertificateRecord.Status.AUTHORIZED)
         self.assertEqual(certificate.authorized_by, self.event_admin)
 
+    def test_rejection_and_certificate_denial_require_and_store_reasons(self):
+        from checkin.models import ParticipantCheckIn
+        from forms_builder.models import CertificateRecord, FormSubmission, Payment
+
+        missing_reason = self.client.post(
+            f"/en/staff/payments/{self.payment.pk}/reject/",
+        )
+        self.assertRedirects(
+            missing_reason, "/en/staff/", fetch_redirect_response=False,
+        )
+        self.payment.refresh_from_db()
+        self.assertEqual(self.payment.status, Payment.Status.PENDING)
+
+        self.client.post(
+            f"/en/staff/payments/{self.payment.pk}/reject/",
+            {"reason": "The transaction reference could not be confirmed."},
+        )
+        self.payment.refresh_from_db()
+        self.assertEqual(self.payment.status, Payment.Status.REJECTED)
+        self.assertEqual(
+            self.payment.notes,
+            "The transaction reference could not be confirmed.",
+        )
+
+        self.submission.review_status = FormSubmission.ReviewStatus.APPROVED
+        self.submission.save(update_fields=("review_status", "updated_at"))
+        ParticipantCheckIn.objects.create(
+            submission=self.submission,
+            checked_in_by=self.event_admin,
+        )
+        self.client.post(
+            f"/en/staff/certificates/{self.submission.pk}/deny/",
+            {"reason": "The minimum attendance requirement was not met."},
+        )
+        certificate = CertificateRecord.objects.get(submission=self.submission)
+        self.assertEqual(certificate.status, CertificateRecord.Status.DENIED)
+        self.assertEqual(
+            certificate.denial_reason,
+            "The minimum attendance requirement was not met.",
+        )
+        self.assertEqual(certificate.denied_by, self.event_admin)
+
     def test_registration_officer_cannot_authorize_certificate(self):
         officer = User.objects.create_user(
             username="registration-no-certificate",

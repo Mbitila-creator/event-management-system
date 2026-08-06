@@ -119,13 +119,19 @@ def review_registration(request, submission_id, decision):
         is_active=True,
         is_complete=True,
     )
+    reason = request.POST.get("reason", "").strip()
+    if status == FormSubmission.ReviewStatus.REJECTED and not reason:
+        messages.error(request, _("Enter a reason before rejecting the registration."))
+        return redirect("accounts:role_home")
     submission.review_status = status
     submission.reviewed_by = request.user
     submission.reviewed_at = timezone.now()
     submission.updated_by = request.user
+    if status == FormSubmission.ReviewStatus.REJECTED:
+        submission.review_notes = reason
     submission.save(update_fields=(
         "review_status", "reviewed_by", "reviewed_at", "updated_by",
-        "updated_at",
+        "review_notes", "updated_at",
     ))
     notification_type = (
         NotificationLog.NotificationType.REGISTRATION_APPROVED
@@ -152,12 +158,19 @@ def review_payment(request, payment_id, decision):
     if status is None:
         raise PermissionDenied
     payment = get_object_or_404(Payment, pk=payment_id)
+    reason = request.POST.get("reason", "").strip()
+    if status == Payment.Status.REJECTED and not reason:
+        messages.error(request, _("Enter a reason before rejecting the payment."))
+        return redirect("accounts:role_home")
     payment.status = status
     payment.verified_by = request.user if status == Payment.Status.VERIFIED else None
     payment.verified_at = timezone.now() if status == Payment.Status.VERIFIED else None
     payment.updated_by = request.user
+    if status == Payment.Status.REJECTED:
+        payment.notes = reason
     payment.save(update_fields=(
-        "status", "verified_by", "verified_at", "updated_by", "updated_at",
+        "status", "verified_by", "verified_at", "notes", "updated_by",
+        "updated_at",
     ))
     notification_type = (
         NotificationLog.NotificationType.PAYMENT_VERIFIED
@@ -186,6 +199,7 @@ def update_certificate_authorization(request, submission_id, decision):
         pk=submission_id,
     )
     now = timezone.now()
+    reason = request.POST.get("reason", "").strip()
     if decision == "authorize":
         certificate, created = CertificateRecord.objects.get_or_create(
             submission=submission,
@@ -194,6 +208,9 @@ def update_certificate_authorization(request, submission_id, decision):
                 "status": CertificateRecord.Status.AUTHORIZED,
                 "authorized_by": request.user,
                 "authorized_at": now,
+                "denied_by": None,
+                "denied_at": None,
+                "denial_reason": "",
                 "created_by": request.user,
                 "updated_by": request.user,
             },
@@ -206,6 +223,9 @@ def update_certificate_authorization(request, submission_id, decision):
             certificate.revoked_by = None
             certificate.revoked_at = None
             certificate.revocation_reason = ""
+            certificate.denied_by = None
+            certificate.denied_at = None
+            certificate.denial_reason = ""
             certificate.updated_by = request.user
             certificate.save()
         send_submission_notification(
@@ -214,7 +234,41 @@ def update_certificate_authorization(request, submission_id, decision):
             request=request,
         )
         messages.success(request, _("Certificate authorized successfully."))
+    elif decision == "deny":
+        if not reason:
+            messages.error(request, _("Enter a reason for not authorizing the certificate."))
+            return redirect("accounts:role_home")
+        certificate, created = CertificateRecord.objects.get_or_create(
+            submission=submission,
+            defaults={
+                "certificate_number": certificate_number(submission),
+                "status": CertificateRecord.Status.DENIED,
+                "authorized_by": None,
+                "authorized_at": None,
+                "denied_by": request.user,
+                "denied_at": now,
+                "denial_reason": reason,
+                "created_by": request.user,
+                "updated_by": request.user,
+            },
+        )
+        if not created:
+            certificate.status = CertificateRecord.Status.DENIED
+            certificate.authorized_by = None
+            certificate.authorized_at = None
+            certificate.denied_by = request.user
+            certificate.denied_at = now
+            certificate.denial_reason = reason
+            certificate.revoked_by = None
+            certificate.revoked_at = None
+            certificate.revocation_reason = ""
+            certificate.updated_by = request.user
+            certificate.save()
+        messages.success(request, _("Certificate decision recorded successfully."))
     elif decision == "revoke":
+        if not reason:
+            messages.error(request, _("Enter a reason before revoking the certificate."))
+            return redirect("accounts:role_home")
         certificate = get_object_or_404(
             CertificateRecord,
             submission=submission,
@@ -223,9 +277,11 @@ def update_certificate_authorization(request, submission_id, decision):
         certificate.status = CertificateRecord.Status.REVOKED
         certificate.revoked_by = request.user
         certificate.revoked_at = now
+        certificate.revocation_reason = reason
         certificate.updated_by = request.user
         certificate.save(update_fields=(
-            "status", "revoked_by", "revoked_at", "updated_by", "updated_at",
+            "status", "revoked_by", "revoked_at", "revocation_reason",
+            "updated_by", "updated_at",
         ))
         messages.success(request, _("Certificate authorization revoked."))
     else:

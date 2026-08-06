@@ -848,6 +848,9 @@ class FormSubmissionAdmin(admin.ModelAdmin):
                     "status": CertificateRecord.Status.AUTHORIZED,
                     "authorized_by": request.user,
                     "authorized_at": now,
+                    "denied_by": None,
+                    "denied_at": None,
+                    "denial_reason": "",
                     "revoked_by": None,
                     "revoked_at": None,
                     "revocation_reason": "",
@@ -860,6 +863,9 @@ class FormSubmissionAdmin(admin.ModelAdmin):
                 certificate.status = CertificateRecord.Status.AUTHORIZED
                 certificate.authorized_by = request.user
                 certificate.authorized_at = now
+                certificate.denied_by = None
+                certificate.denied_at = None
+                certificate.denial_reason = ""
                 certificate.revoked_by = None
                 certificate.revoked_at = None
                 certificate.revocation_reason = ""
@@ -893,6 +899,7 @@ class FormSubmissionAdmin(admin.ModelAdmin):
             status=CertificateRecord.Status.REVOKED,
             revoked_by=request.user,
             revoked_at=timezone.now(),
+            revocation_reason=_("Revoked through system administration."),
             updated_by=request.user,
             updated_at=timezone.now(),
         )
@@ -1053,13 +1060,15 @@ class CertificateRecordAdmin(admin.ModelAdmin):
     )
     readonly_fields = (
         "submission", "certificate_number", "status", "authorized_by",
-        "authorized_at", "revoked_by", "revoked_at", "revocation_reason",
+        "authorized_at", "denied_by", "denied_at", "denial_reason",
+        "revoked_by", "revoked_at", "revocation_reason",
         "created_by", "updated_by", "created_at", "updated_at",
     )
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
-            "submission__event_form__event", "authorized_by", "revoked_by",
+            "submission__event_form__event", "authorized_by", "denied_by",
+            "revoked_by",
         )
 
     @admin.display(description=_("Reference number"), ordering="submission__reference_number")

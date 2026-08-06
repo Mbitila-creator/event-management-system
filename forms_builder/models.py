@@ -584,6 +584,7 @@ class Participant(FormSubmission):
 class CertificateRecord(BaseModel):
     class Status(models.TextChoices):
         AUTHORIZED = "AUTHORIZED", _("Authorized")
+        DENIED = "DENIED", _("Not authorized")
         REVOKED = "REVOKED", _("Revoked")
 
     submission = models.OneToOneField(
@@ -606,7 +607,16 @@ class CertificateRecord(BaseModel):
         on_delete=models.PROTECT,
         null=True, blank=True,
     )
-    authorized_at = models.DateTimeField(_("authorized at"))
+    authorized_at = models.DateTimeField(_("authorized at"), null=True, blank=True)
+    denied_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("denied by"),
+        related_name="denied_certificate_records",
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+    )
+    denied_at = models.DateTimeField(_("denied at"), null=True, blank=True)
+    denial_reason = models.TextField(_("denial reason"), blank=True)
     revoked_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name=_("revoked by"),
@@ -626,11 +636,20 @@ class CertificateRecord(BaseModel):
                 check=(
                     models.Q(
                         status="AUTHORIZED", revoked_by__isnull=True,
+                        revoked_at__isnull=True, denied_by__isnull=True,
+                        denied_at__isnull=True,
+                    )
+                    | models.Q(
+                        status="DENIED", authorized_by__isnull=True,
+                        authorized_at__isnull=True, denied_by__isnull=False,
+                        denied_at__isnull=False, revoked_by__isnull=True,
                         revoked_at__isnull=True,
                     )
                     | models.Q(
-                        status="REVOKED", revoked_by__isnull=False,
-                        revoked_at__isnull=False,
+                        status="REVOKED", authorized_by__isnull=False,
+                        authorized_at__isnull=False, revoked_by__isnull=False,
+                        revoked_at__isnull=False, denied_by__isnull=True,
+                        denied_at__isnull=True,
                     )
                 ),
                 name="valid_certificate_lifecycle_state",
@@ -640,8 +659,8 @@ class CertificateRecord(BaseModel):
     def clean(self):
         super().clean()
         if self.status == self.Status.AUTHORIZED:
-            if self.revoked_by_id or self.revoked_at:
-                raise ValidationError(_("An authorized certificate cannot contain revocation details."))
+            if self.revoked_by_id or self.revoked_at or self.denied_by_id or self.denied_at:
+                raise ValidationError(_("An authorized certificate cannot contain denial or revocation details."))
             eligible = (
                 not self.submission_id
                 or FormSubmission.objects.filter(
@@ -653,8 +672,11 @@ class CertificateRecord(BaseModel):
             )
             if not eligible:
                 raise ValidationError(_("Only an approved, checked-in participant may receive a certificate."))
-        elif not self.revoked_by_id or not self.revoked_at:
-            raise ValidationError(_("A revoked certificate requires the officer and revocation time."))
+        elif self.status == self.Status.DENIED:
+            if not self.denied_by_id or not self.denied_at or not self.denial_reason.strip():
+                raise ValidationError(_("A certificate denial requires the officer, time and reason."))
+        elif not self.revoked_by_id or not self.revoked_at or not self.revocation_reason.strip():
+            raise ValidationError(_("A revoked certificate requires the officer, time and reason."))
 
     def save(self, *args, **kwargs):
         self.full_clean()
