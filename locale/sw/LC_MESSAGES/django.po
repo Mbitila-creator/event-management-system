@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-06 19:41+0300\n"
+"POT-Creation-Date: 2026-08-06 20:03+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -2454,7 +2454,7 @@ msgstr "Wakurugenzi, Wakurugenzi Wasaidizi, Wasimamizi wa Mfumo, Wasimamizi wa M
 msgid "Participants do not need a staff account."
 msgstr "Washiriki hawahitaji akaunti ya mtumishi."
 
-#: templates/accounts/staff_login.html:45 templates/events/base_public.html:66
+#: templates/accounts/staff_login.html:45
 #: templates/forms_builder/registration_status.html:6
 #: templates/forms_builder/registration_status.html:24
 #: templates/forms_builder/submission_success.html:105
@@ -3023,6 +3023,10 @@ msgstr "Hakuna matukio yanayopatikana kwa ajili ya ripoti."
 #: templates/forms_builder/submission_success.html:34
 msgid "Back"
 msgstr "Rudi"
+
+#: templates/events/base_public.html:66
+msgid "Registration Status"
+msgstr "Hali ya Usajili"
 
 #: templates/events/base_public.html:70
 #: templates/forms_builder/public_event_form.html:60

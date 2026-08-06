@@ -24,7 +24,7 @@
 
     <link
         rel="stylesheet"
-        href="{% static 'css/events-public.css' %}"
+        href="{% static 'css/events-public.css' %}?v=20260806b"
     >
 
     <link
@@ -63,7 +63,7 @@
                     href="{% url 'forms_builder:registration_status' %}"
                     class="header-link registration-status-link"
                 >
-                    {% translate "Check registration status" %}
+                    {% translate "Registration Status" %}
                 </a>
 
                 <a href="{% url 'events:home' %}" class="header-link public-exit-button">
