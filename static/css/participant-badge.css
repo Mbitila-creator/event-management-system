@@ -35,18 +35,13 @@
     box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
 }
 
-.participant-badge > :not(.badge-logo-watermark) {
-    position: relative;
-    z-index: 1;
-}
-
 .badge-logo-watermark {
     position: absolute;
     z-index: 0;
-    top: 54%;
+    top: 50%;
     left: 50%;
-    width: min(62%, 360px);
-    max-height: 62%;
+    width: 58%;
+    height: 72%;
     transform: translate(-50%, -50%);
     object-fit: contain;
     opacity: .055;
@@ -86,9 +81,16 @@
 }
 
 .badge-body {
+    position: relative;
+    overflow: hidden;
     padding: 28px 24px;
     background: rgba(255, 255, 255, .82);
     text-align: center;
+}
+
+.badge-body > :not(.badge-logo-watermark) {
+    position: relative;
+    z-index: 1;
 }
 
 .badge-type {

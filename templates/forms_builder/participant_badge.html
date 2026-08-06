@@ -9,7 +9,7 @@
 {% block extra_css %}
     <link
         rel="stylesheet"
-        href="{% static 'css/participant-badge.css' %}"
+        href="{% static 'css/participant-badge.css' %}?v=20260806b"
     >
 {% endblock %}
 
@@ -33,7 +33,6 @@
         </div>
 
         <article class="participant-badge" aria-label="{% translate 'Participant badge' %}">
-            {% if event.logo %}<img class="badge-logo-watermark" src="{{ event.logo.url }}" alt="">{% endif %}
             <header class="badge-header">
                 {% if event.logo %}
                     <img src="{{ event.logo.url }}" alt="{{ event.code }}">
@@ -51,7 +50,16 @@
                 </div>
             </header>
 
-            <div class="badge-body">
+            <div class="badge-body" style="position: relative; overflow: hidden;">
+                {% if event.logo %}
+                    <img
+                        class="badge-logo-watermark"
+                        src="{{ event.logo.url }}"
+                        alt=""
+                        aria-hidden="true"
+                        style="position: absolute; z-index: 0; top: 50%; left: 50%; width: 58%; height: 72%; transform: translate(-50%, -50%); object-fit: contain; opacity: .055; pointer-events: none;"
+                    >
+                {% endif %}
                 <p class="badge-type">{% translate "PARTICIPANT" %}</p>
 
                 <h3>{{ submission.badge_display_name }}</h3>
