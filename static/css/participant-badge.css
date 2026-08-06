@@ -218,9 +218,7 @@
         border-radius: 0;
         box-shadow: none;
         break-inside: avoid;
-        break-after: page;
         page-break-inside: avoid;
-        page-break-after: always;
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
     }
