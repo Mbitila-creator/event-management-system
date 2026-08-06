@@ -144,6 +144,32 @@ class RoleAndLanguageTests(TestCase):
 
         self.assertRedirects(response, "/sw/staff/", fetch_redirect_response=False)
 
+        preferred_page = self.client.get("/sw/staff/")
+        self.assertEqual(preferred_page.status_code, 200)
+
+        manually_switched = self.client.get("/en/staff/")
+        self.assertEqual(manually_switched.status_code, 200)
+        self.assertContains(manually_switched, "Staff workspace")
+
+    def test_administration_has_language_switcher(self):
+        user = User.objects.create_user(
+            username="language-admin",
+            email="language-admin@example.org",
+            role=User.Role.SYSTEM_ADMIN,
+            preferred_language="en",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get("/en/admin/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="admin-language"')
+        self.assertContains(response, 'value="sw"')
+        self.assertContains(response, 'value="en"')
+
+        manually_switched = self.client.get("/sw/admin/")
+        self.assertEqual(manually_switched.status_code, 200)
+
     def test_check_in_uses_authenticated_users_preferred_language(self):
         user = User.objects.create_user(
             username="english-attendance",

@@ -5,6 +5,7 @@
 .ems-brand strong,.ems-brand small { display:block; color:white; }
 .ems-brand strong { font-size:18px; }.ems-brand small { opacity:.78; margin-top:2px; }
 .ems-quick-nav { display:flex; gap:8px; flex-wrap:wrap; }.ems-quick-nav a { color:white; padding:8px 12px; border-radius:8px; background:rgba(255,255,255,.12); }
+.ems-language-switcher { display:flex; align-items:center; gap:7px; margin:0; color:white; }.ems-language-switcher label { color:white; font-weight:700; }.ems-language-switcher select { min-height:36px; padding:6px 9px; border:1px solid rgba(255,255,255,.45); border-radius:8px; background:white; color:#173b67; font-weight:700; }
 body { background:var(--ems-bg); }.ems-dashboard { max-width:1280px; margin:auto; }.ems-welcome { background:linear-gradient(135deg,var(--ems-navy),var(--ems-blue)); color:white; border-radius:18px; padding:28px 32px; margin-bottom:24px; }
 .ems-welcome p { color:#d9e8f8; text-transform:uppercase; letter-spacing:.12em; font-weight:800; }.ems-welcome h1 { color:white; margin:5px 0 10px; }.ems-welcome span { display:inline-block; background:rgba(255,255,255,.15); border-radius:999px; padding:6px 12px; }
 .ems-quick-actions { display:flex; align-items:center; justify-content:space-between; gap:22px; margin-bottom:24px; padding:20px 22px; border:1px solid #d7e2ee; border-radius:16px; background:white; box-shadow:0 8px 24px rgba(23,59,103,.06); }

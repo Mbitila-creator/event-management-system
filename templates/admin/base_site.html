@@ -30,5 +30,14 @@
         {% if perms.checkin.view_participantcheckin %}
             <a href="{% url 'checkin:lookup' %}">{% translate "Check-in" %}</a>
         {% endif %}
+        <form action="{% url 'set_language' %}" method="post" class="ems-language-switcher">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <label for="admin-language">{% translate "Language" %}</label>
+            <select id="admin-language" name="language" onchange="this.form.submit()">
+                <option value="sw" {% if request.LANGUAGE_CODE == 'sw' %}selected{% endif %}>Kiswahili</option>
+                <option value="en" {% if request.LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+            </select>
+        </form>
     </nav>
 {% endblock %}
