@@ -6,9 +6,14 @@
 .workspace-welcome p { margin: 0; opacity: .9; }
 .workspace-secondary-button { padding: 12px 16px; border: 1px solid rgba(255,255,255,.7); border-radius: 9px; background: transparent; color: #fff; font: inherit; font-weight: 750; text-decoration: none; cursor: pointer; }
 .workspace-statistics { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; margin: 22px 0; }
-.workspace-statistics article { padding: 22px; border: 1px solid #d8e2ef; border-radius: 14px; background: #fff; }
-.workspace-statistics span { display: block; min-height: 44px; color: #5a6b82; font-weight: 700; }
-.workspace-statistics strong { display: block; margin-top: 8px; color: #17365d; font-size: 36px; }
+.workspace-stat-card { display: block; padding: 22px; border: 1px solid #d8e2ef; border-radius: 14px; background: #fff; text-decoration: none; transition: transform .15s ease,box-shadow .15s ease,border-color .15s ease; }
+.workspace-stat-card span { display: block; min-height: 44px; color: #5a6b82; font-weight: 700; }
+.workspace-stat-card strong { display: block; margin-top: 8px; color: #17365d; font-size: 36px; }
+.workspace-stat-card small { display: block; margin-top: 13px; color: #2f75b5; font-weight: 750; }
+.workspace-stat-card:hover,.workspace-stat-card:focus-visible { transform: translateY(-2px); border-color: #2f75b5; box-shadow: 0 9px 24px rgba(23,54,93,.12); }
+.workspace-stat-card.is-selected { border: 2px solid #2f75b5; background: #edf6ff; }
+.workspace-filter-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -8px 0 18px; padding: 10px 14px; border-radius: 9px; background: #dfeeff; color: #17365d; font-weight: 700; }
+.workspace-filter-status a { color: #245f98; }
 .workspace-actions { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; margin-bottom: 22px; }
 .workspace-actions a { display: flex; min-height: 94px; flex-direction: column; justify-content: center; padding: 20px; border: 1px solid #b9cbe0; border-radius: 13px; background: #fff; color: #17365d; text-decoration: none; }
 .workspace-actions a:hover { border-color: #2f75b5; box-shadow: 0 8px 24px rgba(23,54,93,.08); }

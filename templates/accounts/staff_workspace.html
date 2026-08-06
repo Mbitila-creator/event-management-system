@@ -23,11 +23,12 @@
         </header>
 
         <div class="workspace-statistics">
-            <article><span>{% translate "Active events" %}</span><strong>{{ active_events }}</strong></article>
-            <article><span>{% translate "Pending registrations" %}</span><strong>{{ pending_registration_count }}</strong></article>
-            <article><span>{% translate "Payments awaiting verification" %}</span><strong>{{ pending_payment_count }}</strong></article>
-            <article><span>{% translate "Participants checked in" %}</span><strong>{{ checked_in_count }}</strong></article>
+            <a href="?view=events#active-events" class="workspace-stat-card {% if selected_view == 'events' %}is-selected{% endif %}" {% if selected_view == 'events' %}aria-current="true"{% endif %}><span>{% translate "Active events" %}</span><strong>{{ active_events }}</strong><small>{% translate "View list" %} →</small></a>
+            <a href="?view=registrations#registrations" class="workspace-stat-card {% if selected_view == 'registrations' %}is-selected{% endif %}" {% if selected_view == 'registrations' %}aria-current="true"{% endif %}><span>{% translate "Pending registrations" %}</span><strong>{{ pending_registration_count }}</strong><small>{% translate "View list" %} →</small></a>
+            <a href="?view=payments#payments" class="workspace-stat-card {% if selected_view == 'payments' %}is-selected{% endif %}" {% if selected_view == 'payments' %}aria-current="true"{% endif %}><span>{% translate "Payments awaiting verification" %}</span><strong>{{ pending_payment_count }}</strong><small>{% translate "View list" %} →</small></a>
+            <a href="?view=checkins#checked-in" class="workspace-stat-card {% if selected_view == 'checkins' %}is-selected{% endif %}" {% if selected_view == 'checkins' %}aria-current="true"{% endif %}><span>{% translate "Participants checked in" %}</span><strong>{{ checked_in_count }}</strong><small>{% translate "View list" %} →</small></a>
         </div>
+        {% if selected_view != "all" %}<div class="workspace-filter-status"><span>{% translate "Filtered view" %}</span><a href="?view=all">{% translate "Show all dashboard sections" %}</a></div>{% endif %}
 
         <nav class="workspace-actions" aria-label="{% translate 'Staff tools' %}">
             <a href="{% url 'checkin:lookup' %}"><strong>{% translate "Participant check-in" %}</strong><span>{% translate "Scan a badge or enter a reference number" %}</span></a>
@@ -38,7 +39,15 @@
         </nav>
 
         <div class="workspace-panels">
-            <section class="workspace-panel">
+            {% if selected_view == "events" %}
+            <section class="workspace-panel" id="active-events">
+                <div class="workspace-panel-heading"><h2>{% translate "Active events" %}</h2><span>{{ active_events }}</span></div>
+                <div class="workspace-table-scroll"><table><thead><tr><th>{% translate "Event code" %}</th><th>{% translate "Event" %}</th><th>{% translate "Start date" %}</th><th>{% translate "End date" %}</th><th>{% translate "Venue" %}</th><th>{% translate "Status" %}</th></tr></thead><tbody>{% for event in active_event_rows %}<tr><td>{{ event.code }}</td><td>{% if request.LANGUAGE_CODE == 'en' %}{{ event.title_en }}{% else %}{{ event.title_sw }}{% endif %}</td><td>{{ event.starts_at|date:"d M Y, H:i" }}</td><td>{{ event.ends_at|date:"d M Y, H:i" }}</td><td>{{ event.venue|default:"—" }}</td><td>{{ event.get_status_display }}</td></tr>{% empty %}<tr><td colspan="6">{% translate "No active events were found." %}</td></tr>{% endfor %}</tbody></table></div>
+            </section>
+            {% endif %}
+
+            {% if selected_view == "all" or selected_view == "registrations" %}
+            <section class="workspace-panel" id="registrations">
                 <div class="workspace-panel-heading">
                     <h2>{% translate "Registrations awaiting review" %}</h2>
                     <span>{{ pending_registration_count }}</span>
@@ -60,8 +69,10 @@
                     </table>
                 </div>
             </section>
+            {% endif %}
 
-            <section class="workspace-panel">
+            {% if selected_view == "all" or selected_view == "payments" %}
+            <section class="workspace-panel" id="payments">
                 <div class="workspace-panel-heading">
                     <h2>{% translate "Payments awaiting verification" %}</h2>
                     <span>{{ pending_payment_count }}</span>
@@ -83,8 +94,16 @@
                     </table>
                 </div>
             </section>
+            {% endif %}
 
-            {% if is_event_admin %}
+            {% if selected_view == "checkins" %}
+            <section class="workspace-panel" id="checked-in">
+                <div class="workspace-panel-heading"><h2>{% translate "Participants checked in" %}</h2><span>{{ checked_in_count }}</span></div>
+                <div class="workspace-table-scroll"><table><thead><tr><th>{% translate "Reference number" %}</th><th>{% translate "Participant" %}</th><th>{% translate "Event" %}</th><th>{% translate "Checked in at" %}</th><th>{% translate "Checked in by" %}</th><th>{% translate "Details" %}</th></tr></thead><tbody>{% for checkin in checked_in_rows %}<tr><td>{{ checkin.submission.reference_number }}</td><td>{{ checkin.submission.badge_display_name }}</td><td>{{ checkin.submission.event_form.event }}</td><td>{{ checkin.checked_in_at|date:"d M Y, H:i" }}</td><td>{{ checkin.checked_in_by.get_full_name|default:checkin.checked_in_by.username }}</td><td><a class="workspace-details-button" href="{% url 'accounts:participant_review_details' checkin.submission.pk %}">{% translate "View details" %}</a></td></tr>{% empty %}<tr><td colspan="6">{% translate "No participants have checked in yet." %}</td></tr>{% endfor %}</tbody></table></div>
+            </section>
+            {% endif %}
+
+            {% if is_event_admin and selected_view == "all" %}
             <section class="workspace-panel">
                 <div class="workspace-panel-heading">
                     <h2>{% translate "Certificate authorization" %}</h2>

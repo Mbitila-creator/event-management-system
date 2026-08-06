@@ -304,6 +304,22 @@ class EventAdministratorOperationsTests(TestCase):
         forbidden = self.client.get(detail_url)
         self.assertEqual(forbidden.status_code, 403)
 
+    def test_workspace_statistic_cards_filter_to_matching_lists(self):
+        workspace = self.client.get("/en/staff/")
+        self.assertContains(workspace, "?view=events#active-events")
+        self.assertContains(workspace, "?view=registrations#registrations")
+        self.assertContains(workspace, "?view=payments#payments")
+        self.assertContains(workspace, "?view=checkins#checked-in")
+
+        events_view = self.client.get("/en/staff/?view=events")
+        self.assertEqual(events_view.context["selected_view"], "events")
+        self.assertContains(events_view, 'id="active-events"')
+        self.assertNotContains(events_view, 'id="registrations"')
+
+        payments_view = self.client.get("/en/staff/?view=payments")
+        self.assertContains(payments_view, 'id="payments"')
+        self.assertNotContains(payments_view, 'id="registrations"')
+
     def test_event_administrator_can_authorize_checked_in_certificate(self):
         from checkin.models import ParticipantCheckIn
         from forms_builder.models import CertificateRecord, FormSubmission

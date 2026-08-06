@@ -69,11 +69,25 @@ def role_home(request):
             event_form__event__certificate_enabled=True,
             check_in__isnull=False,
         ).select_related("certificate_record").order_by("-created_at")
+        selected_view = request.GET.get("view", "all")
+        if selected_view not in {
+            "all", "events", "registrations", "payments", "checkins",
+        }:
+            selected_view = "all"
+        active_event_rows = Event.objects.filter(is_active=True).select_related(
+            "venue",
+        ).order_by("starts_at")
+        checked_in_rows = ParticipantCheckIn.objects.select_related(
+            "submission__event_form__event", "checked_in_by",
+        ).order_by("-checked_in_at")
         return render(request, "accounts/staff_workspace.html", {
-            "active_events": Event.objects.filter(is_active=True).count(),
+            "active_events": active_event_rows.count(),
             "pending_registration_count": pending_submissions.count(),
             "pending_payment_count": pending_payments.count(),
             "checked_in_count": ParticipantCheckIn.objects.count(),
+            "active_event_rows": active_event_rows,
+            "checked_in_rows": checked_in_rows,
+            "selected_view": selected_view,
             "recent_submissions": pending_submissions.order_by(
                 "-created_at",
             )[:8],
