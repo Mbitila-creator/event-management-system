@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-06 11:06+0300\n"
+"POT-Creation-Date: 2026-08-06 12:24+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -45,7 +45,7 @@ msgstr "Afisa Mahudhurio"
 msgid "Report Officer"
 msgstr "Afisa Ripoti"
 
-#: accounts/models.py:19 forms_builder/admin.py:1082
+#: accounts/models.py:19 forms_builder/admin.py:1130
 #: templates/accounts/staff_workspace.html:48
 #: templates/accounts/staff_workspace.html:95
 #: templates/forms_builder/payment_receipt.html:12
@@ -168,7 +168,7 @@ msgstr "uthibitishaji wa mahudhurio ya mshiriki"
 msgid "participant check-ins"
 msgstr "uthibitishaji wa mahudhurio ya washiriki"
 
-#: checkin/views.py:259 forms_builder/admin.py:1074
+#: checkin/views.py:259 forms_builder/admin.py:1122
 #: templates/accounts/staff_workspace.html:48
 #: templates/accounts/staff_workspace.html:71
 #: templates/accounts/staff_workspace.html:95
@@ -706,7 +706,7 @@ msgstr "Kataa malipo yaliyochaguliwa"
 msgid "Export selected visitor interests to CSV"
 msgstr "Hamisha nia za wageni zilizochaguliwa kwenda CSV"
 
-#: forms_builder/admin.py:352 forms_builder/admin.py:1078
+#: forms_builder/admin.py:352 forms_builder/admin.py:1126
 #: templates/accounts/staff_workspace.html:48
 #: templates/accounts/staff_workspace.html:95
 #: templates/checkin/participant_check_in.html:102
@@ -751,57 +751,81 @@ msgstr "Ujumbe"
 msgid "Submitted on"
 msgstr "Iliwasilishwa tarehe"
 
-#: forms_builder/admin.py:822
+#: forms_builder/admin.py:687
+msgid "Registration record"
+msgstr "Taarifa ya usajili"
+
+#: forms_builder/admin.py:696
+msgid "Participant contact information"
+msgstr "Mawasiliano ya mshiriki"
+
+#: forms_builder/admin.py:700
+msgid "Update these fields when a participant reports an incorrect email address or phone number."
+msgstr "Sasisha sehemu hizi mshiriki anapotoa taarifa kuwa anwani ya barua pepe au namba ya simu si sahihi."
+
+#: forms_builder/admin.py:705
+msgid "Registration review"
+msgstr "Mapitio ya usajili"
+
+#: forms_builder/admin.py:714
+msgid "Badge information"
+msgstr "Taarifa za beji"
+
+#: forms_builder/admin.py:723
+msgid "Technical and audit information"
+msgstr "Taarifa za kiufundi na ukaguzi"
+
+#: forms_builder/admin.py:870
 msgid "Authorize certificates for selected participants"
 msgstr "Ruhusu vyeti kwa washiriki waliochaguliwa"
 
-#: forms_builder/admin.py:832
+#: forms_builder/admin.py:880
 msgid "You cannot authorize certificates."
 msgstr "Huna ruhusa ya kuidhinisha vyeti."
 
-#: forms_builder/admin.py:881
+#: forms_builder/admin.py:929
 #, python-format
 msgid "Certificates authorized: %(count)s"
 msgstr "Vyeti vilivyoidhinishwa: %(count)s"
 
-#: forms_builder/admin.py:885
+#: forms_builder/admin.py:933
 msgid "Revoke certificate authorization"
 msgstr "Ondoa idhini ya cheti"
 
-#: forms_builder/admin.py:902
+#: forms_builder/admin.py:950
 msgid "Revoked through system administration."
 msgstr "Kimebatilishwa kupitia usimamizi wa mfumo."
 
-#: forms_builder/admin.py:1086
+#: forms_builder/admin.py:1134
 #: templates/forms_builder/participant_portal.html:18
 #: templates/forms_builder/participant_portal.html:47
 msgid "Certificate"
 msgstr "Cheti"
 
-#: forms_builder/admin.py:1089 forms_builder/models.py:588
+#: forms_builder/admin.py:1137 forms_builder/models.py:588
 #: templates/accounts/staff_workspace.html:100
 #: templates/forms_builder/participant_portal.html:18
 msgid "Revoked"
 msgstr "Kimebatilishwa"
 
-#: forms_builder/admin.py:1093
+#: forms_builder/admin.py:1141
 msgid "Open certificate"
 msgstr "Tazama cheti"
 
-#: forms_builder/admin.py:1138
+#: forms_builder/admin.py:1186
 msgid "Send selected reminders now"
 msgstr "Tuma vikumbusho vilivyochaguliwa sasa"
 
-#: forms_builder/admin.py:1150
+#: forms_builder/admin.py:1198
 #, python-format
 msgid "%(completed)s reminder(s) sent; %(skipped)s already completed."
 msgstr "Vikumbusho %(completed)s vimetumwa; %(skipped)s vilikuwa vimekamilika tayari."
 
-#: forms_builder/admin.py:1207
+#: forms_builder/admin.py:1255
 msgid "Resend selected notifications"
 msgstr "Tuma tena taarifa zilizochaguliwa"
 
-#: forms_builder/admin.py:1218
+#: forms_builder/admin.py:1266
 #, python-format
 msgid "%(count)s notification(s) resent."
 msgstr "Taarifa %(count)s zimetumwa tena."

@@ -668,8 +668,6 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "event_form",
         "submitted_by",
         "language",
-        "submitter_email",
-        "submitter_phone",
         "ip_address",
         "user_agent",
         "is_complete",
@@ -682,6 +680,56 @@ class FormSubmissionAdmin(admin.ModelAdmin):
         "updated_by",
         "created_at",
         "updated_at",
+    )
+
+    fieldsets = (
+        (
+            _("Registration record"),
+            {
+                "fields": (
+                    "reference_number", "event_form", "submitted_by",
+                    "language", "is_complete",
+                ),
+            },
+        ),
+        (
+            _("Participant contact information"),
+            {
+                "fields": ("submitter_email", "submitter_phone"),
+                "description": _(
+                    "Update these fields when a participant reports an incorrect email address or phone number."
+                ),
+            },
+        ),
+        (
+            _("Registration review"),
+            {
+                "fields": (
+                    "review_status", "review_notes", "reviewed_by",
+                    "reviewed_at",
+                ),
+            },
+        ),
+        (
+            _("Badge information"),
+            {
+                "fields": (
+                    "badge_name", "badge_organization", "badge_title",
+                    "badge_tools", "certificate_tools",
+                ),
+            },
+        ),
+        (
+            _("Technical and audit information"),
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "participant_token", "ip_address", "user_agent",
+                    "is_active", "created_by", "updated_by", "created_at",
+                    "updated_at",
+                ),
+            },
+        ),
     )
 
     date_hierarchy = "created_at"

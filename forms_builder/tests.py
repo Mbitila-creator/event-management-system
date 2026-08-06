@@ -1315,6 +1315,18 @@ class SubmissionReviewAdminTests(TestCase):
             ).exists()
         )
 
+    def test_participant_contact_fields_are_editable_in_administration(self):
+        self.assertNotIn("submitter_email", self.model_admin.readonly_fields)
+        self.assertNotIn("submitter_phone", self.model_admin.readonly_fields)
+        contact_fieldset = next(
+            options for title, options in self.model_admin.fieldsets
+            if options.get("fields") == ("submitter_email", "submitter_phone")
+        )
+        self.assertEqual(
+            contact_fieldset["fields"],
+            ("submitter_email", "submitter_phone"),
+        )
+
     def test_reject_action_records_reviewer_and_time(self):
         self.model_admin.reject_submissions(
             self.request,
