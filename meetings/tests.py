@@ -269,6 +269,62 @@ class MeetingWorkflowTests(TestCase):
         self.assertContains(response, "Meetings workspace")
         self.assertContains(response, "Workflow Meeting")
 
+    def test_manager_can_view_meeting_calendar(self):
+        month = timezone.localdate(self.event.starts_at).strftime("%Y-%m")
+        response = self.client.get(
+            "/en/staff/meetings/calendar/",
+            {"month": month},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Meeting calendar")
+        self.assertContains(response, "Workflow Meeting")
+
+    def test_meeting_pack_is_printable(self):
+        response = self.client.get(
+            f"/en/staff/meetings/{self.meeting.pk}/print/",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Meeting pack")
+        self.assertContains(response, self.meeting.reference_number)
+        self.assertContains(response, "window.print()")
+
+    def test_action_report_marks_overdue_items(self):
+        MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="Andaa taarifa",
+            description_en="Prepare report",
+            responsible_name="Afisa Mipango",
+            due_date=timezone.localdate() - timedelta(days=1),
+            status=MeetingActionItem.Status.PENDING,
+        )
+        response = self.client.get(
+            "/en/staff/meetings/reports/actions/",
+            {"status": "OVERDUE"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Prepare report")
+        self.assertContains(response, "Overdue")
+
+    def test_action_report_csv_is_downloadable_and_spreadsheet_safe(self):
+        MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="=HATARI()",
+            description_en="=DANGEROUS()",
+            responsible_name="@Officer",
+            due_date=timezone.localdate() + timedelta(days=2),
+        )
+        response = self.client.get(
+            "/en/staff/meetings/reports/actions/export/",
+            {"status": "ALL"},
+        )
+        content = response.content.decode("utf-8-sig")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("'=DANGEROUS()", content)
+        self.assertIn("'@Officer", content)
+
     def test_manager_can_create_event_and_meeting_in_one_workflow(self):
         starts_at = timezone.localtime(timezone.now() + timedelta(days=12))
         response = self.client.post("/en/staff/meetings/new/", {
@@ -423,3 +479,5 @@ class MeetingWorkflowTests(TestCase):
         self.client.force_login(officer)
         response = self.client.get("/en/staff/meetings/")
         self.assertEqual(response.status_code, 403)
+        report = self.client.get("/en/staff/meetings/reports/actions/")
+        self.assertEqual(report.status_code, 403)

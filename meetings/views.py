@@ -1,11 +1,17 @@
+import calendar
+import csv
+from collections import defaultdict
+from datetime import date, timedelta
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from accounts.models import User
 from events.models import Event
@@ -100,6 +106,63 @@ def _form_error_message(form):
     return first_error
 
 
+def _month_value(raw_value):
+    try:
+        return date.fromisoformat(f"{raw_value}-01")
+    except (TypeError, ValueError):
+        return timezone.localdate().replace(day=1)
+
+
+def _next_month(month):
+    return (month.replace(day=28) + timedelta(days=4)).replace(day=1)
+
+
+def _report_actions(request):
+    actions = MeetingActionItem.objects.select_related(
+        "meeting", "meeting__event", "responsible_user",
+    ).filter(is_active=True, meeting__is_active=True)
+    selected_status = request.GET.get("status", "OPEN").strip().upper()
+    selected_meeting = request.GET.get("meeting", "").strip()
+    closed_statuses = {
+        MeetingActionItem.Status.COMPLETED,
+        MeetingActionItem.Status.CANCELLED,
+    }
+    if selected_status == "OPEN":
+        actions = actions.exclude(status__in=closed_statuses)
+    elif selected_status == "OVERDUE":
+        actions = actions.filter(
+            Q(status=MeetingActionItem.Status.OVERDUE)
+            | Q(due_date__lt=timezone.localdate()),
+        ).exclude(status__in=closed_statuses)
+    elif selected_status in MeetingActionItem.Status.values:
+        actions = actions.filter(status=selected_status)
+    else:
+        selected_status = "ALL"
+    if selected_meeting.isdigit():
+        actions = actions.filter(meeting_id=selected_meeting)
+    else:
+        selected_meeting = ""
+    today = timezone.localdate()
+    rows = list(actions.order_by("due_date", "meeting__event__starts_at"))
+    for action in rows:
+        action.is_report_overdue = bool(
+            action.status == MeetingActionItem.Status.OVERDUE
+            or (
+                action.due_date
+                and action.due_date < today
+                and action.status not in closed_statuses
+            )
+        )
+    return rows, selected_status, selected_meeting
+
+
+def _safe_csv_value(value):
+    rendered = "" if value is None else str(value)
+    if rendered.startswith(("=", "+", "-", "@")):
+        return f"'{rendered}"
+    return rendered
+
+
 @login_required(login_url="accounts:staff_login")
 def meeting_list(request):
     _require_view_access(request.user)
@@ -155,6 +218,140 @@ def meeting_list(request):
         ).count(),
     }
     return render(request, "meetings/meeting_list.html", context)
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def meeting_calendar(request):
+    _require_view_access(request.user)
+    selected_month = _month_value(request.GET.get("month"))
+    following_month = _next_month(selected_month)
+    meetings = _meeting_queryset().filter(
+        is_active=True,
+        event__starts_at__date__gte=selected_month,
+        event__starts_at__date__lt=following_month,
+    ).order_by("event__starts_at")
+    meetings_by_date = defaultdict(list)
+    for meeting in meetings:
+        meetings_by_date[timezone.localdate(meeting.event.starts_at)].append(meeting)
+    weeks = []
+    for week in calendar.Calendar(firstweekday=0).monthdatescalendar(
+        selected_month.year,
+        selected_month.month,
+    ):
+        weeks.append([
+            {
+                "date": day,
+                "in_month": day.month == selected_month.month,
+                "meetings": meetings_by_date.get(day, []),
+            }
+            for day in week
+        ])
+    previous_month = (selected_month - timedelta(days=1)).replace(day=1)
+    return render(request, "meetings/meeting_calendar.html", {
+        "weeks": weeks,
+        "selected_month": selected_month,
+        "previous_month": previous_month,
+        "next_month": following_month,
+        "meeting_count": len(meetings),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def action_report(request):
+    _require_view_access(request.user)
+    actions, selected_status, selected_meeting = _report_actions(request)
+    all_actions = MeetingActionItem.objects.filter(
+        is_active=True,
+        meeting__is_active=True,
+    )
+    closed_statuses = {
+        MeetingActionItem.Status.COMPLETED,
+        MeetingActionItem.Status.CANCELLED,
+    }
+    context = {
+        "actions": actions,
+        "selected_status": selected_status,
+        "selected_meeting": selected_meeting,
+        "meetings": Meeting.objects.filter(is_active=True).select_related(
+            "event",
+        ).order_by("-event__starts_at"),
+        "status_choices": MeetingActionItem.Status.choices,
+        "summary": {
+            "total": all_actions.count(),
+            "open": all_actions.exclude(status__in=closed_statuses).count(),
+            "completed": all_actions.filter(
+                status=MeetingActionItem.Status.COMPLETED,
+            ).count(),
+            "overdue": all_actions.filter(
+                Q(status=MeetingActionItem.Status.OVERDUE)
+                | Q(due_date__lt=timezone.localdate()),
+            ).exclude(status__in=closed_statuses).count(),
+        },
+    }
+    return render(request, "meetings/action_report.html", context)
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def action_report_csv(request):
+    _require_view_access(request.user)
+    actions, _selected_status, _selected_meeting = _report_actions(request)
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response.write("\ufeff")
+    response["Content-Disposition"] = (
+        'attachment; filename="meeting-action-report.csv"'
+    )
+    writer = csv.writer(response)
+    writer.writerow([
+        _("Meeting reference"), _("Meeting"), _("Action number"),
+        _("Action"), _("Responsible person"), _("Due date"),
+        _("Status"), _("Progress notes"),
+    ])
+    language = request.LANGUAGE_CODE
+    for action in actions:
+        description = (
+            action.description_en
+            if language == "en" and action.description_en
+            else action.description_sw
+        )
+        status = _("Overdue") if action.is_report_overdue else action.get_status_display()
+        writer.writerow([_safe_csv_value(value) for value in (
+            action.meeting.reference_number,
+            action.meeting.event.title_en if language == "en" else action.meeting.event.title_sw,
+            action.action_number,
+            description,
+            action.responsible_name,
+            action.due_date.isoformat() if action.due_date else "",
+            status,
+            action.progress_notes,
+        )])
+    return response
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def meeting_print(request, meeting_id):
+    _require_view_access(request.user)
+    meeting = get_object_or_404(_meeting_queryset(), pk=meeting_id, is_active=True)
+    attendees = meeting.attendees.filter(is_active=True).order_by("full_name")
+    present_count = attendees.filter(
+        attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
+    ).count()
+    return render(request, "meetings/meeting_print.html", {
+        "meeting": meeting,
+        "agenda_items": meeting.agenda_items.filter(is_active=True),
+        "attendees": attendees,
+        "decisions": meeting.decisions.filter(is_active=True),
+        "action_items": meeting.action_items.filter(is_active=True),
+        "present_count": present_count,
+        "quorum_met": (
+            present_count >= meeting.quorum_required
+            if meeting.quorum_required
+            else None
+        ),
+    })
 
 
 @login_required(login_url="accounts:staff_login")

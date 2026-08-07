@@ -7,6 +7,21 @@ app_name = "meetings"
 
 urlpatterns = [
     path("staff/meetings/", views.meeting_list, name="meeting_list"),
+    path(
+        "staff/meetings/calendar/",
+        views.meeting_calendar,
+        name="meeting_calendar",
+    ),
+    path(
+        "staff/meetings/reports/actions/",
+        views.action_report,
+        name="action_report",
+    ),
+    path(
+        "staff/meetings/reports/actions/export/",
+        views.action_report_csv,
+        name="action_report_csv",
+    ),
     path("staff/meetings/new/", views.meeting_create, name="meeting_create"),
     path(
         "staff/meetings/<int:meeting_id>/",
@@ -17,6 +32,11 @@ urlpatterns = [
         "staff/meetings/<int:meeting_id>/edit/",
         views.meeting_edit,
         name="meeting_edit",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/print/",
+        views.meeting_print,
+        name="meeting_print",
     ),
     path(
         "staff/meetings/<int:meeting_id>/agenda/add/",
