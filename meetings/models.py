@@ -39,6 +39,18 @@ class Meeting(BaseModel):
         RETURNED = "RETURNED", _("Returned for correction")
         APPROVED = "APPROVED", _("Approved")
 
+    class AttendanceMode(models.TextChoices):
+        IN_PERSON = "IN_PERSON", _("In-person meeting")
+        ONLINE = "ONLINE", _("Online meeting")
+        HYBRID = "HYBRID", _("Hybrid meeting")
+
+    class OnlinePlatform(models.TextChoices):
+        ZOOM = "ZOOM", _("Zoom")
+        MICROSOFT_TEAMS = "MICROSOFT_TEAMS", _("Microsoft Teams")
+        GOOGLE_MEET = "GOOGLE_MEET", _("Google Meet")
+        WEBEX = "WEBEX", _("Cisco Webex")
+        OTHER = "OTHER", _("Other platform")
+
     event = models.OneToOneField(
         Event,
         verbose_name=_("event"),
@@ -64,6 +76,33 @@ class Meeting(BaseModel):
         max_length=30,
         choices=MeetingType.choices,
         default=MeetingType.MANAGEMENT,
+    )
+    attendance_mode = models.CharField(
+        _("meeting attendance mode"),
+        max_length=20,
+        choices=AttendanceMode.choices,
+        default=AttendanceMode.IN_PERSON,
+    )
+    online_platform = models.CharField(
+        _("online meeting platform"),
+        max_length=30,
+        choices=OnlinePlatform.choices,
+        blank=True,
+    )
+    online_join_url = models.URLField(
+        _("online joining link"), max_length=500, blank=True,
+    )
+    online_meeting_id = models.CharField(
+        _("online meeting ID"), max_length=120, blank=True,
+    )
+    online_passcode = models.CharField(
+        _("online meeting passcode"), max_length=120, blank=True,
+    )
+    online_instructions_sw = models.TextField(
+        _("online joining instructions in Kiswahili"), blank=True,
+    )
+    online_instructions_en = models.TextField(
+        _("online joining instructions in English"), blank=True,
     )
     chairperson_name = models.CharField(
         _("chairperson"),
@@ -156,6 +195,18 @@ class Meeting(BaseModel):
             errors["quorum_required"] = _(
                 "The required quorum must be greater than zero."
             )
+        if self.attendance_mode in {
+            self.AttendanceMode.ONLINE,
+            self.AttendanceMode.HYBRID,
+        }:
+            if not self.online_platform:
+                errors["online_platform"] = _(
+                    "Select the platform for an online or hybrid meeting."
+                )
+            if not self.online_join_url:
+                errors["online_join_url"] = _(
+                    "Enter the joining link for an online or hybrid meeting."
+                )
         if errors:
             raise ValidationError(errors)
 
@@ -201,6 +252,33 @@ class MeetingSeries(BaseModel):
         choices=Meeting.MeetingType.choices,
         default=Meeting.MeetingType.MANAGEMENT,
     )
+    attendance_mode = models.CharField(
+        _("default meeting attendance mode"),
+        max_length=20,
+        choices=Meeting.AttendanceMode.choices,
+        default=Meeting.AttendanceMode.IN_PERSON,
+    )
+    online_platform = models.CharField(
+        _("default online meeting platform"),
+        max_length=30,
+        choices=Meeting.OnlinePlatform.choices,
+        blank=True,
+    )
+    online_join_url = models.URLField(
+        _("default online joining link"), max_length=500, blank=True,
+    )
+    online_meeting_id = models.CharField(
+        _("default online meeting ID"), max_length=120, blank=True,
+    )
+    online_passcode = models.CharField(
+        _("default online meeting passcode"), max_length=120, blank=True,
+    )
+    online_instructions_sw = models.TextField(
+        _("default online joining instructions in Kiswahili"), blank=True,
+    )
+    online_instructions_en = models.TextField(
+        _("default online joining instructions in English"), blank=True,
+    )
     default_duration_minutes = models.PositiveIntegerField(
         _("default duration in minutes"),
         default=120,
@@ -242,6 +320,18 @@ class MeetingSeries(BaseModel):
             errors["quorum_required"] = _(
                 "The required quorum must be greater than zero."
             )
+        if self.attendance_mode in {
+            Meeting.AttendanceMode.ONLINE,
+            Meeting.AttendanceMode.HYBRID,
+        }:
+            if not self.online_platform:
+                errors["online_platform"] = _(
+                    "Select the platform for an online or hybrid meeting."
+                )
+            if not self.online_join_url:
+                errors["online_join_url"] = _(
+                    "Enter the joining link for an online or hybrid meeting."
+                )
         if errors:
             raise ValidationError(errors)
 

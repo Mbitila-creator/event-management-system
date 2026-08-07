@@ -81,6 +81,12 @@ class MeetingModelTests(TestCase):
                 invitation_deadline=self.event.starts_at + timedelta(minutes=1),
             )
 
+    def test_online_meeting_requires_platform_and_joining_link(self):
+        with self.assertRaises(ValidationError):
+            self.create_meeting(
+                attendance_mode=Meeting.AttendanceMode.ONLINE,
+            )
+
     def test_meeting_reference_is_normalized(self):
         meeting = self.create_meeting(reference_number=" km/001/2026 ")
         self.assertEqual(meeting.reference_number, "KM/001/2026")
@@ -585,6 +591,7 @@ class MeetingWorkflowTests(TestCase):
             "description_en": "Description",
             "frequency": MeetingSeries.Frequency.MONTHLY,
             "meeting_type": Meeting.MeetingType.TECHNICAL,
+            "attendance_mode": Meeting.AttendanceMode.IN_PERSON,
             "default_duration_minutes": "120",
             "chairperson_name": "Mkurugenzi",
             "secretary_name": "Katibu",
@@ -718,6 +725,7 @@ class MeetingWorkflowTests(TestCase):
             ),
             "status": Event.Status.DRAFT,
             "meeting_type": Meeting.MeetingType.TECHNICAL,
+            "attendance_mode": Meeting.AttendanceMode.IN_PERSON,
             "chairperson_name": "Mwenyekiti Mpya",
             "secretary_name": "Katibu",
             "quorum_required": "3",
@@ -817,6 +825,72 @@ class MeetingWorkflowTests(TestCase):
             MeetingAttendee.ResponseStatus.ACCEPTED,
         )
         self.assertIsNotNone(attendee.responded_at)
+
+    def test_online_meeting_access_is_in_invitation_and_secure_response_page(self):
+        self.meeting.attendance_mode = Meeting.AttendanceMode.ONLINE
+        self.meeting.online_platform = Meeting.OnlinePlatform.MICROSOFT_TEAMS
+        self.meeting.online_join_url = "https://teams.example.com/join/meeting-001"
+        self.meeting.online_meeting_id = "987 654 321"
+        self.meeting.online_passcode = "Secure-2026"
+        self.meeting.online_instructions_sw = "Jiunge dakika tano kabla."
+        self.meeting.online_instructions_en = "Join five minutes early."
+        self.meeting.save()
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Online Participant",
+            email="online.participant@example.com",
+            preferred_language="en",
+        )
+        with self.settings(
+            EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        ):
+            response = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/participants/"
+                f"{attendee.pk}/invite/",
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(self.meeting.online_join_url, mail.outbox[0].body)
+        self.assertIn("Microsoft Teams", mail.outbox[0].body)
+        self.assertIn("Secure-2026", mail.outbox[0].body)
+
+        self.client.logout()
+        response = self.client.post(
+            f"/en/meetings/invitations/{attendee.response_token}/",
+            {"response_status": MeetingAttendee.ResponseStatus.ACCEPTED},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Join online meeting")
+        self.assertContains(response, self.meeting.online_join_url)
+        self.assertContains(response, "987 654 321")
+
+    def test_online_series_copies_access_details_to_new_occurrence(self):
+        series = self.create_series(
+            code="ONLINE-MONTHLY",
+            attendance_mode=Meeting.AttendanceMode.ONLINE,
+            online_platform=Meeting.OnlinePlatform.ZOOM,
+            online_join_url="https://zoom.example.com/j/123456",
+            online_meeting_id="123456",
+            online_passcode="Monthly-Access",
+            online_instructions_en="Use your official name.",
+        )
+        starts_at = timezone.localtime(timezone.now() + timedelta(days=45))
+        response = self.client.post(
+            f"/en/staff/meetings/series/{series.pk}/schedule/",
+            {
+                "code": "ONLINE-002",
+                "reference_number": "ONL/002/2026",
+                "title_sw": "Kikao cha Mtandaoni",
+                "title_en": "Online Meeting",
+                "starts_at": starts_at.strftime("%Y-%m-%dT%H:%M"),
+                "status": Event.Status.DRAFT,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        occurrence = Meeting.objects.get(reference_number="ONL/002/2026")
+        self.assertEqual(occurrence.attendance_mode, Meeting.AttendanceMode.ONLINE)
+        self.assertEqual(occurrence.online_platform, Meeting.OnlinePlatform.ZOOM)
+        self.assertEqual(occurrence.online_join_url, series.online_join_url)
+        self.assertEqual(occurrence.online_passcode, "Monthly-Access")
 
     def test_manager_can_send_pending_invitations_in_bulk(self):
         pending = MeetingAttendee.objects.create(

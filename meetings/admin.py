@@ -114,11 +114,13 @@ class MeetingSeriesAgendaTemplateInline(admin.TabularInline):
 @admin.register(Meeting)
 class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_display = (
-        "reference_number", "event", "series", "meeting_type", "meeting_date",
-        "chairperson_name", "minutes_status", "attendee_total", "is_active",
+        "reference_number", "event", "series", "meeting_type", "attendance_mode",
+        "meeting_date", "chairperson_name", "minutes_status", "attendee_total",
+        "is_active",
     )
     list_filter = (
-        "series", "meeting_type", "minutes_status", "event__status", "is_active",
+        "series", "meeting_type", "attendance_mode", "online_platform",
+        "minutes_status", "event__status", "is_active",
     )
     search_fields = (
         "reference_number", "event__code", "event__title_sw", "event__title_en",
@@ -140,6 +142,11 @@ class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
             "secretary_name", "quorum_required", "invitation_deadline", "is_active",
         )}),
         (_("Meeting objectives"), {"fields": ("objectives_sw", "objectives_en")}),
+        (_("Online meeting access"), {"fields": (
+            "attendance_mode", "online_platform", "online_join_url",
+            "online_meeting_id", "online_passcode", "online_instructions_sw",
+            "online_instructions_en",
+        )}),
         (_("Meeting minutes"), {"fields": (
             "minutes_status", "minutes_sw", "minutes_en", "minutes_document",
             "minutes_approved_by", "minutes_approved_at",
@@ -178,10 +185,13 @@ class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
 @admin.register(MeetingSeries)
 class MeetingSeriesAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_display = (
-        "code", "name_sw", "frequency", "meeting_type", "chairperson_name",
-        "venue", "is_active",
+        "code", "name_sw", "frequency", "meeting_type", "attendance_mode",
+        "chairperson_name", "venue", "is_active",
     )
-    list_filter = ("frequency", "meeting_type", "is_active")
+    list_filter = (
+        "frequency", "meeting_type", "attendance_mode", "online_platform",
+        "is_active",
+    )
     search_fields = ("code", "name_sw", "name_en", "chairperson_name")
     autocomplete_fields = ("venue",)
     inlines = (MeetingSeriesAgendaTemplateInline,)

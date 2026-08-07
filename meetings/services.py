@@ -88,6 +88,39 @@ def _meeting_details(meeting, language):
     }
 
 
+def _online_access_details(meeting, language):
+    if meeting.attendance_mode == meeting.AttendanceMode.IN_PERSON:
+        return ""
+    instructions = (
+        meeting.online_instructions_en
+        if language == "en" and meeting.online_instructions_en
+        else meeting.online_instructions_sw
+    )
+    lines = [
+        "",
+        _("Online meeting access:"),
+        _("Platform: %(platform)s") % {
+            "platform": meeting.get_online_platform_display(),
+        },
+        _("Joining link: %(link)s") % {"link": meeting.online_join_url},
+    ]
+    if meeting.online_meeting_id:
+        lines.append(
+            _("Meeting ID: %(meeting_id)s") % {
+                "meeting_id": meeting.online_meeting_id,
+            }
+        )
+    if meeting.online_passcode:
+        lines.append(
+            _("Passcode: %(passcode)s") % {"passcode": meeting.online_passcode}
+        )
+    if instructions:
+        lines.append(_("Joining instructions: %(instructions)s") % {
+            "instructions": instructions,
+        })
+    return "\n".join(lines)
+
+
 def send_meeting_invitation(attendee, request=None):
     """Send one bilingual-ready invitation and return whether it was delivered."""
     recipient = attendee.email.strip()
@@ -111,6 +144,7 @@ def send_meeting_invitation(attendee, request=None):
             "Reference: %(reference)s\n"
             "Date and time: %(date)s\n"
             "Venue: %(venue)s\n"
+            "%(online_access)s\n"
             "Chairperson: %(chairperson)s\n\n"
             "Confirm your attendance using this secure link:\n%(response_url)s"
         ) % {
@@ -119,6 +153,7 @@ def send_meeting_invitation(attendee, request=None):
             "reference": meeting.reference_number,
             "date": details["meeting_date"],
             "venue": details["venue"],
+            "online_access": _online_access_details(meeting, language),
             "chairperson": meeting.chairperson_name,
             "response_url": response_url,
         }
@@ -168,7 +203,8 @@ def send_rsvp_reminder(attendee, request=None):
             "This is a reminder to confirm whether you will attend %(meeting)s.\n\n"
             "Reference: %(reference)s\n"
             "Date and time: %(date)s\n"
-            "Venue: %(venue)s\n\n"
+            "Venue: %(venue)s\n"
+            "%(online_access)s\n\n"
             "Submit your response using this secure link:\n%(response_url)s"
         ) % {
             "name": attendee.full_name,
@@ -176,6 +212,7 @@ def send_rsvp_reminder(attendee, request=None):
             "reference": meeting.reference_number,
             "date": details["meeting_date"],
             "venue": details["venue"],
+            "online_access": _online_access_details(meeting, language),
             "response_url": response_url,
         }
         return _send_and_log(

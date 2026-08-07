@@ -6,7 +6,7 @@
 {% block meeting_content %}
 {% translate "Not specified" as not_specified %}
 <header class="meeting-detail-hero">
-    <div><a href="{% url 'meetings:meeting_list' %}">← {% translate "All meetings" %}</a><div class="meeting-card-kickers"><span>{{ meeting.reference_number }}</span><span>{{ meeting.get_meeting_type_display }}</span><span>{{ meeting.event.get_status_display }}</span>{% if meeting.series %}<a href="{% url 'meetings:series_detail' meeting.series.pk %}">{{ meeting.series.code }}</a>{% endif %}</div><h1>{% if request.LANGUAGE_CODE == 'en' %}{{ meeting.event.title_en }}{% else %}{{ meeting.event.title_sw }}{% endif %}</h1><p>{{ meeting.event.starts_at|date:"d M Y, H:i" }} — {{ meeting.event.ends_at|date:"d M Y, H:i" }} · {{ meeting.event.venue|default:"—" }}</p></div>
+    <div><a href="{% url 'meetings:meeting_list' %}">← {% translate "All meetings" %}</a><div class="meeting-card-kickers"><span>{{ meeting.reference_number }}</span><span>{{ meeting.get_meeting_type_display }}</span><span>{{ meeting.get_attendance_mode_display }}</span><span>{{ meeting.event.get_status_display }}</span>{% if meeting.series %}<a href="{% url 'meetings:series_detail' meeting.series.pk %}">{{ meeting.series.code }}</a>{% endif %}</div><h1>{% if request.LANGUAGE_CODE == 'en' %}{{ meeting.event.title_en }}{% else %}{{ meeting.event.title_sw }}{% endif %}</h1><p>{{ meeting.event.starts_at|date:"d M Y, H:i" }} — {{ meeting.event.ends_at|date:"d M Y, H:i" }} · {{ meeting.event.venue|default:"—" }}</p></div>
     <div class="meeting-hero-actions">
         <a class="meeting-secondary-button" href="{% url 'meetings:meeting_print' meeting.pk %}">{% translate "Print meeting pack" %}</a>
         {% if can_manage %}<a class="meeting-secondary-button" href="{% url 'meetings:meeting_edit' meeting.pk %}">{% translate "Edit meeting details" %}</a>{% endif %}
@@ -39,7 +39,9 @@
         <div><dt>{% translate "Quorum status" %}</dt><dd>{% if quorum_met is None %}{% translate "Not applicable" %}{% elif quorum_met %}<span class="meeting-pill success">{% translate "Quorum met" %}</span>{% else %}<span class="meeting-pill warning">{% translate "Quorum not met" %}</span>{% endif %}</dd></div>
         <div><dt>{% translate "Invitation deadline" %}</dt><dd>{{ meeting.invitation_deadline|date:"d M Y, H:i"|default:"—" }}</dd></div>
         <div><dt>{% translate "Minutes status" %}</dt><dd>{{ meeting.get_minutes_status_display }}</dd></div>
+        <div><dt>{% translate "Attendance mode" %}</dt><dd>{{ meeting.get_attendance_mode_display }}</dd></div>
     </dl>
+    {% if meeting.attendance_mode != 'IN_PERSON' %}<div class="meeting-online-access"><div><span>{% translate "Online meeting access" %}</span><h3>{{ meeting.get_online_platform_display }}</h3><p>{% if request.LANGUAGE_CODE == 'en' and meeting.online_instructions_en %}{{ meeting.online_instructions_en|linebreaksbr }}{% elif meeting.online_instructions_sw %}{{ meeting.online_instructions_sw|linebreaksbr }}{% else %}{% translate "Use the secure joining details below." %}{% endif %}</p></div><dl><div><dt>{% translate "Meeting ID" %}</dt><dd>{{ meeting.online_meeting_id|default:"—" }}</dd></div><div><dt>{% translate "Passcode" %}</dt><dd>{{ meeting.online_passcode|default:"—" }}</dd></div></dl><a class="meeting-primary-button" href="{{ meeting.online_join_url }}" target="_blank" rel="noopener noreferrer">{% translate "Join online meeting" %} ↗</a></div>{% endif %}
 </section>
 
 <section id="agenda" class="meeting-workflow-section">

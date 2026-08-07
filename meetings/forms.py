@@ -96,6 +96,40 @@ class MeetingWorkflowForm(forms.Form):
         label=_("Meeting type"),
         choices=Meeting.MeetingType.choices,
     )
+    attendance_mode = forms.ChoiceField(
+        label=_("Attendance mode"),
+        choices=Meeting.AttendanceMode.choices,
+    )
+    online_platform = forms.ChoiceField(
+        label=_("Online platform"),
+        choices=(("", _("Select platform")), *Meeting.OnlinePlatform.choices),
+        required=False,
+    )
+    online_join_url = forms.URLField(
+        label=_("Online joining link"),
+        max_length=500,
+        required=False,
+        widget=forms.URLInput(attrs={"placeholder": "https://"}),
+    )
+    online_meeting_id = forms.CharField(
+        label=_("Meeting ID"), max_length=120, required=False,
+    )
+    online_passcode = forms.CharField(
+        label=_("Meeting passcode"),
+        max_length=120,
+        required=False,
+        widget=forms.PasswordInput(render_value=True),
+    )
+    online_instructions_sw = forms.CharField(
+        label=_("Joining instructions in Kiswahili"),
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+    )
+    online_instructions_en = forms.CharField(
+        label=_("Joining instructions in English"),
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+    )
     chairperson_name = forms.CharField(label=_("Chairperson"), max_length=200)
     secretary_name = forms.CharField(
         label=_("Meeting secretary"),
@@ -154,6 +188,13 @@ class MeetingWorkflowForm(forms.Form):
                 "status": event.status,
                 "is_public": event.is_public,
                 "meeting_type": instance.meeting_type,
+                "attendance_mode": instance.attendance_mode,
+                "online_platform": instance.online_platform,
+                "online_join_url": instance.online_join_url,
+                "online_meeting_id": instance.online_meeting_id,
+                "online_passcode": instance.online_passcode,
+                "online_instructions_sw": instance.online_instructions_sw,
+                "online_instructions_en": instance.online_instructions_en,
                 "chairperson_name": instance.chairperson_name,
                 "secretary_name": instance.secretary_name,
                 "quorum_required": instance.quorum_required,
@@ -200,6 +241,20 @@ class MeetingWorkflowForm(forms.Form):
                 "invitation_deadline",
                 _("The invitation deadline cannot be after the meeting starts."),
             )
+        if cleaned.get("attendance_mode") in {
+            Meeting.AttendanceMode.ONLINE,
+            Meeting.AttendanceMode.HYBRID,
+        }:
+            if not cleaned.get("online_platform"):
+                self.add_error(
+                    "online_platform",
+                    _("Select the platform for an online or hybrid meeting."),
+                )
+            if not cleaned.get("online_join_url"):
+                self.add_error(
+                    "online_join_url",
+                    _("Enter the joining link for an online or hybrid meeting."),
+                )
         return cleaned
 
     @transaction.atomic
@@ -239,7 +294,10 @@ class MeetingWorkflowForm(forms.Form):
         for field in (
             "reference_number", "meeting_type", "chairperson_name",
             "secretary_name", "quorum_required", "invitation_deadline",
-            "objectives_sw", "objectives_en",
+            "objectives_sw", "objectives_en", "attendance_mode",
+            "online_platform", "online_join_url", "online_meeting_id",
+            "online_passcode", "online_instructions_sw",
+            "online_instructions_en",
         ):
             setattr(meeting, field, self.cleaned_data[field])
         if not meeting.pk:
@@ -433,13 +491,19 @@ class MeetingSeriesForm(forms.ModelForm):
             "code", "name_sw", "name_en", "description_sw", "description_en",
             "frequency", "meeting_type", "default_duration_minutes", "venue",
             "chairperson_name", "secretary_name", "quorum_required",
-            "objectives_sw", "objectives_en", "is_active",
+            "objectives_sw", "objectives_en", "attendance_mode",
+            "online_platform", "online_join_url", "online_meeting_id",
+            "online_passcode", "online_instructions_sw",
+            "online_instructions_en", "is_active",
         )
         widgets = {
             "description_sw": forms.Textarea(attrs={"rows": 3}),
             "description_en": forms.Textarea(attrs={"rows": 3}),
             "objectives_sw": forms.Textarea(attrs={"rows": 3}),
             "objectives_en": forms.Textarea(attrs={"rows": 3}),
+            "online_passcode": forms.PasswordInput(render_value=True),
+            "online_instructions_sw": forms.Textarea(attrs={"rows": 2}),
+            "online_instructions_en": forms.Textarea(attrs={"rows": 2}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -573,6 +637,13 @@ class MeetingOccurrenceForm(forms.Form):
             invitation_deadline=self.cleaned_data["invitation_deadline"],
             objectives_sw=self.series.objectives_sw,
             objectives_en=self.series.objectives_en,
+            attendance_mode=self.series.attendance_mode,
+            online_platform=self.series.online_platform,
+            online_join_url=self.series.online_join_url,
+            online_meeting_id=self.series.online_meeting_id,
+            online_passcode=self.series.online_passcode,
+            online_instructions_sw=self.series.online_instructions_sw,
+            online_instructions_en=self.series.online_instructions_en,
             created_by=user,
             updated_by=user,
         )
