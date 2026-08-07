@@ -32,6 +32,9 @@
         {% if perms.forms_builder.view_formsubmission %}
             <a href="{% url 'admin:forms_builder_participant_changelist' %}">{% translate "Participants" %}</a>
         {% endif %}
+        {% if perms.meetings.view_meeting %}
+            <a href="{% url 'admin:meetings_meeting_changelist' %}">{% translate "Meetings" %}</a>
+        {% endif %}
         {% if perms.checkin.add_participantcheckin %}
             <a href="{% url 'checkin:lookup' %}">{% translate "Check-in" %}</a>
         {% endif %}

@@ -78,13 +78,17 @@ class User(AbstractUser):
 
     ROLE_PERMISSION_APPS = {
         Role.SYSTEM_ADMIN: {"*"},
-        Role.EVENT_ADMIN: {"events", "forms_builder", "checkin", "core"},
+        Role.EVENT_ADMIN: {
+            "events", "forms_builder", "checkin", "meetings", "core",
+        },
         Role.REGISTRATION_OFFICER: set(),
         Role.ATTENDANCE_OFFICER: {"checkin"},
-        Role.REPORT_OFFICER: {"forms_builder", "checkin"},
-        Role.DIRECTOR: {"accounts", "events", "forms_builder", "checkin", "core"},
+        Role.REPORT_OFFICER: {"forms_builder", "checkin", "meetings"},
+        Role.DIRECTOR: {
+            "accounts", "events", "forms_builder", "checkin", "meetings", "core",
+        },
         Role.ASSISTANT_DIRECTOR: {
-            "accounts", "events", "forms_builder", "checkin", "core",
+            "accounts", "events", "forms_builder", "checkin", "meetings", "core",
         },
         Role.PARTICIPANT: set(),
     }

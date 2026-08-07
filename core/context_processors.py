@@ -5,6 +5,7 @@ from accounts.models import User
 from checkin.models import ParticipantCheckIn
 from events.models import Event
 from forms_builder.models import CertificateRecord, EventForm, FormSubmission, Payment
+from meetings.models import Meeting, MeetingActionItem
 
 
 def administration_dashboard(request):
@@ -19,6 +20,31 @@ def administration_dashboard(request):
             "value": Event.objects.filter(is_active=True).count(),
             "url": reverse("admin:events_event_changelist"),
             "tone": "blue",
+        })
+
+    if request.user.has_perm("meetings.view_meeting"):
+        cards.append({
+            "label": _("Active meetings"),
+            "value": Meeting.objects.filter(
+                is_active=True,
+                event__is_active=True,
+            ).count(),
+            "url": reverse("admin:meetings_meeting_changelist"),
+            "tone": "navy",
+        })
+        cards.append({
+            "label": _("Open meeting actions"),
+            "value": MeetingActionItem.objects.filter(
+                is_active=True,
+                meeting__is_active=True,
+            ).exclude(
+                status__in={
+                    MeetingActionItem.Status.COMPLETED,
+                    MeetingActionItem.Status.CANCELLED,
+                },
+            ).count(),
+            "url": reverse("admin:meetings_meetingactionitem_changelist"),
+            "tone": "gold",
         })
 
     if request.user.has_perm("forms_builder.view_formsubmission"):

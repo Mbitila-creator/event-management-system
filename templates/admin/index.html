@@ -9,7 +9,7 @@
         <span>{% if request.user.is_superuser %}{% translate "System Administrator" %}{% else %}{{ request.user.get_role_display }}{% endif %}</span>
     </header>
 
-    {% if perms.events.add_event or perms.events.add_venue or perms.events.add_eventcategory or perms.forms_builder.add_eventform or perms.accounts.change_user %}
+    {% if perms.events.add_event or perms.events.add_venue or perms.events.add_eventcategory or perms.forms_builder.add_eventform or perms.meetings.add_meeting or perms.accounts.change_user %}
     <section class="ems-quick-actions" aria-label="{% translate 'Quick actions' %}">
         <div class="ems-quick-actions-heading">
             <h2>{% translate "Quick actions" %}</h2>
@@ -20,6 +20,7 @@
             {% if perms.events.add_venue %}<a href="{% url 'admin:events_venue_add' %}">＋ {% translate "Add venue" %}</a>{% endif %}
             {% if perms.events.add_eventcategory %}<a href="{% url 'admin:events_eventcategory_add' %}">＋ {% translate "Add event category" %}</a>{% endif %}
             {% if perms.forms_builder.add_eventform %}<a href="{% url 'admin:forms_builder_eventform_add' %}">＋ {% translate "Create registration form" %}</a>{% endif %}
+            {% if perms.meetings.add_meeting %}<a href="{% url 'admin:meetings_meeting_add' %}">＋ {% translate "Create meeting record" %}</a>{% endif %}
             {% if perms.accounts.change_user %}<a href="{% url 'admin:accounts_user_changelist' %}">🔑 {% translate "Manage users and passwords" %}</a>{% endif %}
         </div>
     </section>
@@ -58,6 +59,15 @@
             <a href="{% url 'admin:events_eventcategory_changelist' %}">{% translate "Categories" %}</a>
             <a href="{% url 'admin:events_venue_changelist' %}">{% translate "Venues" %}</a>
             <a href="{% url 'admin:events_event_changelist' %}">{% translate "Events" %}</a>
+        </div></section>{% endif %}
+
+        {% if perms.meetings.view_meeting %}<section class="ems-group"><h2>{% translate "Meetings" %}</h2><div class="ems-links">
+            {% if perms.meetings.add_meeting %}<a class="ems-create-link" href="{% url 'admin:meetings_meeting_add' %}">＋ {% translate "Create meeting record" %}</a>{% endif %}
+            <a href="{% url 'admin:meetings_meeting_changelist' %}">{% translate "Meeting records" %}</a>
+            <a href="{% url 'admin:meetings_meetingagendaitem_changelist' %}">{% translate "Meeting agendas" %}</a>
+            <a href="{% url 'admin:meetings_meetingattendee_changelist' %}">{% translate "Meeting participants" %}</a>
+            <a href="{% url 'admin:meetings_meetingdecision_changelist' %}">{% translate "Meeting decisions" %}</a>
+            <a href="{% url 'admin:meetings_meetingactionitem_changelist' %}">{% translate "Meeting action items" %}</a>
         </div></section>{% endif %}
 
         {% if perms.forms_builder.view_eventform %}<section class="ems-group"><h2>{% translate "Registration" %}</h2><div class="ems-links">

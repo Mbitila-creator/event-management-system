@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-06 20:03+0300\n"
+"POT-Creation-Date: 2026-08-07 09:19+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -70,7 +70,7 @@ msgstr "Kiswahili"
 msgid "English"
 msgstr "Kiingereza"
 
-#: accounts/models.py:28
+#: accounts/models.py:28 meetings/models.py:247
 msgid "email address"
 msgstr "anwani ya baruapepe"
 
@@ -78,7 +78,7 @@ msgstr "anwani ya baruapepe"
 msgid "employee number"
 msgstr "namba ya mfanyakazi"
 
-#: accounts/models.py:41
+#: accounts/models.py:41 meetings/models.py:249
 msgid "phone number"
 msgstr "namba ya simu"
 
@@ -190,7 +190,7 @@ msgstr "uwasilishaji wa mshiriki"
 msgid "checked in by"
 msgstr "amepokelewa na"
 
-#: checkin/models.py:29
+#: checkin/models.py:29 meetings/models.py:276
 msgid "checked in at"
 msgstr "amepokelewa tarehe"
 
@@ -527,7 +527,7 @@ msgstr "longitudo"
 msgid "online meeting link"
 msgstr "kiungo cha mkutano wa mtandaoni"
 
-#: events/models.py:151
+#: events/models.py:151 meetings/models.py:182
 msgid "notes"
 msgstr "maelezo ya ziada"
 
@@ -539,7 +539,7 @@ msgstr "eneo"
 msgid "venues"
 msgstr "maeneo"
 
-#: events/models.py:176 forms_builder/models.py:1064
+#: events/models.py:176 forms_builder/models.py:1064 meetings/models.py:26
 msgid "Draft"
 msgstr "Rasimu"
 
@@ -559,11 +559,11 @@ msgstr "Usajili Umefungwa"
 msgid "Ongoing"
 msgstr "Inaendelea"
 
-#: events/models.py:187 forms_builder/models.py:1067
+#: events/models.py:187 forms_builder/models.py:1067 meetings/models.py:382
 msgid "Completed"
 msgstr "Imekamilika"
 
-#: events/models.py:188
+#: events/models.py:188 meetings/models.py:384
 msgid "Cancelled"
 msgstr "Imefutwa"
 
@@ -623,7 +623,7 @@ msgstr "nembo ya tukio"
 msgid "event banner"
 msgstr "bango la tukio"
 
-#: events/models.py:315
+#: events/models.py:315 meetings/models.py:347 meetings/models.py:418
 msgid "status"
 msgstr "hali"
 
@@ -681,6 +681,7 @@ msgstr "maelekezo ya malipo kwa Kiingereza"
 
 #: events/models.py:377 forms_builder/models.py:37 forms_builder/models.py:691
 #: forms_builder/models.py:819 forms_builder/models.py:1071
+#: meetings/models.py:32
 msgid "event"
 msgstr "tukio"
 
@@ -803,8 +804,12 @@ msgid "Participant contact information"
 msgstr "Mawasiliano ya mshiriki"
 
 #: forms_builder/admin.py:700
-msgid "Update these fields when a participant reports an incorrect email address or phone number."
-msgstr "Sasisha sehemu hizi mshiriki anapotoa taarifa kuwa anwani ya barua pepe au namba ya simu si sahihi."
+msgid ""
+"Update these fields when a participant reports an incorrect email address or "
+"phone number."
+msgstr ""
+"Sasisha sehemu hizi mshiriki anapotoa taarifa kuwa anwani ya barua pepe au "
+"namba ya simu si sahihi."
 
 #: forms_builder/admin.py:705
 msgid "Registration review"
@@ -862,7 +867,8 @@ msgstr "Tuma vikumbusho vilivyochaguliwa sasa"
 #: forms_builder/admin.py:1198
 #, python-format
 msgid "%(completed)s reminder(s) sent; %(skipped)s already completed."
-msgstr "Vikumbusho %(completed)s vimetumwa; %(skipped)s vilikuwa vimekamilika tayari."
+msgstr ""
+"Vikumbusho %(completed)s vimetumwa; %(skipped)s vilikuwa vimekamilika tayari."
 
 #: forms_builder/admin.py:1255
 msgid "Resend selected notifications"
@@ -923,7 +929,8 @@ msgstr "onyesha muhtasari wa tukio juu ya fomu"
 
 #: forms_builder/models.py:79
 msgid "Display the event logo, code, title, dates and venue above this form."
-msgstr "Onyesha nembo, msimbo, kichwa, tarehe na eneo la tukio juu ya fomu hii."
+msgstr ""
+"Onyesha nembo, msimbo, kichwa, tarehe na eneo la tukio juu ya fomu hii."
 
 #: forms_builder/models.py:84
 msgid "success message in Kiswahili"
@@ -1003,8 +1010,12 @@ msgid "form sections"
 msgstr "sehemu za fomu"
 
 #: forms_builder/models.py:211
-msgid "Both the controlling question and answer value are required for conditional display."
-msgstr "Swali linalodhibiti na thamani ya jibu vinahitajika kwa mwonekano wenye masharti."
+msgid ""
+"Both the controlling question and answer value are required for conditional "
+"display."
+msgstr ""
+"Swali linalodhibiti na thamani ya jibu vinahitajika kwa mwonekano wenye "
+"masharti."
 
 #: forms_builder/models.py:225
 msgid "The controlling question must belong to the same form."
@@ -1012,7 +1023,8 @@ msgstr "Swali linalodhibiti lazima liwe katika fomu hiyo hiyo."
 
 #: forms_builder/models.py:241
 msgid "Enter an active stored option value from the controlling question."
-msgstr "Weka thamani hai iliyohifadhiwa ya chaguo kutoka kwenye swali linalodhibiti."
+msgstr ""
+"Weka thamani hai iliyohifadhiwa ya chaguo kutoka kwenye swali linalodhibiti."
 
 #: forms_builder/models.py:253
 msgid "Short text"
@@ -1154,7 +1166,8 @@ msgstr "chaguo za swali"
 msgid "Pending review"
 msgstr "Inasubiri ukaguzi"
 
-#: forms_builder/models.py:408 templates/checkin/reports.html:45
+#: forms_builder/models.py:408 meetings/models.py:28 meetings/models.py:326
+#: templates/checkin/reports.html:45
 msgid "Approved"
 msgstr "Imepitishwa"
 
@@ -1249,7 +1262,7 @@ msgstr "uwasilishaji wa fomu"
 msgid "participant"
 msgstr "Mshiriki"
 
-#: forms_builder/models.py:581
+#: forms_builder/models.py:581 meetings/admin.py:123
 msgid "participants"
 msgstr "washiriki"
 
@@ -1312,11 +1325,15 @@ msgstr "vyeti"
 
 #: forms_builder/models.py:663
 msgid "An authorized certificate cannot contain denial or revocation details."
-msgstr "Cheti kilichoidhinishwa hakiwezi kuwa na taarifa za kukataliwa au kubatilishwa."
+msgstr ""
+"Cheti kilichoidhinishwa hakiwezi kuwa na taarifa za kukataliwa au "
+"kubatilishwa."
 
 #: forms_builder/models.py:674
 msgid "Only an approved, checked-in participant may receive a certificate."
-msgstr "Ni mshiriki aliyeidhinishwa na kuthibitishwa mahudhurio pekee anayeweza kupewa cheti."
+msgstr ""
+"Ni mshiriki aliyeidhinishwa na kuthibitishwa mahudhurio pekee anayeweza "
+"kupewa cheti."
 
 #: forms_builder/models.py:677
 msgid "A certificate denial requires the officer, time and reason."
@@ -1880,12 +1897,14 @@ msgstr "Taarifa ya usajili — %(event)s"
 #: forms_builder/notifications.py:55
 #, python-format
 msgid ""
-"Your registration for %(event)s was not approved. Please contact the event organizer if you need assistance.\n"
+"Your registration for %(event)s was not approved. Please contact the event "
+"organizer if you need assistance.\n"
 "\n"
 "Reference number: %(reference)s\n"
 "Check status: %(status_url)s"
 msgstr ""
-"Usajili wako kwa %(event)s haujaidhinishwa. Tafadhali wasiliana na mratibu wa tukio ikiwa unahitaji msaada.\n"
+"Usajili wako kwa %(event)s haujaidhinishwa. Tafadhali wasiliana na mratibu "
+"wa tukio ikiwa unahitaji msaada.\n"
 "\n"
 "Namba ya kumbukumbu: %(reference)s\n"
 "Angalia hali: %(status_url)s"
@@ -1985,7 +2004,8 @@ msgstr "Usajili umepokelewa — %(event)s"
 
 #: forms_builder/notifications.py:182
 #: templates/forms_builder/participant_payment.html:25
-msgid "Your payment information has been received and is awaiting verification."
+msgid ""
+"Your payment information has been received and is awaiting verification."
 msgstr "Taarifa zako za malipo zimepokelewa na zinasubiri uthibitisho."
 
 #: forms_builder/notifications.py:184
@@ -2037,7 +2057,9 @@ msgstr "Cheti hiki kinatolewa kwa fahari kwa"
 #: templates/forms_builder/participant_certificate.html:56
 #, python-format
 msgid "for participating in %(event_name)s and completing verified attendance."
-msgstr "kwa kushiriki katika %(event_name)s na kukamilisha mahudhurio yaliyothibitishwa."
+msgstr ""
+"kwa kushiriki katika %(event_name)s na kukamilisha mahudhurio "
+"yaliyothibitishwa."
 
 #: forms_builder/services.py:300
 #: templates/forms_builder/certificate_verification.html:45
@@ -2099,8 +2121,383 @@ msgstr "Malipo ya usajili huu tayari yanasubiri au yamethibitishwa."
 
 #: forms_builder/views.py:1077
 #: templates/forms_builder/participant_payment.html:19
-msgid "The payment amount could not be calculated. Contact the event organizer."
-msgstr "Kiasi cha malipo hakikuweza kukokotolewa. Wasiliana na mratibu wa tukio."
+msgid ""
+"The payment amount could not be calculated. Contact the event organizer."
+msgstr ""
+"Kiasi cha malipo hakikuweza kukokotolewa. Wasiliana na mratibu wa tukio."
+
+#: meetings/admin.py:100
+msgid "Meeting information"
+msgstr "Taarifa za kikao"
+
+#: meetings/admin.py:104
+msgid "Meeting objectives"
+msgstr "Malengo ya kikao"
+
+#: meetings/admin.py:105
+msgid "Meeting minutes"
+msgstr "Kumbukumbu za kikao"
+
+#: meetings/admin.py:109
+msgid "Audit information"
+msgstr "Taarifa za ufuatiliaji"
+
+#: meetings/admin.py:119
+msgid "meeting date"
+msgstr "tarehe ya kikao"
+
+#: meetings/admin.py:173 meetings/models.py:394
+msgid "decision"
+msgstr "uamuzi"
+
+#: meetings/admin.py:192
+msgid "action"
+msgstr "hatua"
+
+#: meetings/apps.py:8 templates/admin/index.html:64
+msgid "Meetings"
+msgstr "Vikao"
+
+#: core/context_processors.py
+msgid "Active meetings"
+msgstr "Vikao vinavyoendelea"
+
+#: core/context_processors.py
+msgid "Open meeting actions"
+msgstr "Hatua za vikao ambazo hazijafungwa"
+
+#: meetings/models.py:16
+msgid "Management meeting"
+msgstr "Kikao cha menejimenti"
+
+#: meetings/models.py:17
+msgid "Technical meeting"
+msgstr "Kikao cha kiufundi"
+
+#: meetings/models.py:18
+msgid "Committee meeting"
+msgstr "Kikao cha kamati"
+
+#: meetings/models.py:19
+msgid "Board meeting"
+msgstr "Kikao cha bodi"
+
+#: meetings/models.py:20
+msgid "Stakeholder meeting"
+msgstr "Kikao cha wadau"
+
+#: meetings/models.py:21
+msgid "Working session"
+msgstr "Kikao kazi"
+
+#: meetings/models.py:22
+msgid "Other meeting"
+msgstr "Kikao kingine"
+
+#: meetings/models.py:25
+msgid "Not started"
+msgstr "Haijaanza"
+
+#: meetings/models.py:27
+msgid "Submitted for approval"
+msgstr "Imewasilishwa kwa ajili ya kuidhinishwa"
+
+#: meetings/models.py:37
+msgid "meeting reference number"
+msgstr "namba ya kumbukumbu ya kikao"
+
+#: meetings/models.py:40
+msgid "Use the official meeting reference when available."
+msgstr "Tumia namba rasmi ya kumbukumbu ya kikao inapopatikana."
+
+#: meetings/models.py:43
+msgid "meeting type"
+msgstr "aina ya kikao"
+
+#: meetings/models.py:49
+msgid "chairperson"
+msgstr "mwenyekiti"
+
+#: meetings/models.py:53
+msgid "meeting secretary"
+msgstr "katibu wa kikao"
+
+#: meetings/models.py:58
+msgid "required quorum"
+msgstr "akidi inayohitajika"
+
+#: meetings/models.py:61
+msgid "Leave empty when the meeting has no formal quorum."
+msgstr "Acha wazi ikiwa kikao hakihitaji akidi rasmi."
+
+#: meetings/models.py:64
+msgid "invitation response deadline"
+msgstr "tarehe ya mwisho ya kujibu mwaliko"
+
+#: meetings/models.py:69
+msgid "objectives in Kiswahili"
+msgstr "malengo kwa Kiswahili"
+
+#: meetings/models.py:73
+msgid "objectives in English"
+msgstr "malengo kwa Kiingereza"
+
+#: meetings/models.py:77
+msgid "minutes status"
+msgstr "hali ya kumbukumbu za kikao"
+
+#: meetings/models.py:83
+msgid "minutes in Kiswahili"
+msgstr "kumbukumbu za kikao kwa Kiswahili"
+
+#: meetings/models.py:87
+msgid "minutes in English"
+msgstr "kumbukumbu za kikao kwa Kiingereza"
+
+#: meetings/models.py:91
+msgid "signed minutes document"
+msgstr "hati ya kumbukumbu za kikao iliyosainiwa"
+
+#: meetings/models.py:98
+msgid "minutes approved by"
+msgstr "kumbukumbu zimeidhinishwa na"
+
+#: meetings/models.py:105
+msgid "minutes approved at"
+msgstr "kumbukumbu ziliidhinishwa tarehe"
+
+#: meetings/models.py:111 meetings/models.py:159 meetings/models.py:218
+#: meetings/models.py:331 meetings/models.py:388
+msgid "meeting"
+msgstr "kikao"
+
+#: meetings/models.py:112
+msgid "meetings"
+msgstr "vikao"
+
+#: meetings/models.py:125
+msgid "Only an event in the MEETING category can have meeting details."
+msgstr "Ni tukio la kundi la MEETING pekee linaloweza kuwa na taarifa za kikao."
+
+#: meetings/models.py:133
+msgid "The invitation deadline cannot be after the meeting starts."
+msgstr "Tarehe ya mwisho ya kujibu mwaliko haiwezi kuwa baada ya kikao kuanza."
+
+#: meetings/models.py:137
+msgid "The required quorum must be greater than zero."
+msgstr "Akidi inayohitajika lazima iwe kubwa kuliko sifuri."
+
+#: meetings/models.py:163
+msgid "agenda item number"
+msgstr "namba ya ajenda"
+
+#: meetings/models.py:165
+msgid "agenda title in Kiswahili"
+msgstr "jina la ajenda kwa Kiswahili"
+
+#: meetings/models.py:169
+msgid "agenda title in English"
+msgstr "jina la ajenda kwa Kiingereza"
+
+#: meetings/models.py:173
+msgid "presenter"
+msgstr "mwasilishaji"
+
+#: meetings/models.py:178
+msgid "allocated minutes"
+msgstr "dakika zilizotengwa"
+
+#: meetings/models.py:185
+msgid "meeting agenda item"
+msgstr "kipengele cha ajenda ya kikao"
+
+#: meetings/models.py:186
+msgid "meeting agenda items"
+msgstr "vipengele vya ajenda ya kikao"
+
+#: meetings/models.py:201
+msgid "Internal participant"
+msgstr "Mshiriki wa ndani"
+
+#: meetings/models.py:202
+msgid "External participant"
+msgstr "Mshiriki wa nje"
+
+#: meetings/models.py:205
+msgid "Invited"
+msgstr "Amealikwa"
+
+#: meetings/models.py:206
+msgid "Accepted"
+msgstr "Amekubali"
+
+#: meetings/models.py:207
+msgid "Declined"
+msgstr "Amekataa"
+
+#: meetings/models.py:208
+msgid "Tentative"
+msgstr "Bado hajathibitisha"
+
+#: meetings/models.py:211
+msgid "Not marked"
+msgstr "Haijawekwa"
+
+#: meetings/models.py:212
+msgid "Present"
+msgstr "Amehudhuria"
+
+#: meetings/models.py:213
+msgid "Absent"
+msgstr "Hakuhudhuria"
+
+#: meetings/models.py:214
+msgid "Excused"
+msgstr "Amepewa udhuru"
+
+#: meetings/models.py:223
+msgid "participant type"
+msgstr "aina ya mshiriki"
+
+#: meetings/models.py:230
+msgid "system user"
+msgstr "mtumiaji wa mfumo"
+
+#: meetings/models.py:236
+msgid "full name"
+msgstr "jina kamili"
+
+#: meetings/models.py:238
+msgid "organization"
+msgstr "taasisi"
+
+#: meetings/models.py:243
+msgid "designation"
+msgstr "cheo"
+
+#: meetings/models.py:254
+msgid "invitation response"
+msgstr "jibu la mwaliko"
+
+#: meetings/models.py:260
+msgid "attendance status"
+msgstr "hali ya mahudhurio"
+
+#: meetings/models.py:266
+msgid "invitation sent at"
+msgstr "mwaliko ulitumwa tarehe"
+
+#: meetings/models.py:271
+msgid "invitation responded at"
+msgstr "mwaliko ulijibiwa tarehe"
+
+#: meetings/models.py:282
+msgid "meeting participant"
+msgstr "mshiriki wa kikao"
+
+#: meetings/models.py:283
+msgid "meeting participants"
+msgstr "washiriki wa kikao"
+
+#: meetings/models.py:307
+msgid "Select a system user for an internal participant."
+msgstr "Chagua mtumiaji wa mfumo kwa mshiriki wa ndani."
+
+#: meetings/models.py:325
+msgid "Proposed"
+msgstr "Imependekezwa"
+
+#: meetings/models.py:327
+msgid "Deferred"
+msgstr "Imeahirishwa"
+
+#: meetings/models.py:337
+msgid "agenda item"
+msgstr "kipengele cha ajenda"
+
+#: meetings/models.py:343
+msgid "decision number"
+msgstr "namba ya uamuzi"
+
+#: meetings/models.py:344
+msgid "decision in Kiswahili"
+msgstr "uamuzi kwa Kiswahili"
+
+#: meetings/models.py:345
+msgid "decision in English"
+msgstr "uamuzi kwa Kiingereza"
+
+#: meetings/models.py:354
+msgid "meeting decision"
+msgstr "uamuzi wa kikao"
+
+#: meetings/models.py:355
+msgid "meeting decisions"
+msgstr "maamuzi ya kikao"
+
+#: meetings/models.py:367
+msgid "The agenda item must belong to this meeting."
+msgstr "Kipengele cha ajenda lazima kiwe cha kikao hiki."
+
+#: meetings/models.py:380 templates/checkin/reports.html:50
+msgid "Pending"
+msgstr "Inasubiri"
+
+#: meetings/models.py:381
+msgid "In progress"
+msgstr "Inaendelea"
+
+#: meetings/models.py:383
+msgid "Overdue"
+msgstr "Imepitiliza muda"
+
+#: meetings/models.py:400
+msgid "action number"
+msgstr "namba ya hatua"
+
+#: meetings/models.py:401
+msgid "action in Kiswahili"
+msgstr "hatua kwa Kiswahili"
+
+#: meetings/models.py:402
+msgid "action in English"
+msgstr "hatua kwa Kiingereza"
+
+#: meetings/models.py:405
+msgid "responsible system user"
+msgstr "mtumiaji wa mfumo anayewajibika"
+
+#: meetings/models.py:412
+msgid "responsible person"
+msgstr "mtu anayewajibika"
+
+#: meetings/models.py:416
+msgid "due date"
+msgstr "tarehe ya mwisho"
+
+#: meetings/models.py:423
+msgid "progress notes"
+msgstr "maelezo ya maendeleo"
+
+#: meetings/models.py:425
+msgid "completed at"
+msgstr "ilikamilika tarehe"
+
+#: meetings/models.py:431
+msgid "meeting action item"
+msgstr "hatua ya utekelezaji ya kikao"
+
+#: meetings/models.py:432
+msgid "meeting action items"
+msgstr "hatua za utekelezaji za kikao"
+
+#: meetings/models.py:450
+msgid "The decision must belong to this meeting."
+msgstr "Uamuzi lazima uwe wa kikao hiki."
+
+#: meetings/models.py:453
+msgid "Enter a responsible person or select a system user."
+msgstr "Weka mtu anayewajibika au chagua mtumiaji wa mfumo."
 
 #: templates/accounts/booth_assignments.html:4
 #: templates/accounts/booth_assignments.html:9
@@ -2113,8 +2510,12 @@ msgid "Event operations"
 msgstr "Uendeshaji wa tukio"
 
 #: templates/accounts/booth_assignments.html:9
-msgid "Assign approved exhibitors, track readiness and release booths when necessary."
-msgstr "Pangia waoneshaji walioidhinishwa, fuatilia utayari na ondoa mipangilio inapohitajika."
+msgid ""
+"Assign approved exhibitors, track readiness and release booths when "
+"necessary."
+msgstr ""
+"Pangia waoneshaji walioidhinishwa, fuatilia utayari na ondoa mipangilio "
+"inapohitajika."
 
 #: templates/accounts/booth_assignments.html:9
 #: templates/accounts/participant_review_details.html:11
@@ -2283,8 +2684,12 @@ msgid "Success"
 msgstr "Imefanikiwa"
 
 #: templates/accounts/password_change_done.html:5
-msgid "Your password has been updated successfully. Use the new password the next time you sign in."
-msgstr "Nenosiri lako limesasishwa kwa mafanikio. Tumia nenosiri jipya utakapoingia tena."
+msgid ""
+"Your password has been updated successfully. Use the new password the next "
+"time you sign in."
+msgstr ""
+"Nenosiri lako limesasishwa kwa mafanikio. Tumia nenosiri jipya utakapoingia "
+"tena."
 
 #: templates/accounts/password_change_form.html:3
 #: templates/accounts/password_change_form.html:5
@@ -2341,8 +2746,12 @@ msgid "Reset link is invalid"
 msgstr "Kiungo cha kuweka upya si halali"
 
 #: templates/accounts/password_reset_confirm.html:5
-msgid "This password-reset link is invalid or has already been used. Request a new link to continue."
-msgstr "Kiungo hiki cha kuweka upya nenosiri si halali au tayari kimetumika. Omba kiungo kipya ili kuendelea."
+msgid ""
+"This password-reset link is invalid or has already been used. Request a new "
+"link to continue."
+msgstr ""
+"Kiungo hiki cha kuweka upya nenosiri si halali au tayari kimetumika. Omba "
+"kiungo kipya ili kuendelea."
 
 #: templates/accounts/password_reset_confirm.html:5
 msgid "Request another reset link"
@@ -2358,8 +2767,12 @@ msgid "Check your email"
 msgstr "Angalia barua pepe yako"
 
 #: templates/accounts/password_reset_done.html:5
-msgid "If an active account matches that email address, a password-reset link has been sent. Check your inbox and spam folder."
-msgstr "Ikiwa akaunti hai inalingana na anwani hiyo ya barua pepe, kiungo cha kuweka upya nenosiri kimetumwa. Angalia kikasha chako na folda ya barua taka."
+msgid ""
+"If an active account matches that email address, a password-reset link has "
+"been sent. Check your inbox and spam folder."
+msgstr ""
+"Ikiwa akaunti hai inalingana na anwani hiyo ya barua pepe, kiungo cha kuweka "
+"upya nenosiri kimetumwa. Angalia kikasha chako na folda ya barua taka."
 
 #: templates/accounts/password_reset_done.html:5
 #: templates/accounts/password_reset_form.html:5
@@ -2371,16 +2784,23 @@ msgid "Hello"
 msgstr "Habari"
 
 #: templates/accounts/password_reset_email.txt:3
-msgid "A password reset was requested for your Event Management System account."
-msgstr "Ombi la kuweka upya nenosiri limetolewa kwa akaunti yako ya Mfumo wa Usimamizi wa Matukio."
+msgid ""
+"A password reset was requested for your Event Management System account."
+msgstr ""
+"Ombi la kuweka upya nenosiri limetolewa kwa akaunti yako ya Mfumo wa "
+"Usimamizi wa Matukio."
 
 #: templates/accounts/password_reset_email.txt:5
 msgid "Open the secure link below to choose a new password:"
 msgstr "Fungua kiungo salama hapa chini ili kuchagua nenosiri jipya:"
 
 #: templates/accounts/password_reset_email.txt:8
-msgid "If you did not request this reset, ignore this email. Your current password will remain unchanged."
-msgstr "Ikiwa hukuomba uwekaji huu upya, puuza barua pepe hii. Nenosiri lako la sasa halitabadilika."
+msgid ""
+"If you did not request this reset, ignore this email. Your current password "
+"will remain unchanged."
+msgstr ""
+"Ikiwa hukuomba uwekaji huu upya, puuza barua pepe hii. Nenosiri lako la sasa "
+"halitabadilika."
 
 #: templates/accounts/password_reset_email.txt:10
 #: templates/admin/base_site.html:4 templates/admin/base_site.html:20
@@ -2398,8 +2818,12 @@ msgid "Forgot password?"
 msgstr "Umesahau nenosiri?"
 
 #: templates/accounts/password_reset_form.html:5
-msgid "Enter the email address registered on your staff account. We will send a secure password-reset link if the account is active."
-msgstr "Weka anwani ya barua pepe iliyosajiliwa kwenye akaunti yako ya mtumishi. Tutatuma kiungo salama cha kuweka upya nenosiri ikiwa akaunti ni hai."
+msgid ""
+"Enter the email address registered on your staff account. We will send a "
+"secure password-reset link if the account is active."
+msgstr ""
+"Weka anwani ya barua pepe iliyosajiliwa kwenye akaunti yako ya mtumishi. "
+"Tutatuma kiungo salama cha kuweka upya nenosiri ikiwa akaunti ni hai."
 
 #: templates/accounts/password_reset_form.html:5
 msgid "Registered email address"
@@ -2447,8 +2871,12 @@ msgid "Who should use this page?"
 msgstr "Nani anapaswa kutumia ukurasa huu?"
 
 #: templates/accounts/staff_login.html:44
-msgid "Directors, Assistant Directors, System Administrators, Event Administrators, Registration Officers, Attendance Officers and Report Officers."
-msgstr "Wakurugenzi, Wakurugenzi Wasaidizi, Wasimamizi wa Mfumo, Wasimamizi wa Matukio, Maafisa wa Usajili, Maafisa wa Mahudhurio na Maafisa wa Ripoti."
+msgid ""
+"Directors, Assistant Directors, System Administrators, Event Administrators, "
+"Registration Officers, Attendance Officers and Report Officers."
+msgstr ""
+"Wakurugenzi, Wakurugenzi Wasaidizi, Wasimamizi wa Mfumo, Wasimamizi wa "
+"Matukio, Maafisa wa Usajili, Maafisa wa Mahudhurio na Maafisa wa Ripoti."
 
 #: templates/accounts/staff_login.html:45
 msgid "Participants do not need a staff account."
@@ -2700,7 +3128,7 @@ msgstr "Dashibodi"
 msgid "Users"
 msgstr "Watumiaji"
 
-#: templates/admin/base_site.html:33 templates/admin/index.html:70
+#: templates/admin/base_site.html:33 templates/admin/index.html:80
 #, fuzzy
 #| msgid "Participant"
 msgid "Participants"
@@ -2721,10 +3149,11 @@ msgid "Quick actions"
 msgstr "Vitendo vya haraka"
 
 #: templates/admin/index.html:16
-msgid "Create and configure an event without searching through administration menus."
+msgid ""
+"Create and configure an event without searching through administration menus."
 msgstr "Unda na sanidi tukio bila kutafuta kwenye menyu za usimamizi."
 
-#: templates/admin/index.html:19 templates/admin/index.html:57
+#: templates/admin/index.html:19 templates/admin/index.html:58
 msgid "Create new event"
 msgstr "Unda tukio jipya"
 
@@ -2740,137 +3169,161 @@ msgstr "Ongeza aina ya tukio"
 msgid "Create registration form"
 msgstr "Unda fomu ya usajili"
 
-#: templates/admin/index.html:23
+#: templates/admin/index.html:23 templates/admin/index.html:65
+msgid "Create meeting record"
+msgstr "Unda kumbukumbu ya kikao"
+
+#: templates/admin/index.html:24
 msgid "Manage users and passwords"
 msgstr "Simamia watumiaji na manenosiri"
 
-#: templates/admin/index.html:29
+#: templates/admin/index.html:30
 msgid "Operational statistics"
 msgstr "Takwimu za uendeshaji"
 
-#: templates/admin/index.html:34
+#: templates/admin/index.html:35
 msgid "Open records"
 msgstr "Fungua kumbukumbu"
 
-#: templates/admin/index.html:42
+#: templates/admin/index.html:43
 msgid "Users and access"
 msgstr "Watumiaji na ruhusa"
 
-#: templates/admin/index.html:43
+#: templates/admin/index.html:44
 msgid "Manage users and reset passwords"
 msgstr "Simamia watumiaji na kuweka upya manenosiri"
 
-#: templates/admin/index.html:44
+#: templates/admin/index.html:45
 msgid "Create staff account"
 msgstr "Unda akaunti ya mtumishi"
 
-#: templates/admin/index.html:48
+#: templates/admin/index.html:49
 msgid "Reference Data"
 msgstr "Data Rejea"
 
-#: templates/admin/index.html:49
+#: templates/admin/index.html:50
 msgid "Countries"
 msgstr "Nchi"
 
-#: templates/admin/index.html:50
+#: templates/admin/index.html:51
 msgid "Regions"
 msgstr "Mikoa"
 
-#: templates/admin/index.html:51
+#: templates/admin/index.html:52
 msgid "Councils"
 msgstr "Halmashauri"
 
-#: templates/admin/index.html:52
+#: templates/admin/index.html:53
 msgid "Wards"
 msgstr "Kata"
 
-#: templates/admin/index.html:56 templates/admin/index.html:60
+#: templates/admin/index.html:57 templates/admin/index.html:61
 #: templates/events/home.html:5 templates/events/home.html:100
 msgid "Events"
 msgstr "Matukio"
 
-#: templates/admin/index.html:58
+#: templates/admin/index.html:59
 msgid "Categories"
 msgstr "Makundi"
 
-#: templates/admin/index.html:59
+#: templates/admin/index.html:60
 msgid "Venues"
 msgstr "Maeneo"
 
-#: templates/admin/index.html:63
+#: templates/admin/index.html:66
+msgid "Meeting records"
+msgstr "Kumbukumbu za vikao"
+
+#: templates/admin/index.html:67
+msgid "Meeting agendas"
+msgstr "Ajenda za vikao"
+
+#: templates/admin/index.html:68
+msgid "Meeting participants"
+msgstr "Washiriki wa vikao"
+
+#: templates/admin/index.html:69
+msgid "Meeting decisions"
+msgstr "Maamuzi ya vikao"
+
+#: templates/admin/index.html:70
+msgid "Meeting action items"
+msgstr "Hatua za utekelezaji za vikao"
+
+#: templates/admin/index.html:73
 #: templates/forms_builder/participant_portal.html:15
 #: templates/forms_builder/registration_status.html:21
 msgid "Registration"
 msgstr "Usajili"
 
-#: templates/admin/index.html:64
+#: templates/admin/index.html:74
 msgid "Registration Forms"
 msgstr "Fomu za Usajili"
 
-#: templates/admin/index.html:65
+#: templates/admin/index.html:75
 msgid "Questions"
 msgstr "Maswali"
 
-#: templates/admin/index.html:66
+#: templates/admin/index.html:76
 msgid "Responses"
 msgstr "Majibu"
 
-#: templates/admin/index.html:69
+#: templates/admin/index.html:79
 msgid "Participants and Certificates"
 msgstr "Washiriki na Vyeti"
 
-#: templates/admin/index.html:71
+#: templates/admin/index.html:81
 msgid "QR Codes and Badges"
 msgstr "Misimbo ya QR na Beji"
 
-#: templates/admin/index.html:72
+#: templates/admin/index.html:82
 #, fuzzy
 #| msgid "Certificate number"
 msgid "Certificates"
 msgstr "Namba ya cheti"
 
-#: templates/admin/index.html:75
+#: templates/admin/index.html:85
 #, fuzzy
 #| msgid "payments"
 msgid "Payments"
 msgstr "malipo"
 
-#: templates/admin/index.html:76
+#: templates/admin/index.html:86
 msgid "Payment Records"
 msgstr "Kumbukumbu za Malipo"
 
-#: templates/admin/index.html:77
+#: templates/admin/index.html:87
 msgid "Record Payment"
 msgstr "Weka Malipo"
 
-#: templates/admin/index.html:80 templates/checkin/reports.html:80
+#: templates/admin/index.html:90 templates/checkin/reports.html:80
 #: templates/forms_builder/participant_portal.html:17
 #, fuzzy
 #| msgid "Attendance Officer"
 msgid "Attendance"
 msgstr "Afisa Mahudhurio"
 
-#: templates/admin/index.html:81
+#: templates/admin/index.html:91
 msgid "Check-in Participants"
 msgstr "Thibitisha Mahudhurio ya Washiriki"
 
-#: templates/admin/index.html:82
+#: templates/admin/index.html:92
 msgid "Attendance Records"
 msgstr "Kumbukumbu za Mahudhurio"
 
-#: templates/admin/index.html:83
+#: templates/admin/index.html:93
 msgid "Attendance Reports"
 msgstr "Ripoti za Mahudhurio"
 
-#: templates/admin/index.html:86
+#: templates/admin/index.html:96
 msgid "Evaluation and Reports"
 msgstr "Tathmini na Ripoti"
 
-#: templates/admin/index.html:87
+#: templates/admin/index.html:97
 msgid "Evaluation Reports"
 msgstr "Ripoti za Tathmini"
 
-#: templates/admin/index.html:88
+#: templates/admin/index.html:98
 msgid "Participant Reports"
 msgstr "Ripoti za Washiriki"
 
@@ -2879,8 +3332,12 @@ msgid "Event attendance"
 msgstr "Mahudhurio ya tukio"
 
 #: templates/checkin/lookup.html:17
-msgid "Scan the participant badge QR code, or enter the reference number or participant token below."
-msgstr "Changanua msimbo wa QR kwenye beji ya mshiriki, au weka namba ya kumbukumbu au kitambulisho cha mshiriki hapa chini."
+msgid ""
+"Scan the participant badge QR code, or enter the reference number or "
+"participant token below."
+msgstr ""
+"Changanua msimbo wa QR kwenye beji ya mshiriki, au weka namba ya kumbukumbu "
+"au kitambulisho cha mshiriki hapa chini."
 
 #: templates/checkin/lookup.html:25
 msgid "Participant not found or not eligible for check-in."
@@ -2987,12 +3444,6 @@ msgstr "Hajahudhuria"
 #: templates/checkin/reports.html:48
 msgid "Attendance rate"
 msgstr "Kiwango cha mahudhurio"
-
-#: templates/checkin/reports.html:50
-#, fuzzy
-#| msgid "Pending review"
-msgid "Pending"
-msgstr "Inasubiri ukaguzi"
 
 #: templates/checkin/reports.html:56
 msgid "Download attendance CSV"
@@ -3233,8 +3684,12 @@ msgid "Certificate verified"
 msgstr "Cheti kimethibitishwa"
 
 #: templates/forms_builder/certificate_verification.html:17
-msgid "This certificate is valid and was issued to a participant with verified attendance."
-msgstr "Cheti hiki ni halali na kimetolewa kwa mshiriki ambaye mahudhurio yake yamethibitishwa."
+msgid ""
+"This certificate is valid and was issued to a participant with verified "
+"attendance."
+msgstr ""
+"Cheti hiki ni halali na kimetolewa kwa mshiriki ambaye mahudhurio yake "
+"yamethibitishwa."
 
 #: templates/forms_builder/evaluation_reports.html:16
 msgid "Visitor feedback"
@@ -3502,11 +3957,16 @@ msgid "Verify this receipt"
 msgstr "Thibitisha risiti hii"
 
 #: templates/forms_builder/payment_receipt.html:20
-msgid "Scan this QR code to confirm that this payment receipt is authentic and verified."
-msgstr "Changanua msimbo huu wa QR kuthibitisha kuwa risiti hii ya malipo ni halisi na imethibitishwa."
+msgid ""
+"Scan this QR code to confirm that this payment receipt is authentic and "
+"verified."
+msgstr ""
+"Changanua msimbo huu wa QR kuthibitisha kuwa risiti hii ya malipo ni halisi "
+"na imethibitishwa."
 
 #: templates/forms_builder/payment_receipt.html:21
-msgid "This receipt was generated electronically by the Event Management System."
+msgid ""
+"This receipt was generated electronically by the Event Management System."
 msgstr "Risiti hii imetolewa kielektroniki na Mfumo wa Usimamizi wa Matukio."
 
 #: templates/forms_builder/payment_receipt_verification.html:3
@@ -3522,8 +3982,12 @@ msgid "Payment receipt verified"
 msgstr "Risiti ya malipo imethibitishwa"
 
 #: templates/forms_builder/payment_receipt_verification.html:5
-msgid "This receipt was issued by the Event Management System for a verified payment."
-msgstr "Risiti hii imetolewa na Mfumo wa Usimamizi wa Matukio kwa malipo yaliyothibitishwa."
+msgid ""
+"This receipt was issued by the Event Management System for a verified "
+"payment."
+msgstr ""
+"Risiti hii imetolewa na Mfumo wa Usimamizi wa Matukio kwa malipo "
+"yaliyothibitishwa."
 
 #: templates/forms_builder/payment_receipt_verification.html:5
 msgid "Receipt number"
@@ -3615,8 +4079,12 @@ msgid "Required field"
 msgstr "Sehemu ya lazima"
 
 #: templates/forms_builder/registration_status.html:27
-msgid "Enter your reference number and the email address or phone number used during registration."
-msgstr "Weka namba yako ya kumbukumbu na anwani ya baruapepe au namba ya simu uliyotumia wakati wa usajili."
+msgid ""
+"Enter your reference number and the email address or phone number used "
+"during registration."
+msgstr ""
+"Weka namba yako ya kumbukumbu na anwani ya baruapepe au namba ya simu "
+"uliyotumia wakati wa usajili."
 
 #: templates/forms_builder/registration_status.html:36
 msgid "We could not verify a registration with those details."
@@ -3639,8 +4107,12 @@ msgid "View payment status"
 msgstr "Tazama hali ya malipo"
 
 #: templates/forms_builder/registration_status.html:114
-msgid "Your registration has been approved. Keep your reference number for future event services."
-msgstr "Usajili wako umeidhinishwa. Hifadhi namba yako ya kumbukumbu kwa huduma za tukio zijazo."
+msgid ""
+"Your registration has been approved. Keep your reference number for future "
+"event services."
+msgstr ""
+"Usajili wako umeidhinishwa. Hifadhi namba yako ya kumbukumbu kwa huduma za "
+"tukio zijazo."
 
 #: templates/forms_builder/registration_status.html:122
 msgid "View participant badge"
@@ -3651,15 +4123,20 @@ msgid "Registration not approved"
 msgstr "Usajili haujaidhinishwa"
 
 #: templates/forms_builder/registration_status.html:136
-msgid "Your registration was not approved. Contact the event organizer if you need assistance."
-msgstr "Usajili wako haujaidhinishwa. Wasiliana na mratibu wa tukio ikiwa unahitaji msaada."
+msgid ""
+"Your registration was not approved. Contact the event organizer if you need "
+"assistance."
+msgstr ""
+"Usajili wako haujaidhinishwa. Wasiliana na mratibu wa tukio ikiwa unahitaji "
+"msaada."
 
 #: templates/forms_builder/registration_status.html:139
 msgid "Registration pending review"
 msgstr "Usajili unasubiri kukaguliwa"
 
 #: templates/forms_builder/registration_status.html:141
-msgid "Your registration was received and is waiting for administrative review."
+msgid ""
+"Your registration was received and is waiting for administrative review."
 msgstr "Usajili wako umepokelewa na unasubiri ukaguzi wa kiutawala."
 
 #: templates/forms_builder/submission_success.html:15
