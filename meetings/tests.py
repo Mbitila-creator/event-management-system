@@ -16,6 +16,8 @@ from .models import (
     MeetingAttendee,
     MeetingCommunicationLog,
     MeetingDecision,
+    MeetingSeries,
+    MeetingSeriesAgendaTemplate,
 )
 
 
@@ -264,6 +266,21 @@ class MeetingWorkflowTests(TestCase):
     def setUp(self):
         self.client.force_login(self.manager)
 
+    def create_series(self, **overrides):
+        values = {
+            "code": "MANAGEMENT-MONTHLY",
+            "name_sw": "Kikao cha Menejimenti cha Mwezi",
+            "name_en": "Monthly Management Meeting",
+            "frequency": MeetingSeries.Frequency.MONTHLY,
+            "meeting_type": Meeting.MeetingType.MANAGEMENT,
+            "default_duration_minutes": 90,
+            "chairperson_name": "Mkurugenzi",
+            "secretary_name": "Katibu wa Menejimenti",
+            "quorum_required": 3,
+        }
+        values.update(overrides)
+        return MeetingSeries.objects.create(**values)
+
     def test_manager_can_open_meeting_workspace(self):
         response = self.client.get("/en/staff/meetings/")
         self.assertEqual(response.status_code, 200)
@@ -279,6 +296,85 @@ class MeetingWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Meeting calendar")
         self.assertContains(response, "Workflow Meeting")
+
+    def test_manager_can_create_meeting_series(self):
+        response = self.client.post("/en/staff/meetings/series/new/", {
+            "code": "TECH-MONTHLY",
+            "name_sw": "Kikao cha Kiufundi",
+            "name_en": "Technical Meeting",
+            "description_sw": "Maelezo",
+            "description_en": "Description",
+            "frequency": MeetingSeries.Frequency.MONTHLY,
+            "meeting_type": Meeting.MeetingType.TECHNICAL,
+            "default_duration_minutes": "120",
+            "chairperson_name": "Mkurugenzi",
+            "secretary_name": "Katibu",
+            "quorum_required": "4",
+            "objectives_sw": "Kufuatilia utekelezaji",
+            "objectives_en": "Monitor implementation",
+            "is_active": "on",
+        })
+        series = MeetingSeries.objects.get(code="TECH-MONTHLY")
+        self.assertRedirects(
+            response,
+            f"/en/staff/meetings/series/{series.pk}/",
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(series.default_duration_minutes, 120)
+
+    def test_series_occurrence_copies_agenda_and_participants(self):
+        series = self.create_series()
+        MeetingSeriesAgendaTemplate.objects.create(
+            series=series,
+            item_number=1,
+            title_sw="Mapitio ya utekelezaji",
+            title_en="Implementation review",
+            allocated_minutes=30,
+        )
+        self.meeting.series = series
+        self.meeting.save()
+        source_attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Asha Mjumbe",
+            email="asha.series@example.com",
+            preferred_language="en",
+            response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
+            attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
+        )
+        starts_at = timezone.localtime(timezone.now() + timedelta(days=30))
+        response = self.client.post(
+            f"/en/staff/meetings/series/{series.pk}/schedule/",
+            {
+                "code": "SERIES-002",
+                "reference_number": "SER/002/2026",
+                "title_sw": "Kikao cha Pili",
+                "title_en": "Second Meeting",
+                "starts_at": starts_at.strftime("%Y-%m-%dT%H:%M"),
+                "status": Event.Status.DRAFT,
+                "copy_participants": "on",
+            },
+        )
+        occurrence = Meeting.objects.get(reference_number="SER/002/2026")
+        self.assertRedirects(
+            response,
+            f"/en/staff/meetings/{occurrence.pk}/",
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(occurrence.series, series)
+        self.assertEqual(
+            occurrence.event.ends_at - occurrence.event.starts_at,
+            timedelta(minutes=90),
+        )
+        self.assertEqual(occurrence.agenda_items.count(), 1)
+        copied = occurrence.attendees.get(email=source_attendee.email)
+        self.assertEqual(
+            copied.response_status,
+            MeetingAttendee.ResponseStatus.INVITED,
+        )
+        self.assertEqual(
+            copied.attendance_status,
+            MeetingAttendee.AttendanceStatus.NOT_MARKED,
+        )
 
     def test_meeting_pack_is_printable(self):
         response = self.client.get(

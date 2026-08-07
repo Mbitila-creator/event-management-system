@@ -12,6 +12,32 @@ urlpatterns = [
         views.meeting_calendar,
         name="meeting_calendar",
     ),
+    path("staff/meetings/series/", views.series_list, name="series_list"),
+    path(
+        "staff/meetings/series/new/",
+        views.series_create,
+        name="series_create",
+    ),
+    path(
+        "staff/meetings/series/<int:series_id>/",
+        views.series_detail,
+        name="series_detail",
+    ),
+    path(
+        "staff/meetings/series/<int:series_id>/edit/",
+        views.series_edit,
+        name="series_edit",
+    ),
+    path(
+        "staff/meetings/series/<int:series_id>/agenda/add/",
+        views.series_agenda_add,
+        name="series_agenda_add",
+    ),
+    path(
+        "staff/meetings/series/<int:series_id>/schedule/",
+        views.series_occurrence_create,
+        name="series_occurrence_create",
+    ),
     path(
         "staff/meetings/reports/actions/",
         views.action_report,

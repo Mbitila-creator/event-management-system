@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django import forms
 from django.db import transaction
 from django.utils import timezone
@@ -12,6 +14,8 @@ from .models import (
     MeetingAgendaItem,
     MeetingAttendee,
     MeetingDecision,
+    MeetingSeries,
+    MeetingSeriesAgendaTemplate,
 )
 
 
@@ -356,3 +360,187 @@ class InvitationResponseForm(forms.Form):
         ),
         widget=forms.RadioSelect,
     )
+
+
+class MeetingSeriesForm(forms.ModelForm):
+    class Meta:
+        model = MeetingSeries
+        fields = (
+            "code", "name_sw", "name_en", "description_sw", "description_en",
+            "frequency", "meeting_type", "default_duration_minutes", "venue",
+            "chairperson_name", "secretary_name", "quorum_required",
+            "objectives_sw", "objectives_en", "is_active",
+        )
+        widgets = {
+            "description_sw": forms.Textarea(attrs={"rows": 3}),
+            "description_en": forms.Textarea(attrs={"rows": 3}),
+            "objectives_sw": forms.Textarea(attrs={"rows": 3}),
+            "objectives_en": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["venue"].queryset = Venue.objects.filter(
+            is_active=True,
+        ).select_related("council").order_by("name")
+
+
+class MeetingSeriesAgendaTemplateForm(forms.ModelForm):
+    class Meta:
+        model = MeetingSeriesAgendaTemplate
+        fields = (
+            "item_number", "title_sw", "title_en", "presenter_name",
+            "allocated_minutes", "notes",
+        )
+        widgets = {"notes": forms.Textarea(attrs={"rows": 2})}
+
+
+class MeetingOccurrenceForm(forms.Form):
+    code = forms.CharField(label=_("Event code"), max_length=50)
+    reference_number = forms.CharField(
+        label=_("Meeting reference number"),
+        max_length=80,
+    )
+    title_sw = forms.CharField(label=_("Meeting title in Kiswahili"), max_length=250)
+    title_en = forms.CharField(label=_("Meeting title in English"), max_length=250)
+    starts_at = forms.DateTimeField(
+        label=_("Meeting starts"),
+        input_formats=[DATETIME_FORMAT],
+        widget=forms.DateTimeInput(
+            format=DATETIME_FORMAT,
+            attrs={"type": "datetime-local"},
+        ),
+    )
+    invitation_deadline = forms.DateTimeField(
+        label=_("Invitation response deadline"),
+        required=False,
+        input_formats=[DATETIME_FORMAT],
+        widget=forms.DateTimeInput(
+            format=DATETIME_FORMAT,
+            attrs={"type": "datetime-local"},
+        ),
+    )
+    status = forms.ChoiceField(label=_("Status"), choices=Event.Status.choices)
+    is_public = forms.BooleanField(label=_("Public meeting"), required=False)
+    copy_participants = forms.BooleanField(
+        label=_("Copy participants from the latest meeting in this series"),
+        required=False,
+        initial=True,
+    )
+
+    def __init__(self, *args, series, **kwargs):
+        self.series = series
+        super().__init__(*args, **kwargs)
+        if not self.is_bound:
+            self.initial.update({
+                "title_sw": series.name_sw,
+                "title_en": series.name_en,
+                "status": Event.Status.DRAFT,
+            })
+
+    def clean_code(self):
+        code = self.cleaned_data["code"].strip().upper()
+        if Event.objects.filter(code=code).exists():
+            raise forms.ValidationError(_("An event with this code already exists."))
+        return code
+
+    def clean_reference_number(self):
+        reference = self.cleaned_data["reference_number"].strip().upper()
+        if Meeting.objects.filter(reference_number=reference).exists():
+            raise forms.ValidationError(
+                _("A meeting with this reference number already exists.")
+            )
+        return reference
+
+    def clean(self):
+        cleaned = super().clean()
+        starts_at = cleaned.get("starts_at")
+        deadline = cleaned.get("invitation_deadline")
+        if starts_at and deadline and deadline > starts_at:
+            self.add_error(
+                "invitation_deadline",
+                _("The invitation deadline cannot be after the meeting starts."),
+            )
+        return cleaned
+
+    @transaction.atomic
+    def save(self, user):
+        category, created = EventCategory.objects.get_or_create(
+            code="MEETING",
+            defaults={
+                "name_sw": "Vikao",
+                "name_en": "Meetings",
+                "created_by": user,
+                "updated_by": user,
+            },
+        )
+        if not created and not category.is_active:
+            category.is_active = True
+            category.updated_by = user
+            category.save(update_fields=["is_active", "updated_by", "updated_at"])
+        starts_at = self.cleaned_data["starts_at"]
+        event = Event.objects.create(
+            category=category,
+            venue=self.series.venue,
+            code=self.cleaned_data["code"],
+            title_sw=self.cleaned_data["title_sw"],
+            title_en=self.cleaned_data["title_en"],
+            description_sw=self.series.description_sw,
+            description_en=self.series.description_en,
+            starts_at=starts_at,
+            ends_at=starts_at + timedelta(
+                minutes=self.series.default_duration_minutes,
+            ),
+            status=self.cleaned_data["status"],
+            is_public=self.cleaned_data["is_public"],
+            registration_enabled=False,
+            qr_checkin_enabled=False,
+            created_by=user,
+            updated_by=user,
+        )
+        meeting = Meeting.objects.create(
+            event=event,
+            series=self.series,
+            reference_number=self.cleaned_data["reference_number"],
+            meeting_type=self.series.meeting_type,
+            chairperson_name=self.series.chairperson_name,
+            secretary_name=self.series.secretary_name,
+            quorum_required=self.series.quorum_required,
+            invitation_deadline=self.cleaned_data["invitation_deadline"],
+            objectives_sw=self.series.objectives_sw,
+            objectives_en=self.series.objectives_en,
+            created_by=user,
+            updated_by=user,
+        )
+        for template in self.series.agenda_templates.filter(is_active=True):
+            MeetingAgendaItem.objects.create(
+                meeting=meeting,
+                item_number=template.item_number,
+                title_sw=template.title_sw,
+                title_en=template.title_en,
+                presenter_name=template.presenter_name,
+                allocated_minutes=template.allocated_minutes,
+                notes=template.notes,
+                created_by=user,
+                updated_by=user,
+            )
+        if self.cleaned_data["copy_participants"]:
+            source = self.series.meetings.exclude(pk=meeting.pk).order_by(
+                "-event__starts_at",
+            ).first()
+            if source:
+                for attendee in source.attendees.filter(is_active=True):
+                    MeetingAttendee.objects.create(
+                        meeting=meeting,
+                        attendee_type=attendee.attendee_type,
+                        user=attendee.user,
+                        full_name=attendee.full_name,
+                        organization=attendee.organization,
+                        designation=attendee.designation,
+                        email=attendee.email,
+                        phone_number=attendee.phone_number,
+                        preferred_language=attendee.preferred_language,
+                        created_by=user,
+                        updated_by=user,
+                    )
+        return meeting

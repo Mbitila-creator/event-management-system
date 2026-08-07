@@ -26,6 +26,9 @@ from .forms import (
     MeetingAttendeeForm,
     MeetingDecisionForm,
     MeetingMinutesForm,
+    MeetingOccurrenceForm,
+    MeetingSeriesAgendaTemplateForm,
+    MeetingSeriesForm,
     MeetingWorkflowForm,
 )
 from .models import (
@@ -33,6 +36,7 @@ from .models import (
     MeetingActionItem,
     MeetingAttendee,
     MeetingDecision,
+    MeetingSeries,
 )
 from .services import (
     send_action_reminder,
@@ -91,7 +95,8 @@ def _require_manager(user):
 
 def _meeting_queryset():
     return Meeting.objects.select_related(
-        "event", "event__category", "event__venue", "minutes_approved_by",
+        "event", "event__category", "event__venue", "series",
+        "minutes_approved_by",
     ).prefetch_related(
         "agenda_items", "attendees__user", "decisions__agenda_item",
         "action_items__decision", "action_items__responsible_user",
@@ -259,6 +264,113 @@ def meeting_calendar(request):
         "previous_month": previous_month,
         "next_month": following_month,
         "meeting_count": len(meetings),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def series_list(request):
+    _require_view_access(request.user)
+    series = MeetingSeries.objects.select_related("venue").annotate(
+        occurrence_count=Count("meetings", distinct=True),
+    ).order_by("name_sw", "code")
+    return render(request, "meetings/series_list.html", {
+        "series_list": series,
+        "can_manage": _can_manage(request.user),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+def series_create(request):
+    _require_manager(request.user)
+    form = MeetingSeriesForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        series = form.save(commit=False)
+        series.created_by = request.user
+        series.updated_by = request.user
+        series.save()
+        messages.success(request, _("The meeting series was created successfully."))
+        return redirect("meetings:series_detail", series_id=series.pk)
+    return render(request, "meetings/series_form.html", {
+        "form": form,
+        "page_title": _("Create meeting series"),
+        "submit_label": _("Create series"),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+def series_edit(request, series_id):
+    _require_manager(request.user)
+    series = get_object_or_404(MeetingSeries, pk=series_id)
+    form = MeetingSeriesForm(request.POST or None, instance=series)
+    if request.method == "POST" and form.is_valid():
+        series = form.save(commit=False)
+        series.updated_by = request.user
+        series.save()
+        messages.success(request, _("The meeting series was updated successfully."))
+        return redirect("meetings:series_detail", series_id=series.pk)
+    return render(request, "meetings/series_form.html", {
+        "form": form,
+        "series": series,
+        "page_title": _("Edit meeting series"),
+        "submit_label": _("Save series changes"),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def series_detail(request, series_id):
+    _require_view_access(request.user)
+    series = get_object_or_404(
+        MeetingSeries.objects.select_related("venue").prefetch_related(
+            "agenda_templates", "meetings__event",
+        ),
+        pk=series_id,
+    )
+    return render(request, "meetings/series_detail.html", {
+        "series": series,
+        "agenda_templates": series.agenda_templates.filter(is_active=True),
+        "occurrences": series.meetings.filter(is_active=True).select_related(
+            "event",
+        ).order_by("-event__starts_at"),
+        "agenda_form": MeetingSeriesAgendaTemplateForm(),
+        "can_manage": _can_manage(request.user),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def series_agenda_add(request, series_id):
+    _require_manager(request.user)
+    series = get_object_or_404(MeetingSeries, pk=series_id, is_active=True)
+    form = MeetingSeriesAgendaTemplateForm(request.POST)
+    if form.is_valid():
+        template = form.save(commit=False)
+        template.series = series
+        template.created_by = request.user
+        template.updated_by = request.user
+        template.save()
+        messages.success(request, _("The reusable agenda item was added."))
+    else:
+        messages.error(request, _form_error_message(form))
+    return redirect(f"{series.get_absolute_url()}#agenda-template")
+
+
+@login_required(login_url="accounts:staff_login")
+def series_occurrence_create(request, series_id):
+    _require_manager(request.user)
+    series = get_object_or_404(MeetingSeries, pk=series_id, is_active=True)
+    form = MeetingOccurrenceForm(request.POST or None, series=series)
+    if request.method == "POST" and form.is_valid():
+        meeting = form.save(request.user)
+        messages.success(
+            request,
+            _("The next meeting occurrence was scheduled successfully."),
+        )
+        return redirect("meetings:meeting_detail", meeting_id=meeting.pk)
+    return render(request, "meetings/series_occurrence_form.html", {
+        "form": form,
+        "series": series,
     })
 
 

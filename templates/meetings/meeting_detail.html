@@ -6,7 +6,7 @@
 {% block meeting_content %}
 {% translate "Not specified" as not_specified %}
 <header class="meeting-detail-hero">
-    <div><a href="{% url 'meetings:meeting_list' %}">← {% translate "All meetings" %}</a><div class="meeting-card-kickers"><span>{{ meeting.reference_number }}</span><span>{{ meeting.get_meeting_type_display }}</span><span>{{ meeting.event.get_status_display }}</span></div><h1>{% if request.LANGUAGE_CODE == 'en' %}{{ meeting.event.title_en }}{% else %}{{ meeting.event.title_sw }}{% endif %}</h1><p>{{ meeting.event.starts_at|date:"d M Y, H:i" }} — {{ meeting.event.ends_at|date:"d M Y, H:i" }} · {{ meeting.event.venue|default:"—" }}</p></div>
+    <div><a href="{% url 'meetings:meeting_list' %}">← {% translate "All meetings" %}</a><div class="meeting-card-kickers"><span>{{ meeting.reference_number }}</span><span>{{ meeting.get_meeting_type_display }}</span><span>{{ meeting.event.get_status_display }}</span>{% if meeting.series %}<a href="{% url 'meetings:series_detail' meeting.series.pk %}">{{ meeting.series.code }}</a>{% endif %}</div><h1>{% if request.LANGUAGE_CODE == 'en' %}{{ meeting.event.title_en }}{% else %}{{ meeting.event.title_sw }}{% endif %}</h1><p>{{ meeting.event.starts_at|date:"d M Y, H:i" }} — {{ meeting.event.ends_at|date:"d M Y, H:i" }} · {{ meeting.event.venue|default:"—" }}</p></div>
     <div class="meeting-hero-actions">
         <a class="meeting-secondary-button" href="{% url 'meetings:meeting_print' meeting.pk %}">{% translate "Print meeting pack" %}</a>
         {% if can_manage %}<a class="meeting-secondary-button" href="{% url 'meetings:meeting_edit' meeting.pk %}">{% translate "Edit meeting details" %}</a>{% endif %}

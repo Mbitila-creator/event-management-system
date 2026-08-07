@@ -36,6 +36,14 @@ class Meeting(BaseModel):
         related_name="meeting",
         on_delete=models.CASCADE,
     )
+    series = models.ForeignKey(
+        "MeetingSeries",
+        verbose_name=_("meeting series"),
+        related_name="meetings",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
     reference_number = models.CharField(
         _("meeting reference number"),
         max_length=80,
@@ -157,6 +165,120 @@ class Meeting(BaseModel):
 
     def get_absolute_url(self):
         return reverse("meetings:meeting_detail", kwargs={"meeting_id": self.pk})
+
+
+class MeetingSeries(BaseModel):
+    class Frequency(models.TextChoices):
+        ON_DEMAND = "ON_DEMAND", _("On demand")
+        WEEKLY = "WEEKLY", _("Weekly")
+        MONTHLY = "MONTHLY", _("Monthly")
+        QUARTERLY = "QUARTERLY", _("Quarterly")
+        ANNUALLY = "ANNUALLY", _("Annually")
+
+    code = models.CharField(_("series code"), max_length=50, unique=True)
+    name_sw = models.CharField(_("series name in Kiswahili"), max_length=250)
+    name_en = models.CharField(_("series name in English"), max_length=250)
+    description_sw = models.TextField(_("description in Kiswahili"), blank=True)
+    description_en = models.TextField(_("description in English"), blank=True)
+    frequency = models.CharField(
+        _("meeting frequency"),
+        max_length=20,
+        choices=Frequency.choices,
+        default=Frequency.MONTHLY,
+    )
+    meeting_type = models.CharField(
+        _("default meeting type"),
+        max_length=30,
+        choices=Meeting.MeetingType.choices,
+        default=Meeting.MeetingType.MANAGEMENT,
+    )
+    default_duration_minutes = models.PositiveIntegerField(
+        _("default duration in minutes"),
+        default=120,
+    )
+    venue = models.ForeignKey(
+        "events.Venue",
+        verbose_name=_("default venue"),
+        related_name="meeting_series",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    chairperson_name = models.CharField(_("default chairperson"), max_length=200)
+    secretary_name = models.CharField(
+        _("default secretary"),
+        max_length=200,
+        blank=True,
+    )
+    quorum_required = models.PositiveIntegerField(
+        _("default required quorum"),
+        null=True,
+        blank=True,
+    )
+    objectives_sw = models.TextField(_("default objectives in Kiswahili"), blank=True)
+    objectives_en = models.TextField(_("default objectives in English"), blank=True)
+
+    class Meta:
+        verbose_name = _("meeting series")
+        verbose_name_plural = _("meeting series")
+        ordering = ["name_sw", "code"]
+
+    def clean(self):
+        errors = {}
+        if self.default_duration_minutes == 0:
+            errors["default_duration_minutes"] = _(
+                "The default duration must be greater than zero."
+            )
+        if self.quorum_required == 0:
+            errors["quorum_required"] = _(
+                "The required quorum must be greater than zero."
+            )
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.code = self.code.strip().upper()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.code} - {self.name_sw}"
+
+    def get_absolute_url(self):
+        return reverse("meetings:series_detail", kwargs={"series_id": self.pk})
+
+
+class MeetingSeriesAgendaTemplate(BaseModel):
+    series = models.ForeignKey(
+        MeetingSeries,
+        verbose_name=_("meeting series"),
+        related_name="agenda_templates",
+        on_delete=models.CASCADE,
+    )
+    item_number = models.PositiveIntegerField(_("agenda item number"))
+    title_sw = models.CharField(_("agenda title in Kiswahili"), max_length=300)
+    title_en = models.CharField(_("agenda title in English"), max_length=300)
+    presenter_name = models.CharField(_("default presenter"), max_length=200, blank=True)
+    allocated_minutes = models.PositiveIntegerField(
+        _("allocated minutes"),
+        null=True,
+        blank=True,
+    )
+    notes = models.TextField(_("notes"), blank=True)
+
+    class Meta:
+        verbose_name = _("series agenda template")
+        verbose_name_plural = _("series agenda templates")
+        ordering = ["series", "item_number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["series", "item_number"],
+                name="unique_agenda_template_per_series",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.series.code} - {self.item_number}. {self.title_sw}"
 
 
 class MeetingAgendaItem(BaseModel):

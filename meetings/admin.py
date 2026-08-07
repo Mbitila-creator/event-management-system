@@ -11,6 +11,8 @@ from .models import (
     MeetingAttendee,
     MeetingCommunicationLog,
     MeetingDecision,
+    MeetingSeries,
+    MeetingSeriesAgendaTemplate,
 )
 
 
@@ -76,20 +78,30 @@ class MeetingActionItemInline(admin.TabularInline):
     ordering = ("action_number",)
 
 
+class MeetingSeriesAgendaTemplateInline(admin.TabularInline):
+    model = MeetingSeriesAgendaTemplate
+    extra = 0
+    fields = (
+        "item_number", "title_sw", "title_en", "presenter_name",
+        "allocated_minutes", "is_active",
+    )
+    ordering = ("item_number",)
+
+
 @admin.register(Meeting)
 class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_display = (
-        "reference_number", "event", "meeting_type", "meeting_date",
+        "reference_number", "event", "series", "meeting_type", "meeting_date",
         "chairperson_name", "minutes_status", "attendee_total", "is_active",
     )
     list_filter = (
-        "meeting_type", "minutes_status", "event__status", "is_active",
+        "series", "meeting_type", "minutes_status", "event__status", "is_active",
     )
     search_fields = (
         "reference_number", "event__code", "event__title_sw", "event__title_en",
         "chairperson_name", "secretary_name",
     )
-    autocomplete_fields = ("event", "minutes_approved_by")
+    autocomplete_fields = ("event", "series", "minutes_approved_by")
     date_hierarchy = "event__starts_at"
     inlines = (
         MeetingAgendaItemInline,
@@ -99,7 +111,7 @@ class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
     )
     fieldsets = (
         (_("Meeting information"), {"fields": (
-            "event", "reference_number", "meeting_type", "chairperson_name",
+            "event", "series", "reference_number", "meeting_type", "chairperson_name",
             "secretary_name", "quorum_required", "invitation_deadline", "is_active",
         )}),
         (_("Meeting objectives"), {"fields": ("objectives_sw", "objectives_en")}),
@@ -136,6 +148,19 @@ class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
         if obj.minutes_status == Meeting.MinutesStatus.APPROVED:
             obj.minutes_approved_by = obj.minutes_approved_by or request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(MeetingSeries)
+class MeetingSeriesAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "code", "name_sw", "frequency", "meeting_type", "chairperson_name",
+        "venue", "is_active",
+    )
+    list_filter = ("frequency", "meeting_type", "is_active")
+    search_fields = ("code", "name_sw", "name_en", "chairperson_name")
+    autocomplete_fields = ("venue",)
+    inlines = (MeetingSeriesAgendaTemplateInline,)
+    ordering = ("name_sw", "code")
 
 
 @admin.register(MeetingAgendaItem)

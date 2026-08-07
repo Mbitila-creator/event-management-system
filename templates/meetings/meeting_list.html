@@ -8,6 +8,7 @@
 <header class="meeting-hero">
     <div><span>{% translate "Meetings module" %}</span><h1>{% translate "Meetings workspace" %}</h1><p>{% translate "Plan meetings, manage invitations and attendance, record decisions, and follow action items." %}</p></div>
     <div class="meeting-hero-actions">
+        <a class="meeting-secondary-button" href="{% url 'meetings:series_list' %}">{% translate "Meeting series" %}</a>
         <a class="meeting-secondary-button" href="{% url 'meetings:meeting_calendar' %}">{% translate "Calendar" %}</a>
         <a class="meeting-secondary-button" href="{% url 'meetings:action_report' %}">{% translate "Action report" %}</a>
         {% if can_manage %}<a class="meeting-primary-button" href="{% url 'meetings:meeting_create' %}">＋ {% translate "Create meeting" %}</a>{% endif %}
