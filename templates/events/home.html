@@ -94,7 +94,7 @@
             </div>
         </form>
 
-        <div class="section-heading">
+        <div class="section-heading" id="available-events">
             <div>
                 <span class="section-kicker">
                     {% translate "Events" %}
@@ -110,6 +110,26 @@
                 {% translate "found" %}
             </span>
         </div>
+
+        {% if request.user.is_authenticated %}
+            <nav class="module-launcher" aria-label="{% translate 'System modules' %}">
+                <span class="module-launcher-label">{% translate "System modules" %}</span>
+
+                <div class="module-launcher-links">
+                    <a href="#available-events" class="module-launcher-link events-module-link" aria-current="page">
+                        <span class="module-link-mark">E</span>
+                        <span>{% translate "Exhibitions" %}</span>
+                    </a>
+
+                    {% if request.user.is_superuser or request.user.role == 'SYSTEM_ADMIN' or request.user.role == 'EVENT_ADMIN' or request.user.role == 'ATTENDANCE_OFFICER' or request.user.role == 'REPORT_OFFICER' or request.user.role == 'DIRECTOR' or request.user.role == 'ASSISTANT_DIRECTOR' %}
+                        <a href="{% url 'meetings:meeting_list' %}" class="module-launcher-link meetings-module-link">
+                            <span class="module-link-mark">M</span>
+                            <span>{% translate "Meetings" %}</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </nav>
+        {% endif %}
 
         <div class="event-grid">
             {% for event in events %}

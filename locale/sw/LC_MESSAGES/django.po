@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-07 11:31+0300\n"
+"POT-Creation-Date: 2026-08-07 12:41+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -1059,7 +1059,7 @@ msgstr "Namba ya simu"
 msgid "Number"
 msgstr "Namba"
 
-#: forms_builder/models.py:258 templates/events/home.html:170
+#: forms_builder/models.py:258 templates/events/home.html:190
 #: templates/meetings/meeting_list.html:32
 msgid "Date"
 msgstr "Tarehe"
@@ -2165,7 +2165,7 @@ msgid "action"
 msgstr "hatua"
 
 #: meetings/apps.py:8 templates/admin/base_site.html:36
-#: templates/admin/index.html:64 templates/events/base_public.html:119
+#: templates/admin/index.html:64 templates/events/home.html:127
 msgid "Meetings"
 msgstr "Vikao"
 
@@ -2202,7 +2202,7 @@ msgid "Organizer in English"
 msgstr "Mratibu kwa Kiingereza"
 
 #: meetings/forms.py:52 templates/accounts/staff_workspace.html:47
-#: templates/events/event_detail.html:152 templates/events/home.html:183
+#: templates/events/event_detail.html:152 templates/events/home.html:203
 #: templates/forms_builder/participant_portal.html:53
 #: templates/forms_builder/public_event_form.html:183
 #: templates/meetings/invitation_response.html:13
@@ -2688,68 +2688,68 @@ msgstr ""
 msgid "Check the information entered and try again."
 msgstr "Kagua taarifa ulizoingiza kisha ujaribu tena."
 
-#: meetings/views.py:162
+#: meetings/views.py:166
 msgid "The meeting was created successfully."
 msgstr "Kikao kimeundwa kwa mafanikio."
 
-#: meetings/views.py:166 templates/meetings/meeting_list.html:10
+#: meetings/views.py:170 templates/meetings/meeting_list.html:10
 msgid "Create meeting"
 msgstr "Unda kikao"
 
-#: meetings/views.py:167
+#: meetings/views.py:171
 msgid "Create meeting and continue"
 msgstr "Unda kikao na uendelee"
 
-#: meetings/views.py:178
+#: meetings/views.py:182
 msgid "The meeting details were updated successfully."
 msgstr "Taarifa za kikao zimesasishwa kwa mafanikio."
 
-#: meetings/views.py:183
+#: meetings/views.py:187
 msgid "Edit meeting"
 msgstr "Hariri kikao"
 
-#: meetings/views.py:184
+#: meetings/views.py:188
 msgid "Save meeting changes"
 msgstr "Hifadhi mabadiliko ya kikao"
 
-#: meetings/views.py:251
+#: meetings/views.py:255
 msgid "The agenda item was added."
 msgstr "Kipengele cha ajenda kimeongezwa."
 
-#: meetings/views.py:269
+#: meetings/views.py:273
 msgid "The participant was added to the invitation list."
 msgstr "Mshiriki ameongezwa kwenye orodha ya mialiko."
 
-#: meetings/views.py:305
+#: meetings/views.py:309
 msgid "The participant status was updated."
 msgstr "Hali ya mshiriki imesasishwa."
 
-#: meetings/views.py:325
+#: meetings/views.py:329
 msgid "The meeting invitation was sent."
 msgstr "Mwaliko wa kikao umetumwa."
 
-#: meetings/views.py:327
+#: meetings/views.py:331
 msgid "The email service did not confirm delivery."
 msgstr "Mfumo wa baruapepe haukuthibitisha utumaji."
 
-#: meetings/views.py:331
+#: meetings/views.py:335
 #, python-format
 msgid "The invitation could not be sent: %(error)s"
 msgstr "Mwaliko haukuweza kutumwa: %(error)s"
 
-#: meetings/views.py:352
+#: meetings/views.py:356
 msgid "The meeting minutes were updated."
 msgstr "Kumbukumbu za kikao zimesasishwa."
 
-#: meetings/views.py:374
+#: meetings/views.py:378
 msgid "The meeting decision was recorded."
 msgstr "Uamuzi wa kikao umehifadhiwa."
 
-#: meetings/views.py:396
+#: meetings/views.py:400
 msgid "The action item was assigned."
 msgstr "Hatua ya utekelezaji imepangiwa mhusika."
 
-#: meetings/views.py:424
+#: meetings/views.py:428
 msgid "The action progress was updated."
 msgstr "Maendeleo ya hatua yamesasishwa."
 
@@ -2947,7 +2947,7 @@ msgstr ""
 
 #: templates/accounts/password_change_form.html:3
 #: templates/accounts/password_change_form.html:5
-#: templates/events/base_public.html:123
+#: templates/events/base_public.html:118
 msgid "Change password"
 msgstr "Badilisha Nywila"
 
@@ -3059,7 +3059,7 @@ msgstr ""
 #: templates/accounts/password_reset_email.txt:10
 #: templates/admin/base_site.html:4 templates/admin/base_site.html:20
 #: templates/events/base_public.html:16 templates/events/base_public.html:21
-#: templates/events/base_public.html:49 templates/events/base_public.html:152
+#: templates/events/base_public.html:49 templates/events/base_public.html:147
 #: templates/events/home.html:6 templates/events/home.html:18
 #: templates/forms_builder/public_event_form.html:58
 #: templates/forms_builder/submission_success.html:39
@@ -3092,7 +3092,7 @@ msgid "Reset your Event Management System password"
 msgstr "Weka upya nenosiri lako la Mfumo wa Usimamizi wa Matukio"
 
 #: templates/accounts/staff_login.html:4 templates/accounts/staff_login.html:15
-#: templates/events/base_public.html:137
+#: templates/events/base_public.html:132
 msgid "Staff login"
 msgstr "Kuingia kwa watumishi"
 
@@ -3154,7 +3154,7 @@ msgid "Welcome"
 msgstr "Karibu"
 
 #: templates/accounts/staff_workspace.html:21
-#: templates/events/base_public.html:133
+#: templates/events/base_public.html:128
 msgid "Sign out"
 msgstr "Ondoka"
 
@@ -3257,7 +3257,7 @@ msgstr "Vitendo"
 #: templates/accounts/staff_workspace.html:88
 #: templates/accounts/staff_workspace.html:104
 #: templates/accounts/staff_workspace.html:116
-#: templates/accounts/staff_workspace.html:125 templates/events/home.html:198
+#: templates/accounts/staff_workspace.html:125 templates/events/home.html:218
 msgid "View details"
 msgstr "Angalia maelezo"
 
@@ -3732,7 +3732,7 @@ msgstr "Hali ya Usajili"
 msgid "Exit"
 msgstr "Toka"
 
-#: templates/events/base_public.html:129
+#: templates/events/base_public.html:124
 msgid "My workspace"
 msgstr "Eneo langu la kazi"
 
@@ -3821,11 +3821,19 @@ msgstr "Matukio yanayopatikana"
 msgid "found"
 msgstr "yamepatikana"
 
-#: templates/events/home.html:206
+#: templates/events/home.html:115 templates/events/home.html:116
+msgid "System modules"
+msgstr "Moduli za mfumo"
+
+#: templates/events/home.html:121
+msgid "Exhibitions"
+msgstr "Maonesho"
+
+#: templates/events/home.html:226
 msgid "No events were found"
 msgstr "Hakuna matukio yaliyopatikana"
 
-#: templates/events/home.html:210
+#: templates/events/home.html:230
 msgid "Try changing the search term or event category."
 msgstr "Jaribu kubadilisha neno la utafutaji au aina ya tukio."
 
