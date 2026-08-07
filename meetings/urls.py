@@ -125,6 +125,26 @@ urlpatterns = [
         name="minutes_update",
     ),
     path(
+        "staff/meetings/<int:meeting_id>/minutes/submit/",
+        views.minutes_submit,
+        name="minutes_submit",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/minutes/approve/",
+        views.minutes_approve,
+        name="minutes_approve",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/minutes/return/",
+        views.minutes_return,
+        name="minutes_return",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/minutes/reopen/",
+        views.minutes_reopen,
+        name="minutes_reopen",
+    ),
+    path(
         "staff/meetings/<int:meeting_id>/decisions/add/",
         views.decision_add,
         name="decision_add",

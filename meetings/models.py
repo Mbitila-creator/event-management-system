@@ -36,6 +36,7 @@ class Meeting(BaseModel):
         NOT_STARTED = "NOT_STARTED", _("Not started")
         DRAFT = "DRAFT", _("Draft")
         SUBMITTED = "SUBMITTED", _("Submitted for approval")
+        RETURNED = "RETURNED", _("Returned for correction")
         APPROVED = "APPROVED", _("Approved")
 
     event = models.OneToOneField(
@@ -427,6 +428,52 @@ class MeetingDocument(BaseModel):
 
     def __str__(self):
         return f"{self.meeting.reference_number} - {self.title_sw} (v{self.version})"
+
+
+class MeetingMinutesReview(BaseModel):
+    class Action(models.TextChoices):
+        SUBMITTED = "SUBMITTED", _("Submitted for approval")
+        RETURNED = "RETURNED", _("Returned for correction")
+        APPROVED = "APPROVED", _("Approved")
+        REOPENED = "REOPENED", _("Reopened for correction")
+
+    meeting = models.ForeignKey(
+        Meeting,
+        verbose_name=_("meeting"),
+        related_name="minutes_reviews",
+        on_delete=models.CASCADE,
+    )
+    action = models.CharField(
+        _("review action"),
+        max_length=20,
+        choices=Action.choices,
+    )
+    comment = models.TextField(_("review comment"), blank=True)
+
+    class Meta:
+        verbose_name = _("minutes review record")
+        verbose_name_plural = _("minutes review records")
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["meeting", "action", "created_at"],
+                name="meeting_minutes_review_idx",
+            ),
+        ]
+
+    def clean(self):
+        if self.action in {self.Action.RETURNED, self.Action.REOPENED}:
+            if not self.comment.strip():
+                raise ValidationError({
+                    "comment": _("Enter a reason for returning the minutes."),
+                })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.meeting.reference_number} - {self.get_action_display()}"
 
 
 class MeetingAttendee(BaseModel):

@@ -12,6 +12,7 @@ from .models import (
     MeetingCommunicationLog,
     MeetingDecision,
     MeetingDocument,
+    MeetingMinutesReview,
     MeetingSeries,
     MeetingSeriesAgendaTemplate,
 )
@@ -55,6 +56,18 @@ class MeetingDocumentInline(admin.TabularInline):
         "document_type", "title_sw", "version", "is_confidential", "is_active",
     )
     ordering = ("document_type", "title_sw", "-version")
+
+
+class MeetingMinutesReviewInline(admin.TabularInline):
+    model = MeetingMinutesReview
+    extra = 0
+    fields = ("action", "comment", "created_by", "created_at")
+    readonly_fields = fields
+    ordering = ("-created_at",)
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 class MeetingAttendeeInline(admin.TabularInline):
@@ -119,6 +132,7 @@ class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
         MeetingDecisionInline,
         MeetingActionItemInline,
         MeetingDocumentInline,
+        MeetingMinutesReviewInline,
     )
     fieldsets = (
         (_("Meeting information"), {"fields": (
@@ -213,6 +227,30 @@ class MeetingDocumentAdmin(AuditAdminMixin, admin.ModelAdmin):
     autocomplete_fields = ("meeting", "agenda_item")
     readonly_fields = AuditAdminMixin.readonly_fields + ("original_filename",)
     ordering = ("meeting", "document_type", "title_sw", "-version")
+
+
+@admin.register(MeetingMinutesReview)
+class MeetingMinutesReviewAdmin(admin.ModelAdmin):
+    list_display = ("meeting", "action", "created_by", "created_at")
+    list_filter = ("action", "created_at")
+    search_fields = (
+        "meeting__reference_number", "meeting__event__title_sw",
+        "meeting__event__title_en", "comment", "created_by__username",
+    )
+    readonly_fields = (
+        "meeting", "action", "comment", "created_by", "updated_by",
+        "created_at", "updated_at", "is_active",
+    )
+    ordering = ("-created_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(MeetingDecision)

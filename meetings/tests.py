@@ -20,6 +20,7 @@ from .models import (
     MeetingCommunicationLog,
     MeetingDecision,
     MeetingDocument,
+    MeetingMinutesReview,
     MeetingSeries,
     MeetingSeriesAgendaTemplate,
 )
@@ -364,6 +365,156 @@ class MeetingWorkflowTests(TestCase):
             "Upload a PDF, Office document, text file, or image.",
         )
         self.assertFalse(MeetingDocument.objects.exists())
+
+    def test_minutes_submission_and_director_approval_lock_the_record(self):
+        save_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/minutes/update/",
+            {
+                "minutes_sw": "Kumbukumbu za kikao zilizohakikiwa.",
+                "minutes_en": "Reviewed meeting minutes.",
+                "minutes_status": Meeting.MinutesStatus.APPROVED,
+            },
+        )
+        self.assertEqual(save_response.status_code, 302)
+        self.meeting.refresh_from_db()
+        self.assertEqual(self.meeting.minutes_status, Meeting.MinutesStatus.DRAFT)
+
+        submit_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/minutes/submit/",
+        )
+        self.assertEqual(submit_response.status_code, 302)
+        self.meeting.refresh_from_db()
+        self.assertEqual(
+            self.meeting.minutes_status,
+            Meeting.MinutesStatus.SUBMITTED,
+        )
+        self.assertTrue(
+            MeetingMinutesReview.objects.filter(
+                meeting=self.meeting,
+                action=MeetingMinutesReview.Action.SUBMITTED,
+                created_by=self.manager,
+            ).exists()
+        )
+
+        locked_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/minutes/update/",
+            {"minutes_sw": "Mabadiliko yasiyoruhusiwa"},
+        )
+        self.assertEqual(locked_response.status_code, 403)
+        self.meeting.refresh_from_db()
+        self.assertNotEqual(
+            self.meeting.minutes_sw,
+            "Mabadiliko yasiyoruhusiwa",
+        )
+
+        director = User.objects.create_user(
+            username="minutes.director",
+            email="minutes.director@example.com",
+            role=User.Role.DIRECTOR,
+            preferred_language="en",
+        )
+        self.client.force_login(director)
+        approve_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/minutes/approve/",
+            {"comment": "Approved after review."},
+        )
+        self.assertEqual(approve_response.status_code, 302)
+        self.meeting.refresh_from_db()
+        self.assertEqual(self.meeting.minutes_status, Meeting.MinutesStatus.APPROVED)
+        self.assertEqual(self.meeting.minutes_approved_by, director)
+        self.assertIsNotNone(self.meeting.minutes_approved_at)
+        review = MeetingMinutesReview.objects.get(
+            meeting=self.meeting,
+            action=MeetingMinutesReview.Action.APPROVED,
+        )
+        self.assertEqual(review.comment, "Approved after review.")
+
+    def test_director_can_return_minutes_and_manager_can_correct_them(self):
+        self.meeting.minutes_sw = "Rasimu ya kumbukumbu"
+        self.meeting.minutes_status = Meeting.MinutesStatus.SUBMITTED
+        self.meeting.save()
+        director = User.objects.create_user(
+            username="return.director",
+            email="return.director@example.com",
+            role=User.Role.ASSISTANT_DIRECTOR,
+            preferred_language="en",
+        )
+        self.client.force_login(director)
+
+        missing_reason = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/minutes/return/",
+            {"comment": ""},
+        )
+        self.meeting.refresh_from_db()
+        self.assertEqual(missing_reason.status_code, 302)
+        self.assertEqual(
+            self.meeting.minutes_status,
+            Meeting.MinutesStatus.SUBMITTED,
+        )
+
+        return_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/minutes/return/",
+            {"comment": "Correct the attendance total."},
+        )
+        self.assertEqual(return_response.status_code, 302)
+        self.meeting.refresh_from_db()
+        self.assertEqual(self.meeting.minutes_status, Meeting.MinutesStatus.RETURNED)
+        self.assertTrue(
+            MeetingMinutesReview.objects.filter(
+                meeting=self.meeting,
+                action=MeetingMinutesReview.Action.RETURNED,
+                comment="Correct the attendance total.",
+            ).exists()
+        )
+
+        self.client.force_login(self.manager)
+        correction_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/minutes/update/",
+            {
+                "minutes_sw": "Rasimu iliyosahihishwa",
+                "minutes_en": "Corrected draft",
+            },
+        )
+        self.meeting.refresh_from_db()
+        self.assertEqual(correction_response.status_code, 302)
+        self.assertEqual(self.meeting.minutes_status, Meeting.MinutesStatus.DRAFT)
+        self.assertEqual(self.meeting.minutes_en, "Corrected draft")
+
+    def test_only_minutes_approver_can_approve_or_reopen_minutes(self):
+        self.meeting.minutes_sw = "Kumbukumbu"
+        self.meeting.minutes_status = Meeting.MinutesStatus.SUBMITTED
+        self.meeting.save()
+        manager_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/minutes/approve/",
+            {},
+        )
+        self.assertEqual(manager_response.status_code, 403)
+
+        director = User.objects.create_user(
+            username="reopen.director",
+            email="reopen.director@example.com",
+            role=User.Role.DIRECTOR,
+            preferred_language="en",
+        )
+        self.client.force_login(director)
+        self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/minutes/approve/",
+            {},
+        )
+        reopen_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/minutes/reopen/",
+            {"comment": "A material correction is required."},
+        )
+        self.assertEqual(reopen_response.status_code, 302)
+        self.meeting.refresh_from_db()
+        self.assertEqual(self.meeting.minutes_status, Meeting.MinutesStatus.RETURNED)
+        self.assertIsNone(self.meeting.minutes_approved_by)
+        self.assertTrue(
+            MeetingMinutesReview.objects.filter(
+                meeting=self.meeting,
+                action=MeetingMinutesReview.Action.REOPENED,
+            ).exists()
+        )
 
     def test_read_only_meeting_user_can_download_but_cannot_upload(self):
         media_root = tempfile.mkdtemp()

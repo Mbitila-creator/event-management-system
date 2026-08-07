@@ -7,6 +7,7 @@ from pathlib import Path
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.db.models import Count, Q
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -32,6 +33,8 @@ from .forms import (
     MeetingSeriesAgendaTemplateForm,
     MeetingSeriesForm,
     MeetingWorkflowForm,
+    MinutesApprovalForm,
+    MinutesReturnForm,
 )
 from .models import (
     Meeting,
@@ -39,6 +42,7 @@ from .models import (
     MeetingAttendee,
     MeetingDecision,
     MeetingDocument,
+    MeetingMinutesReview,
     MeetingSeries,
 )
 from .services import (
@@ -59,6 +63,11 @@ MEETING_VIEW_ROLES = {
 MEETING_MANAGER_ROLES = {
     User.Role.SYSTEM_ADMIN,
     User.Role.EVENT_ADMIN,
+}
+MINUTES_APPROVER_ROLES = {
+    User.Role.SYSTEM_ADMIN,
+    User.Role.DIRECTOR,
+    User.Role.ASSISTANT_DIRECTOR,
 }
 
 
@@ -82,6 +91,14 @@ def _can_record_attendance(user):
     )
 
 
+def _can_approve_minutes(user):
+    return bool(
+        user.is_authenticated
+        and user.is_active
+        and (user.is_superuser or user.role in MINUTES_APPROVER_ROLES)
+    )
+
+
 def _require_view_access(user):
     if not (
         user.is_authenticated
@@ -96,6 +113,11 @@ def _require_manager(user):
         raise PermissionDenied
 
 
+def _require_minutes_approver(user):
+    if not _can_approve_minutes(user):
+        raise PermissionDenied
+
+
 def _meeting_queryset():
     return Meeting.objects.select_related(
         "event", "event__category", "event__venue", "series",
@@ -105,6 +127,7 @@ def _meeting_queryset():
         "action_items__decision", "action_items__responsible_user",
         "communications",
         "documents__agenda_item",
+        "minutes_reviews__created_by",
     )
 
 
@@ -217,6 +240,7 @@ def meeting_list(request):
         "event_status_choices": Event.Status.choices,
         "meeting_type_choices": Meeting.MeetingType.choices,
         "can_manage": _can_manage(request.user),
+        "can_approve_minutes": _can_approve_minutes(request.user),
         "total_meetings": Meeting.objects.filter(is_active=True).count(),
         "upcoming_meetings": Meeting.objects.filter(
             is_active=True,
@@ -229,6 +253,10 @@ def meeting_list(request):
                 MeetingActionItem.Status.COMPLETED,
                 MeetingActionItem.Status.CANCELLED,
             },
+        ).count(),
+        "minutes_awaiting_approval": Meeting.objects.filter(
+            is_active=True,
+            minutes_status=Meeting.MinutesStatus.SUBMITTED,
         ).count(),
     }
     return render(request, "meetings/meeting_list.html", context)
@@ -525,6 +553,14 @@ def meeting_detail(request, meeting_id):
         "action_items": actions,
         "can_manage": _can_manage(request.user),
         "can_record_attendance": _can_record_attendance(request.user),
+        "can_approve_minutes": _can_approve_minutes(request.user),
+        "can_edit_minutes": (
+            _can_manage(request.user)
+            and meeting.minutes_status not in {
+                Meeting.MinutesStatus.SUBMITTED,
+                Meeting.MinutesStatus.APPROVED,
+            }
+        ),
         "participant_count": attendees.count(),
         "accepted_count": attendees.filter(
             response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
@@ -547,6 +583,9 @@ def meeting_detail(request, meeting_id):
         "agenda_form": MeetingAgendaItemForm(),
         "attendee_form": MeetingAttendeeForm(),
         "minutes_form": MeetingMinutesForm(instance=meeting),
+        "minutes_approval_form": MinutesApprovalForm(),
+        "minutes_return_form": MinutesReturnForm(),
+        "minutes_reviews": meeting.minutes_reviews.filter(is_active=True)[:20],
         "decision_form": MeetingDecisionForm(
             meeting=meeting,
             instance=MeetingDecision(meeting=meeting),
@@ -899,18 +938,168 @@ def action_reminder_bulk_send(request, meeting_id):
 def minutes_update(request, meeting_id):
     _require_manager(request.user)
     meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    if meeting.minutes_status in {
+        Meeting.MinutesStatus.SUBMITTED,
+        Meeting.MinutesStatus.APPROVED,
+    }:
+        raise PermissionDenied
     form = MeetingMinutesForm(request.POST, request.FILES, instance=meeting)
     if form.is_valid():
         minutes = form.save(commit=False)
-        if minutes.minutes_status == Meeting.MinutesStatus.APPROVED:
-            minutes.minutes_approved_by = request.user
-            minutes.minutes_approved_at = timezone.now()
-        else:
-            minutes.minutes_approved_by = None
-            minutes.minutes_approved_at = None
+        minutes.minutes_status = Meeting.MinutesStatus.DRAFT
+        minutes.minutes_approved_by = None
+        minutes.minutes_approved_at = None
         minutes.updated_by = request.user
         minutes.save()
-        messages.success(request, _("The meeting minutes were updated."))
+        messages.success(request, _("The draft meeting minutes were saved."))
+    else:
+        messages.error(request, _form_error_message(form))
+    return redirect(f"{meeting.get_absolute_url()}#minutes")
+
+
+def _record_minutes_review(meeting, action, user, comment=""):
+    return MeetingMinutesReview.objects.create(
+        meeting=meeting,
+        action=action,
+        comment=comment.strip(),
+        created_by=user,
+        updated_by=user,
+    )
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+@transaction.atomic
+def minutes_submit(request, meeting_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(
+        Meeting.objects.select_for_update(),
+        pk=meeting_id,
+        is_active=True,
+    )
+    if meeting.minutes_status != Meeting.MinutesStatus.DRAFT:
+        messages.error(request, _("Only draft minutes can be submitted for approval."))
+    elif not (
+        meeting.minutes_sw.strip()
+        or meeting.minutes_en.strip()
+        or meeting.minutes_document
+    ):
+        messages.error(request, _("Record the meeting minutes before submitting them."))
+    else:
+        meeting.minutes_status = Meeting.MinutesStatus.SUBMITTED
+        meeting.minutes_approved_by = None
+        meeting.minutes_approved_at = None
+        meeting.updated_by = request.user
+        meeting.save(update_fields=[
+            "minutes_status", "minutes_approved_by", "minutes_approved_at",
+            "updated_by", "updated_at",
+        ])
+        _record_minutes_review(
+            meeting,
+            MeetingMinutesReview.Action.SUBMITTED,
+            request.user,
+        )
+        messages.success(request, _("The minutes were submitted for approval."))
+    return redirect(f"{meeting.get_absolute_url()}#minutes")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+@transaction.atomic
+def minutes_approve(request, meeting_id):
+    _require_minutes_approver(request.user)
+    meeting = get_object_or_404(
+        Meeting.objects.select_for_update(),
+        pk=meeting_id,
+        is_active=True,
+    )
+    form = MinutesApprovalForm(request.POST)
+    if meeting.minutes_status != Meeting.MinutesStatus.SUBMITTED:
+        messages.error(request, _("Only submitted minutes can be approved."))
+    elif form.is_valid():
+        meeting.minutes_status = Meeting.MinutesStatus.APPROVED
+        meeting.minutes_approved_by = request.user
+        meeting.minutes_approved_at = timezone.now()
+        meeting.updated_by = request.user
+        meeting.save(update_fields=[
+            "minutes_status", "minutes_approved_by", "minutes_approved_at",
+            "updated_by", "updated_at",
+        ])
+        _record_minutes_review(
+            meeting,
+            MeetingMinutesReview.Action.APPROVED,
+            request.user,
+            form.cleaned_data["comment"],
+        )
+        messages.success(request, _("The meeting minutes were approved and locked."))
+    else:
+        messages.error(request, _form_error_message(form))
+    return redirect(f"{meeting.get_absolute_url()}#minutes")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+@transaction.atomic
+def minutes_return(request, meeting_id):
+    _require_minutes_approver(request.user)
+    meeting = get_object_or_404(
+        Meeting.objects.select_for_update(),
+        pk=meeting_id,
+        is_active=True,
+    )
+    form = MinutesReturnForm(request.POST)
+    if meeting.minutes_status != Meeting.MinutesStatus.SUBMITTED:
+        messages.error(request, _("Only submitted minutes can be returned."))
+    elif form.is_valid():
+        meeting.minutes_status = Meeting.MinutesStatus.RETURNED
+        meeting.minutes_approved_by = None
+        meeting.minutes_approved_at = None
+        meeting.updated_by = request.user
+        meeting.save(update_fields=[
+            "minutes_status", "minutes_approved_by", "minutes_approved_at",
+            "updated_by", "updated_at",
+        ])
+        _record_minutes_review(
+            meeting,
+            MeetingMinutesReview.Action.RETURNED,
+            request.user,
+            form.cleaned_data["comment"],
+        )
+        messages.success(request, _("The minutes were returned for correction."))
+    else:
+        messages.error(request, _form_error_message(form))
+    return redirect(f"{meeting.get_absolute_url()}#minutes")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+@transaction.atomic
+def minutes_reopen(request, meeting_id):
+    _require_minutes_approver(request.user)
+    meeting = get_object_or_404(
+        Meeting.objects.select_for_update(),
+        pk=meeting_id,
+        is_active=True,
+    )
+    form = MinutesReturnForm(request.POST)
+    if meeting.minutes_status != Meeting.MinutesStatus.APPROVED:
+        messages.error(request, _("Only approved minutes can be reopened."))
+    elif form.is_valid():
+        meeting.minutes_status = Meeting.MinutesStatus.RETURNED
+        meeting.minutes_approved_by = None
+        meeting.minutes_approved_at = None
+        meeting.updated_by = request.user
+        meeting.save(update_fields=[
+            "minutes_status", "minutes_approved_by", "minutes_approved_at",
+            "updated_by", "updated_at",
+        ])
+        _record_minutes_review(
+            meeting,
+            MeetingMinutesReview.Action.REOPENED,
+            request.user,
+            form.cleaned_data["comment"],
+        )
+        messages.success(request, _("The approved minutes were reopened for correction."))
     else:
         messages.error(request, _form_error_message(form))
     return redirect(f"{meeting.get_absolute_url()}#minutes")

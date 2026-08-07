@@ -313,7 +313,7 @@ class MeetingAttendeeForm(forms.ModelForm):
 class MeetingMinutesForm(forms.ModelForm):
     class Meta:
         model = Meeting
-        fields = ("minutes_status", "minutes_sw", "minutes_en", "minutes_document")
+        fields = ("minutes_sw", "minutes_en", "minutes_document")
         widgets = {
             "minutes_sw": forms.Textarea(attrs={"rows": 6}),
             "minutes_en": forms.Textarea(attrs={"rows": 6}),
@@ -324,6 +324,21 @@ class MeetingMinutesForm(forms.ModelForm):
         if uploaded_file:
             return validate_meeting_upload(uploaded_file)
         return uploaded_file
+
+
+class MinutesApprovalForm(forms.Form):
+    comment = forms.CharField(
+        label=_("Approval comment"),
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+    )
+
+
+class MinutesReturnForm(forms.Form):
+    comment = forms.CharField(
+        label=_("Reason for correction"),
+        widget=forms.Textarea(attrs={"rows": 2}),
+    )
 
 
 class MeetingDecisionForm(forms.ModelForm):
