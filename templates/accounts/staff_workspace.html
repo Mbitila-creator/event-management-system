@@ -33,6 +33,7 @@
         <nav class="workspace-actions" aria-label="{% translate 'Staff tools' %}">
             <a href="{% url 'checkin:lookup' %}"><strong>{% translate "Participant check-in" %}</strong><span>{% translate "Scan a badge or enter a reference number" %}</span></a>
             {% if is_event_admin %}
+                <a href="{% url 'meetings:meeting_list' %}"><strong>{% translate "Meetings workflow" %}</strong><span>{% translate "Plan meetings, invitations, minutes and action items" %}</span></a>
                 <a href="{% url 'checkin:reports' %}"><strong>{% translate "Attendance reports" %}</strong><span>{% translate "Review attendance and certificate authorization" %}</span></a>
                 <a href="{% url 'forms_builder:evaluation_reports' %}"><strong>{% translate "Evaluation reports" %}</strong><span>{% translate "Review visitor and participant feedback" %}</span></a>
                 <a href="{% url 'accounts:booth_assignments' %}"><strong>{% translate "Booth assignments" %}</strong><span>{% translate "Assign approved exhibitors and manage booth readiness" %}</span></a>

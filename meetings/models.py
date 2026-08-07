@@ -1,7 +1,10 @@
+import uuid
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -152,6 +155,9 @@ class Meeting(BaseModel):
     def __str__(self):
         return f"{self.reference_number} - {self.event.title_sw}"
 
+    def get_absolute_url(self):
+        return reverse("meetings:meeting_detail", kwargs={"meeting_id": self.pk})
+
 
 class MeetingAgendaItem(BaseModel):
     meeting = models.ForeignKey(
@@ -213,11 +219,21 @@ class MeetingAttendee(BaseModel):
         ABSENT = "ABSENT", _("Absent")
         EXCUSED = "EXCUSED", _("Excused")
 
+    class PreferredLanguage(models.TextChoices):
+        SWAHILI = "sw", _("Kiswahili")
+        ENGLISH = "en", _("English")
+
     meeting = models.ForeignKey(
         Meeting,
         verbose_name=_("meeting"),
         related_name="attendees",
         on_delete=models.CASCADE,
+    )
+    response_token = models.UUIDField(
+        _("invitation response token"),
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
     )
     attendee_type = models.CharField(
         _("participant type"),
@@ -249,6 +265,12 @@ class MeetingAttendee(BaseModel):
         _("phone number"),
         max_length=30,
         blank=True,
+    )
+    preferred_language = models.CharField(
+        _("preferred language"),
+        max_length=5,
+        choices=PreferredLanguage.choices,
+        default=PreferredLanguage.SWAHILI,
     )
     response_status = models.CharField(
         _("invitation response"),
@@ -468,4 +490,3 @@ class MeetingActionItem(BaseModel):
 
     def __str__(self):
         return f"{self.meeting.reference_number} - {self.action_number}"
-

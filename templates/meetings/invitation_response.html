@@ -1,0 +1,16 @@
+{% extends "events/base_public.html" %}
+{% load static i18n %}
+
+{% block title %}{% translate "Meeting invitation" %}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/meetings-workflow.css' %}">{% endblock %}
+
+{% block content %}
+{% translate "To be confirmed" as venue_tbc %}
+<section class="meeting-invitation-page"><article class="meeting-invitation-card">
+    <span class="meeting-invitation-kicker">{% translate "Meeting invitation" %}</span>
+    <h1>{% if request.LANGUAGE_CODE == 'en' %}{{ meeting.event.title_en }}{% else %}{{ meeting.event.title_sw }}{% endif %}</h1>
+    <p>{% blocktranslate with name=attendee.full_name %}Dear {{ name }}, please confirm whether you will attend this meeting.{% endblocktranslate %}</p>
+    <dl><div><dt>{% translate "Reference" %}</dt><dd>{{ meeting.reference_number }}</dd></div><div><dt>{% translate "Date and time" %}</dt><dd>{{ meeting.event.starts_at|date:"d M Y, H:i" }}</dd></div><div><dt>{% translate "Venue" %}</dt><dd>{{ meeting.event.venue|default:venue_tbc }}</dd></div><div><dt>{% translate "Chairperson" %}</dt><dd>{{ meeting.chairperson_name }}</dd></div></dl>
+    {% if submitted %}<div class="meeting-response-success"><strong>{% translate "Thank you. Your response has been recorded." %}</strong><p>{{ attendee.get_response_status_display }}</p></div>{% else %}<form method="post" class="meeting-response-form">{% csrf_token %}{{ form.as_div }}<button type="submit">{% translate "Submit response" %}</button></form>{% endif %}
+</article></section>
+{% endblock %}

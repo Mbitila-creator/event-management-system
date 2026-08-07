@@ -49,7 +49,7 @@ class MeetingAttendeeInline(admin.TabularInline):
     extra = 0
     fields = (
         "attendee_type", "user", "full_name", "organization",
-        "response_status", "attendance_status", "is_active",
+        "preferred_language", "response_status", "attendance_status", "is_active",
     )
     autocomplete_fields = ("user",)
     ordering = ("full_name",)
@@ -150,10 +150,11 @@ class MeetingAgendaItemAdmin(AuditAdminMixin, admin.ModelAdmin):
 class MeetingAttendeeAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_display = (
         "full_name", "meeting", "attendee_type", "organization",
-        "response_status", "attendance_status", "is_active",
+        "preferred_language", "response_status", "attendance_status", "is_active",
     )
     list_filter = (
-        "attendee_type", "response_status", "attendance_status", "meeting", "is_active",
+        "attendee_type", "preferred_language", "response_status",
+        "attendance_status", "meeting", "is_active",
     )
     search_fields = (
         "full_name", "organization", "designation", "email", "phone_number",

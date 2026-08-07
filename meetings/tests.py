@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError
+from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -224,3 +225,201 @@ class MeetingAdministrationTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "id_reference_number")
+
+
+class MeetingWorkflowTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.category = EventCategory.objects.create(
+            name_sw="Vikao",
+            name_en="Meetings",
+            code="MEETING",
+        )
+        starts_at = timezone.now() + timedelta(days=8)
+        cls.event = Event.objects.create(
+            category=cls.category,
+            code="WORKFLOW-001",
+            title_sw="Kikao cha Mfumo",
+            title_en="Workflow Meeting",
+            starts_at=starts_at,
+            ends_at=starts_at + timedelta(hours=2),
+            is_public=False,
+            registration_enabled=False,
+        )
+        cls.meeting = Meeting.objects.create(
+            event=cls.event,
+            reference_number="WK/001/2026",
+            chairperson_name="Mwenyekiti wa Kikao",
+            quorum_required=2,
+        )
+        cls.manager = User.objects.create_user(
+            username="meeting.manager",
+            email="meeting.manager@example.com",
+            password="Strong-Test-Password-2026",
+            role=User.Role.EVENT_ADMIN,
+            preferred_language="en",
+        )
+
+    def setUp(self):
+        self.client.force_login(self.manager)
+
+    def test_manager_can_open_meeting_workspace(self):
+        response = self.client.get("/en/staff/meetings/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Meetings workspace")
+        self.assertContains(response, "Workflow Meeting")
+
+    def test_manager_can_create_event_and_meeting_in_one_workflow(self):
+        starts_at = timezone.localtime(timezone.now() + timedelta(days=12))
+        response = self.client.post("/en/staff/meetings/new/", {
+            "code": "WORKFLOW-002",
+            "reference_number": "WK/002/2026",
+            "title_sw": "Kikao Kipya",
+            "title_en": "New Meeting",
+            "description_sw": "Maelezo",
+            "description_en": "Description",
+            "organizer_name_sw": "Wizara",
+            "organizer_name_en": "Ministry",
+            "starts_at": starts_at.strftime("%Y-%m-%dT%H:%M"),
+            "ends_at": (starts_at + timedelta(hours=3)).strftime(
+                "%Y-%m-%dT%H:%M"
+            ),
+            "status": Event.Status.DRAFT,
+            "meeting_type": Meeting.MeetingType.TECHNICAL,
+            "chairperson_name": "Mwenyekiti Mpya",
+            "secretary_name": "Katibu",
+            "quorum_required": "3",
+            "objectives_sw": "Kujadili utekelezaji",
+            "objectives_en": "Discuss implementation",
+        })
+        created = Meeting.objects.get(reference_number="WK/002/2026")
+        self.assertRedirects(
+            response,
+            f"/en/staff/meetings/{created.pk}/",
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(created.event.code, "WORKFLOW-002")
+        self.assertFalse(created.event.registration_enabled)
+        self.assertFalse(created.event.qr_checkin_enabled)
+
+    def test_manager_can_build_agenda_decisions_and_actions(self):
+        agenda_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/agenda/add/",
+            {
+                "item_number": "1",
+                "title_sw": "Ufunguzi",
+                "title_en": "Opening",
+                "presenter_name": "Mwenyekiti",
+                "allocated_minutes": "10",
+            },
+        )
+        self.assertEqual(agenda_response.status_code, 302)
+        agenda = self.meeting.agenda_items.get(item_number=1)
+
+        decision_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/decisions/add/",
+            {
+                "agenda_item": agenda.pk,
+                "decision_number": "1",
+                "decision_sw": "Taarifa iandaliwe",
+                "decision_en": "Prepare the report",
+                "status": MeetingDecision.Status.APPROVED,
+            },
+        )
+        self.assertEqual(decision_response.status_code, 302)
+        decision = self.meeting.decisions.get(decision_number=1)
+
+        action_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/actions/add/",
+            {
+                "decision": decision.pk,
+                "action_number": "1",
+                "description_sw": "Andaa taarifa",
+                "description_en": "Prepare report",
+                "responsible_name": "Afisa Mipango",
+                "due_date": (timezone.localdate() + timedelta(days=5)).isoformat(),
+                "status": MeetingActionItem.Status.PENDING,
+                "progress_notes": "",
+            },
+        )
+        self.assertEqual(action_response.status_code, 302)
+        self.assertTrue(self.meeting.action_items.filter(action_number=1).exists())
+
+    def test_invitation_email_and_public_response_workflow(self):
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Asha Mjumbe",
+            email="asha@example.com",
+            preferred_language="en",
+        )
+        with self.settings(
+            EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        ):
+            response = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/participants/"
+                f"{attendee.pk}/invite/",
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(str(attendee.response_token), mail.outbox[0].body)
+        attendee.refresh_from_db()
+        self.assertIsNotNone(attendee.invitation_sent_at)
+
+        self.client.logout()
+        public_response = self.client.post(
+            f"/en/meetings/invitations/{attendee.response_token}/",
+            {"response_status": MeetingAttendee.ResponseStatus.ACCEPTED},
+        )
+        self.assertEqual(public_response.status_code, 200)
+        self.assertContains(public_response, "Your response has been recorded")
+        attendee.refresh_from_db()
+        self.assertEqual(
+            attendee.response_status,
+            MeetingAttendee.ResponseStatus.ACCEPTED,
+        )
+        self.assertIsNotNone(attendee.responded_at)
+
+    def test_attendance_officer_can_record_attendance_but_not_manage_meeting(self):
+        officer = User.objects.create_user(
+            username="meeting.attendance",
+            email="meeting.attendance@example.com",
+            role=User.Role.ATTENDANCE_OFFICER,
+            preferred_language="en",
+        )
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Juma Mjumbe",
+            response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
+        )
+        self.client.force_login(officer)
+        detail = self.client.get(f"/en/staff/meetings/{self.meeting.pk}/")
+        self.assertEqual(detail.status_code, 200)
+        self.assertNotContains(detail, "Add agenda item")
+        update = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/participants/"
+            f"{attendee.pk}/update/",
+            {"attendance_status": MeetingAttendee.AttendanceStatus.PRESENT},
+        )
+        self.assertEqual(update.status_code, 302)
+        attendee.refresh_from_db()
+        self.assertEqual(
+            attendee.attendance_status,
+            MeetingAttendee.AttendanceStatus.PRESENT,
+        )
+        self.assertEqual(
+            attendee.response_status,
+            MeetingAttendee.ResponseStatus.ACCEPTED,
+        )
+        create_attempt = self.client.get("/en/staff/meetings/new/")
+        self.assertEqual(create_attempt.status_code, 403)
+
+    def test_registration_officer_cannot_access_meeting_workspace(self):
+        officer = User.objects.create_user(
+            username="registration.only",
+            email="registration.only@example.com",
+            role=User.Role.REGISTRATION_OFFICER,
+            preferred_language="en",
+        )
+        self.client.force_login(officer)
+        response = self.client.get("/en/staff/meetings/")
+        self.assertEqual(response.status_code, 403)

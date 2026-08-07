@@ -1,0 +1,70 @@
+{% extends "meetings/base_meetings.html" %}
+{% load i18n %}
+
+{% block title %}{{ meeting.reference_number }}{% endblock %}
+
+{% block meeting_content %}
+{% translate "Not specified" as not_specified %}
+<header class="meeting-detail-hero">
+    <div><a href="{% url 'meetings:meeting_list' %}">← {% translate "All meetings" %}</a><div class="meeting-card-kickers"><span>{{ meeting.reference_number }}</span><span>{{ meeting.get_meeting_type_display }}</span><span>{{ meeting.event.get_status_display }}</span></div><h1>{% if request.LANGUAGE_CODE == 'en' %}{{ meeting.event.title_en }}{% else %}{{ meeting.event.title_sw }}{% endif %}</h1><p>{{ meeting.event.starts_at|date:"d M Y, H:i" }} — {{ meeting.event.ends_at|date:"d M Y, H:i" }} · {{ meeting.event.venue|default:"—" }}</p></div>
+    {% if can_manage %}<a class="meeting-secondary-button" href="{% url 'meetings:meeting_edit' meeting.pk %}">{% translate "Edit meeting details" %}</a>{% endif %}
+</header>
+
+<nav class="meeting-step-nav" aria-label="{% translate 'Meeting workflow steps' %}">
+    <a href="#overview"><strong>1</strong><span>{% translate "Overview" %}</span></a>
+    <a href="#agenda"><strong>2</strong><span>{% translate "Agenda" %}</span></a>
+    <a href="#participants"><strong>3</strong><span>{% translate "Invitations and attendance" %}</span></a>
+    <a href="#minutes"><strong>4</strong><span>{% translate "Minutes" %}</span></a>
+    <a href="#decisions"><strong>5</strong><span>{% translate "Decisions" %}</span></a>
+    <a href="#actions"><strong>6</strong><span>{% translate "Action follow-up" %}</span></a>
+</nav>
+
+<section id="overview" class="meeting-workflow-section">
+    <div class="meeting-section-heading"><div><span>{% translate "Step 1" %}</span><h2>{% translate "Meeting overview" %}</h2></div></div>
+    <div class="meeting-summary-grid">
+        <article><span>{% translate "Participants" %}</span><strong>{{ participant_count }}</strong></article>
+        <article><span>{% translate "Accepted invitations" %}</span><strong>{{ accepted_count }}</strong></article>
+        <article><span>{% translate "Present" %}</span><strong>{{ present_count }}</strong></article>
+        <article><span>{% translate "Open actions" %}</span><strong>{{ open_action_count }}</strong></article>
+    </div>
+    <dl class="meeting-overview-list">
+        <div><dt>{% translate "Chairperson" %}</dt><dd>{{ meeting.chairperson_name }}</dd></div>
+        <div><dt>{% translate "Secretary" %}</dt><dd>{{ meeting.secretary_name|default:"—" }}</dd></div>
+        <div><dt>{% translate "Required quorum" %}</dt><dd>{{ meeting.quorum_required|default:not_specified }}</dd></div>
+        <div><dt>{% translate "Quorum status" %}</dt><dd>{% if quorum_met is None %}{% translate "Not applicable" %}{% elif quorum_met %}<span class="meeting-pill success">{% translate "Quorum met" %}</span>{% else %}<span class="meeting-pill warning">{% translate "Quorum not met" %}</span>{% endif %}</dd></div>
+        <div><dt>{% translate "Invitation deadline" %}</dt><dd>{{ meeting.invitation_deadline|date:"d M Y, H:i"|default:"—" }}</dd></div>
+        <div><dt>{% translate "Minutes status" %}</dt><dd>{{ meeting.get_minutes_status_display }}</dd></div>
+    </dl>
+</section>
+
+<section id="agenda" class="meeting-workflow-section">
+    <div class="meeting-section-heading"><div><span>{% translate "Step 2" %}</span><h2>{% translate "Prepare the agenda" %}</h2></div>{% if can_manage %}<details><summary>＋ {% translate "Add agenda item" %}</summary><form method="post" action="{% url 'meetings:agenda_add' meeting.pk %}" class="meeting-inline-form">{% csrf_token %}{{ agenda_form.as_div }}<button type="submit">{% translate "Add agenda item" %}</button></form></details>{% endif %}</div>
+    <div class="meeting-table-scroll"><table><thead><tr><th>#</th><th>{% translate "Agenda item" %}</th><th>{% translate "Presenter" %}</th><th>{% translate "Time allocated" %}</th></tr></thead><tbody>{% for item in agenda_items %}<tr><td>{{ item.item_number }}</td><td><strong>{% if request.LANGUAGE_CODE == 'en' %}{{ item.title_en }}{% else %}{{ item.title_sw }}{% endif %}</strong>{% if item.notes %}<small>{{ item.notes }}</small>{% endif %}</td><td>{{ item.presenter_name|default:"—" }}</td><td>{% if item.allocated_minutes %}{{ item.allocated_minutes }} {% translate "minutes" %}{% else %}—{% endif %}</td></tr>{% empty %}<tr><td colspan="4" class="meeting-empty-cell">{% translate "No agenda items have been added." %}</td></tr>{% endfor %}</tbody></table></div>
+</section>
+
+<section id="participants" class="meeting-workflow-section">
+    <div class="meeting-section-heading"><div><span>{% translate "Step 3" %}</span><h2>{% translate "Invitations and attendance" %}</h2></div>{% if can_manage %}<details><summary>＋ {% translate "Add participant" %}</summary><form method="post" action="{% url 'meetings:attendee_add' meeting.pk %}" class="meeting-inline-form">{% csrf_token %}{{ attendee_form.as_div }}<button type="submit">{% translate "Add to invitation list" %}</button></form></details>{% endif %}</div>
+    <div class="meeting-table-scroll"><table><thead><tr><th>{% translate "Participant" %}</th><th>{% translate "Contact" %}</th><th>{% translate "Invitation" %}</th><th>{% translate "Attendance" %}</th><th>{% translate "Actions" %}</th></tr></thead><tbody>
+    {% for attendee in attendees %}<tr><td><strong>{{ attendee.full_name }}</strong><small>{{ attendee.designation|default:"" }}{% if attendee.organization %} · {{ attendee.organization }}{% endif %}</small></td><td>{{ attendee.email|default:"—" }}<small>{{ attendee.phone_number }}</small></td><td>{{ attendee.get_response_status_display }}{% if attendee.invitation_sent_at %}<small>{% translate "Sent" %}: {{ attendee.invitation_sent_at|date:"d M Y, H:i" }}</small>{% endif %}</td><td>{{ attendee.get_attendance_status_display }}{% if attendee.checked_in_at %}<small>{{ attendee.checked_in_at|date:"d M Y, H:i" }}</small>{% endif %}</td><td><div class="meeting-row-actions">
+        {% if can_record_attendance %}<details><summary>{% translate "Update" %}</summary><form method="post" action="{% url 'meetings:attendee_update' meeting.pk attendee.pk %}">{% csrf_token %}{% if can_manage %}<label>{% translate "Invitation response" %}<select name="response_status">{% for value, label in response_choices %}<option value="{{ value }}" {% if attendee.response_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>{% endif %}<label>{% translate "Attendance status" %}<select name="attendance_status">{% for value, label in attendance_choices %}<option value="{{ value }}" {% if attendee.attendance_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><button type="submit">{% translate "Save status" %}</button></form></details>{% endif %}
+        {% if can_manage and attendee.email %}<form method="post" action="{% url 'meetings:invitation_send' meeting.pk attendee.pk %}">{% csrf_token %}<button type="submit" class="meeting-link-button">{% if attendee.invitation_sent_at %}{% translate "Resend invitation" %}{% else %}{% translate "Send invitation" %}{% endif %}</button></form>{% endif %}
+    </div></td></tr>{% empty %}<tr><td colspan="5" class="meeting-empty-cell">{% translate "No participants have been added." %}</td></tr>{% endfor %}
+    </tbody></table></div>
+</section>
+
+<section id="minutes" class="meeting-workflow-section">
+    <div class="meeting-section-heading"><div><span>{% translate "Step 4" %}</span><h2>{% translate "Record and approve minutes" %}</h2></div><span class="meeting-pill">{{ meeting.get_minutes_status_display }}</span></div>
+    {% if can_manage %}<form method="post" enctype="multipart/form-data" action="{% url 'meetings:minutes_update' meeting.pk %}" class="meeting-inline-form meeting-wide-form">{% csrf_token %}{{ minutes_form.as_div }}<button type="submit">{% translate "Save meeting minutes" %}</button></form>{% else %}<div class="meeting-minute-content">{% if request.LANGUAGE_CODE == 'en' and meeting.minutes_en %}{{ meeting.minutes_en|linebreaks }}{% elif meeting.minutes_sw %}{{ meeting.minutes_sw|linebreaks }}{% else %}<p>{% translate "No minutes have been recorded." %}</p>{% endif %}</div>{% endif %}
+    {% if meeting.minutes_document %}<p><a href="{{ meeting.minutes_document.url }}">{% translate "Open signed minutes document" %}</a></p>{% endif %}
+</section>
+
+<section id="decisions" class="meeting-workflow-section">
+    <div class="meeting-section-heading"><div><span>{% translate "Step 5" %}</span><h2>{% translate "Record meeting decisions" %}</h2></div>{% if can_manage %}<details><summary>＋ {% translate "Add decision" %}</summary><form method="post" action="{% url 'meetings:decision_add' meeting.pk %}" class="meeting-inline-form">{% csrf_token %}{{ decision_form.as_div }}<button type="submit">{% translate "Record decision" %}</button></form></details>{% endif %}</div>
+    <div class="meeting-record-grid">{% for decision in decisions %}<article><div><span>{{ decision.decision_number }}</span><span class="meeting-pill">{{ decision.get_status_display }}</span></div><p>{% if request.LANGUAGE_CODE == 'en' and decision.decision_en %}{{ decision.decision_en }}{% else %}{{ decision.decision_sw }}{% endif %}</p>{% if decision.agenda_item %}<small>{% translate "Agenda" %} {{ decision.agenda_item.item_number }}: {% if request.LANGUAGE_CODE == 'en' %}{{ decision.agenda_item.title_en }}{% else %}{{ decision.agenda_item.title_sw }}{% endif %}</small>{% endif %}</article>{% empty %}<div class="meeting-empty"><p>{% translate "No decisions have been recorded." %}</p></div>{% endfor %}</div>
+</section>
+
+<section id="actions" class="meeting-workflow-section">
+    <div class="meeting-section-heading"><div><span>{% translate "Step 6" %}</span><h2>{% translate "Assign and follow action items" %}</h2></div>{% if can_manage %}<details><summary>＋ {% translate "Add action item" %}</summary><form method="post" action="{% url 'meetings:action_add' meeting.pk %}" class="meeting-inline-form">{% csrf_token %}{{ action_form.as_div }}<button type="submit">{% translate "Assign action item" %}</button></form></details>{% endif %}</div>
+    <div class="meeting-table-scroll"><table><thead><tr><th>#</th><th>{% translate "Action" %}</th><th>{% translate "Responsible person" %}</th><th>{% translate "Due date" %}</th><th>{% translate "Status" %}</th><th>{% translate "Progress" %}</th></tr></thead><tbody>{% for action in action_items %}<tr><td>{{ action.action_number }}</td><td>{% if request.LANGUAGE_CODE == 'en' and action.description_en %}{{ action.description_en }}{% else %}{{ action.description_sw }}{% endif %}</td><td>{{ action.responsible_name }}</td><td>{{ action.due_date|date:"d M Y"|default:"—" }}</td><td><span class="meeting-pill">{{ action.get_status_display }}</span></td><td>{% if can_manage %}<details><summary>{% translate "Update" %}</summary><form method="post" action="{% url 'meetings:action_update' meeting.pk action.pk %}" class="meeting-progress-form">{% csrf_token %}<label>{% translate "Status" %}<select name="status">{% for value, label in action_status_choices %}<option value="{{ value }}" {% if action.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>{% translate "Progress notes" %}<textarea name="progress_notes" rows="2">{{ action.progress_notes }}</textarea></label><button type="submit">{% translate "Save progress" %}</button></form></details>{% else %}{{ action.progress_notes|default:"—" }}{% endif %}</td></tr>{% empty %}<tr><td colspan="6" class="meeting-empty-cell">{% translate "No action items have been assigned." %}</td></tr>{% endfor %}</tbody></table></div>
+</section>
+{% endblock %}
