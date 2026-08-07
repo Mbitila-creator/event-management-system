@@ -1,4 +1,5 @@
 from datetime import timedelta
+from pathlib import Path
 
 from django import forms
 from django.db import transaction
@@ -9,17 +10,33 @@ from accounts.models import User
 from events.models import Event, EventCategory, Venue
 
 from .models import (
+    ALLOWED_MEETING_DOCUMENT_EXTENSIONS,
+    MAX_MEETING_DOCUMENT_SIZE,
     Meeting,
     MeetingActionItem,
     MeetingAgendaItem,
     MeetingAttendee,
     MeetingDecision,
+    MeetingDocument,
     MeetingSeries,
     MeetingSeriesAgendaTemplate,
 )
 
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M"
+
+
+def validate_meeting_upload(uploaded_file):
+    extension = Path(uploaded_file.name).suffix.lower()
+    if extension not in ALLOWED_MEETING_DOCUMENT_EXTENSIONS:
+        raise forms.ValidationError(
+            _("Upload a PDF, Office document, text file, or image."),
+        )
+    if uploaded_file.size > MAX_MEETING_DOCUMENT_SIZE:
+        raise forms.ValidationError(
+            _("The document must not exceed 20 MB."),
+        )
+    return uploaded_file
 
 
 class MeetingWorkflowForm(forms.Form):
@@ -242,6 +259,32 @@ class MeetingAgendaItemForm(forms.ModelForm):
         widgets = {"notes": forms.Textarea(attrs={"rows": 2})}
 
 
+class MeetingDocumentForm(forms.ModelForm):
+    class Meta:
+        model = MeetingDocument
+        fields = (
+            "document_type", "agenda_item", "title_sw", "title_en",
+            "description_sw", "description_en", "file", "version",
+            "is_confidential",
+        )
+        widgets = {
+            "description_sw": forms.Textarea(attrs={"rows": 2}),
+            "description_en": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, meeting, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["agenda_item"].queryset = meeting.agenda_items.filter(
+            is_active=True,
+        ).order_by("item_number")
+        self.fields["file"].widget.attrs["accept"] = ",".join(
+            sorted(ALLOWED_MEETING_DOCUMENT_EXTENSIONS)
+        )
+
+    def clean_file(self):
+        return validate_meeting_upload(self.cleaned_data["file"])
+
+
 class MeetingAttendeeForm(forms.ModelForm):
     class Meta:
         model = MeetingAttendee
@@ -275,6 +318,12 @@ class MeetingMinutesForm(forms.ModelForm):
             "minutes_sw": forms.Textarea(attrs={"rows": 6}),
             "minutes_en": forms.Textarea(attrs={"rows": 6}),
         }
+
+    def clean_minutes_document(self):
+        uploaded_file = self.cleaned_data.get("minutes_document")
+        if uploaded_file:
+            return validate_meeting_upload(uploaded_file)
+        return uploaded_file
 
 
 class MeetingDecisionForm(forms.ModelForm):

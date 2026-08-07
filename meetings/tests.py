@@ -1,8 +1,11 @@
 from datetime import timedelta
+import shutil
+import tempfile
 
 from django.core.exceptions import ValidationError
 from django.core import mail
-from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -16,6 +19,7 @@ from .models import (
     MeetingAttendee,
     MeetingCommunicationLog,
     MeetingDecision,
+    MeetingDocument,
     MeetingSeries,
     MeetingSeriesAgendaTemplate,
 )
@@ -286,6 +290,130 @@ class MeetingWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Meetings workspace")
         self.assertContains(response, "Workflow Meeting")
+
+    def test_manager_can_upload_download_and_archive_meeting_document(self):
+        media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media_root, ignore_errors=True)
+        with override_settings(MEDIA_ROOT=media_root):
+            response = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/documents/add/",
+                {
+                    "document_type": MeetingDocument.DocumentType.AGENDA_PAPER,
+                    "title_sw": "Waraka wa ajenda",
+                    "title_en": "Agenda paper",
+                    "version": "2",
+                    "is_confidential": "on",
+                    "file": SimpleUploadedFile(
+                        "agenda-paper.pdf",
+                        b"%PDF-1.4 meeting paper",
+                        content_type="application/pdf",
+                    ),
+                },
+            )
+            document = MeetingDocument.objects.get(title_en="Agenda paper")
+            self.assertRedirects(
+                response,
+                f"/en/staff/meetings/{self.meeting.pk}/#documents",
+                fetch_redirect_response=False,
+            )
+            self.assertNotEqual(document.file.name, "agenda-paper.pdf")
+            self.assertEqual(document.original_filename, "agenda-paper.pdf")
+            self.assertEqual(document.version, 2)
+            self.assertTrue(document.is_confidential)
+
+            response = self.client.get(
+                f"/en/staff/meetings/{self.meeting.pk}/documents/"
+                f"{document.pk}/download/",
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response["X-Content-Type-Options"], "nosniff")
+            self.assertEqual(response["Cache-Control"], "private, no-store")
+            self.assertIn(
+                'filename="agenda-paper.pdf"',
+                response["Content-Disposition"],
+            )
+            self.assertEqual(b"".join(response.streaming_content), b"%PDF-1.4 meeting paper")
+
+            response = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/documents/"
+                f"{document.pk}/archive/",
+            )
+            document.refresh_from_db()
+            self.assertRedirects(
+                response,
+                f"/en/staff/meetings/{self.meeting.pk}/#documents",
+                fetch_redirect_response=False,
+            )
+            self.assertFalse(document.is_active)
+
+    def test_invalid_meeting_document_type_is_rejected(self):
+        response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/documents/add/",
+            {
+                "document_type": MeetingDocument.DocumentType.OTHER,
+                "title_sw": "Faili hatarishi",
+                "title_en": "Unsafe file",
+                "version": "1",
+                "file": SimpleUploadedFile("unsafe.exe", b"program"),
+            },
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "Upload a PDF, Office document, text file, or image.",
+        )
+        self.assertFalse(MeetingDocument.objects.exists())
+
+    def test_read_only_meeting_user_can_download_but_cannot_upload(self):
+        media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media_root, ignore_errors=True)
+        director = User.objects.create_user(
+            username="document.director",
+            email="document.director@example.com",
+            role=User.Role.DIRECTOR,
+            preferred_language="en",
+        )
+        with override_settings(MEDIA_ROOT=media_root):
+            document = MeetingDocument.objects.create(
+                meeting=self.meeting,
+                document_type=MeetingDocument.DocumentType.MEETING_NOTICE,
+                title_sw="Taarifa ya kikao",
+                file=SimpleUploadedFile("notice.pdf", b"meeting notice"),
+            )
+            self.client.force_login(director)
+            download_response = self.client.get(
+                f"/en/staff/meetings/{self.meeting.pk}/documents/"
+                f"{document.pk}/download/",
+            )
+            self.assertEqual(download_response.status_code, 200)
+            upload_response = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/documents/add/",
+                {},
+            )
+            self.assertEqual(upload_response.status_code, 403)
+
+    def test_user_without_meeting_access_cannot_download_document(self):
+        media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media_root, ignore_errors=True)
+        officer = User.objects.create_user(
+            username="document.registration",
+            email="document.registration@example.com",
+            role=User.Role.REGISTRATION_OFFICER,
+            preferred_language="en",
+        )
+        with override_settings(MEDIA_ROOT=media_root):
+            document = MeetingDocument.objects.create(
+                meeting=self.meeting,
+                title_sw="Waraka wa siri",
+                file=SimpleUploadedFile("confidential.pdf", b"confidential"),
+            )
+            self.client.force_login(officer)
+            response = self.client.get(
+                f"/en/staff/meetings/{self.meeting.pk}/documents/"
+                f"{document.pk}/download/",
+            )
+            self.assertEqual(response.status_code, 403)
 
     def test_manager_can_view_meeting_calendar(self):
         month = timezone.localdate(self.event.starts_at).strftime("%Y-%m")

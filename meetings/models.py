@@ -1,4 +1,5 @@
 import uuid
+from pathlib import Path
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -10,6 +11,13 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import BaseModel
 from events.models import Event
+
+
+MAX_MEETING_DOCUMENT_SIZE = 20 * 1024 * 1024
+ALLOWED_MEETING_DOCUMENT_EXTENSIONS = {
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+    ".txt", ".jpg", ".jpeg", ".png",
+}
 
 
 class Meeting(BaseModel):
@@ -322,6 +330,103 @@ class MeetingAgendaItem(BaseModel):
 
     def __str__(self):
         return f"{self.meeting.reference_number} - {self.item_number}. {self.title_sw}"
+
+
+def meeting_document_upload_path(instance, filename):
+    """Store meeting papers under opaque names, not user-supplied paths."""
+    extension = Path(filename).suffix.lower()
+    return f"meetings/documents/{instance.meeting_id}/{uuid.uuid4().hex}{extension}"
+
+
+class MeetingDocument(BaseModel):
+    class DocumentType(models.TextChoices):
+        MEETING_NOTICE = "MEETING_NOTICE", _("Meeting notice")
+        AGENDA_PAPER = "AGENDA_PAPER", _("Agenda paper")
+        PRESENTATION = "PRESENTATION", _("Presentation")
+        SUPPORTING_DOCUMENT = "SUPPORTING_DOCUMENT", _("Supporting document")
+        ATTENDANCE_REGISTER = "ATTENDANCE_REGISTER", _("Attendance register")
+        SIGNED_MINUTES = "SIGNED_MINUTES", _("Signed minutes")
+        OTHER = "OTHER", _("Other document")
+
+    meeting = models.ForeignKey(
+        Meeting,
+        verbose_name=_("meeting"),
+        related_name="documents",
+        on_delete=models.CASCADE,
+    )
+    agenda_item = models.ForeignKey(
+        MeetingAgendaItem,
+        verbose_name=_("agenda item"),
+        related_name="documents",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=_("Optionally link this document to an agenda item."),
+    )
+    document_type = models.CharField(
+        _("document type"),
+        max_length=30,
+        choices=DocumentType.choices,
+        default=DocumentType.SUPPORTING_DOCUMENT,
+    )
+    title_sw = models.CharField(_("document title in Kiswahili"), max_length=300)
+    title_en = models.CharField(
+        _("document title in English"), max_length=300, blank=True,
+    )
+    description_sw = models.TextField(_("description in Kiswahili"), blank=True)
+    description_en = models.TextField(_("description in English"), blank=True)
+    file = models.FileField(
+        _("document file"),
+        upload_to=meeting_document_upload_path,
+        max_length=500,
+    )
+    original_filename = models.CharField(
+        _("original filename"), max_length=255, editable=False,
+    )
+    version = models.PositiveIntegerField(_("version"), default=1)
+    is_confidential = models.BooleanField(
+        _("confidential document"),
+        default=True,
+        help_text=_("Confidential files are available only inside the staff workspace."),
+    )
+
+    class Meta:
+        verbose_name = _("meeting document")
+        verbose_name_plural = _("meeting documents")
+        ordering = ["meeting", "document_type", "title_sw", "-version"]
+        indexes = [
+            models.Index(
+                fields=["meeting", "document_type", "is_active"],
+                name="meeting_doc_type_idx",
+            ),
+        ]
+
+    def clean(self):
+        errors = {}
+        if self.agenda_item_id and self.agenda_item.meeting_id != self.meeting_id:
+            errors["agenda_item"] = _("The agenda item must belong to this meeting.")
+        if self.version == 0:
+            errors["version"] = _("The document version must be greater than zero.")
+        uploaded_file = getattr(self.file, "_file", None)
+        if uploaded_file:
+            extension = Path(uploaded_file.name).suffix.lower()
+            if extension not in ALLOWED_MEETING_DOCUMENT_EXTENSIONS:
+                errors["file"] = _(
+                    "Upload a PDF, Office document, text file, or image."
+                )
+            elif uploaded_file.size > MAX_MEETING_DOCUMENT_SIZE:
+                errors["file"] = _("The document must not exceed 20 MB.")
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if self.file and not self.original_filename:
+            self.original_filename = Path(self.file.name).name[:255]
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.meeting.reference_number} - {self.title_sw} (v{self.version})"
 
 
 class MeetingAttendee(BaseModel):

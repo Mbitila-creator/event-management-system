@@ -21,6 +21,7 @@
     <a href="#decisions"><strong>5</strong><span>{% translate "Decisions" %}</span></a>
     <a href="#actions"><strong>6</strong><span>{% translate "Action follow-up" %}</span></a>
     <a href="#communications"><strong>7</strong><span>{% translate "Communications" %}</span></a>
+    <a href="#documents"><strong>8</strong><span>{% translate "Documents" %}</span></a>
 </nav>
 
 <section id="overview" class="meeting-workflow-section">
@@ -60,7 +61,7 @@
 <section id="minutes" class="meeting-workflow-section">
     <div class="meeting-section-heading"><div><span>{% translate "Step 4" %}</span><h2>{% translate "Record and approve minutes" %}</h2></div><span class="meeting-pill">{{ meeting.get_minutes_status_display }}</span></div>
     {% if can_manage %}<form method="post" enctype="multipart/form-data" action="{% url 'meetings:minutes_update' meeting.pk %}" class="meeting-inline-form meeting-wide-form">{% csrf_token %}{{ minutes_form.as_div }}<button type="submit">{% translate "Save meeting minutes" %}</button></form>{% else %}<div class="meeting-minute-content">{% if request.LANGUAGE_CODE == 'en' and meeting.minutes_en %}{{ meeting.minutes_en|linebreaks }}{% elif meeting.minutes_sw %}{{ meeting.minutes_sw|linebreaks }}{% else %}<p>{% translate "No minutes have been recorded." %}</p>{% endif %}</div>{% endif %}
-    {% if meeting.minutes_document %}<p><a href="{{ meeting.minutes_document.url }}">{% translate "Open signed minutes document" %}</a></p>{% endif %}
+    {% if meeting.minutes_document %}<p><a href="{% url 'meetings:minutes_document_download' meeting.pk %}">{% translate "Download signed minutes document" %}</a></p>{% endif %}
 </section>
 
 <section id="decisions" class="meeting-workflow-section">
@@ -76,5 +77,17 @@
 <section id="communications" class="meeting-workflow-section">
     <div class="meeting-section-heading"><div><span>{% translate "Step 7" %}</span><h2>{% translate "Communication history" %}</h2></div></div>
     <div class="meeting-table-scroll"><table><thead><tr><th>{% translate "Sent at" %}</th><th>{% translate "Communication" %}</th><th>{% translate "Recipient" %}</th><th>{% translate "Subject" %}</th><th>{% translate "Delivery status" %}</th></tr></thead><tbody>{% for communication in communications %}<tr><td>{{ communication.sent_at|date:"d M Y, H:i" }}</td><td>{{ communication.get_communication_type_display }}</td><td><strong>{{ communication.recipient_name }}</strong><small>{{ communication.recipient_email }}</small></td><td>{{ communication.subject }}{% if communication.error_message %}<small class="meeting-delivery-error">{{ communication.error_message }}</small>{% endif %}</td><td><span class="meeting-pill {% if communication.delivery_status == 'SENT' %}success{% else %}warning{% endif %}">{{ communication.get_delivery_status_display }}</span></td></tr>{% empty %}<tr><td colspan="5" class="meeting-empty-cell">{% translate "No meeting communications have been sent." %}</td></tr>{% endfor %}</tbody></table></div>
+</section>
+
+<section id="documents" class="meeting-workflow-section">
+    <div class="meeting-section-heading">
+        <div><span>{% translate "Step 8" %}</span><h2>{% translate "Meeting document centre" %}</h2></div>
+        {% if can_manage %}<details><summary>＋ {% translate "Upload document" %}</summary><form method="post" enctype="multipart/form-data" action="{% url 'meetings:document_add' meeting.pk %}" class="meeting-inline-form meeting-document-form">{% csrf_token %}{{ document_form.as_div }}<button type="submit">{% translate "Upload document" %}</button></form></details>{% endif %}
+    </div>
+    <p class="meeting-section-note">{% translate "Documents are downloaded through the protected staff workspace. Maximum file size: 20 MB." %}</p>
+    <div class="meeting-table-scroll"><table><thead><tr><th>{% translate "Document" %}</th><th>{% translate "Type" %}</th><th>{% translate "Agenda item" %}</th><th>{% translate "Version" %}</th><th>{% translate "Access" %}</th><th>{% translate "Uploaded" %}</th><th>{% translate "Actions" %}</th></tr></thead><tbody>
+    {% for document in documents %}<tr><td><strong>{% if request.LANGUAGE_CODE == 'en' and document.title_en %}{{ document.title_en }}{% else %}{{ document.title_sw }}{% endif %}</strong><small>{{ document.original_filename }}</small>{% if request.LANGUAGE_CODE == 'en' and document.description_en %}<small>{{ document.description_en }}</small>{% elif document.description_sw %}<small>{{ document.description_sw }}</small>{% endif %}</td><td>{{ document.get_document_type_display }}</td><td>{% if document.agenda_item %}{{ document.agenda_item.item_number }}. {% if request.LANGUAGE_CODE == 'en' %}{{ document.agenda_item.title_en }}{% else %}{{ document.agenda_item.title_sw }}{% endif %}{% else %}—{% endif %}</td><td>v{{ document.version }}</td><td>{% if document.is_confidential %}<span class="meeting-pill warning">{% translate "Confidential" %}</span>{% else %}<span class="meeting-pill success">{% translate "Staff" %}</span>{% endif %}</td><td>{{ document.created_at|date:"d M Y, H:i" }}{% if document.created_by %}<small>{{ document.created_by.get_full_name|default:document.created_by.username }}</small>{% endif %}</td><td><div class="meeting-row-actions"><a class="meeting-link-button" href="{% url 'meetings:document_download' meeting.pk document.pk %}">{% translate "Download" %}</a>{% if can_manage %}<form method="post" action="{% url 'meetings:document_archive' meeting.pk document.pk %}" onsubmit="return confirm('{% translate "Archive this document?" %}')">{% csrf_token %}<button type="submit" class="meeting-link-button meeting-archive-button">{% translate "Archive" %}</button></form>{% endif %}</div></td></tr>
+    {% empty %}<tr><td colspan="7" class="meeting-empty-cell">{% translate "No meeting documents have been uploaded." %}</td></tr>{% endfor %}
+    </tbody></table></div>
 </section>
 {% endblock %}

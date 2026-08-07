@@ -2,12 +2,13 @@ import calendar
 import csv
 from collections import defaultdict
 from datetime import date, timedelta
+from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
-from django.http import HttpResponse
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -25,6 +26,7 @@ from .forms import (
     MeetingAgendaItemForm,
     MeetingAttendeeForm,
     MeetingDecisionForm,
+    MeetingDocumentForm,
     MeetingMinutesForm,
     MeetingOccurrenceForm,
     MeetingSeriesAgendaTemplateForm,
@@ -36,6 +38,7 @@ from .models import (
     MeetingActionItem,
     MeetingAttendee,
     MeetingDecision,
+    MeetingDocument,
     MeetingSeries,
 )
 from .services import (
@@ -101,6 +104,7 @@ def _meeting_queryset():
         "agenda_items", "attendees__user", "decisions__agenda_item",
         "action_items__decision", "action_items__responsible_user",
         "communications",
+        "documents__agenda_item",
     )
 
 
@@ -462,6 +466,7 @@ def meeting_print(request, meeting_id):
         "attendees": attendees,
         "decisions": meeting.decisions.filter(is_active=True),
         "action_items": meeting.action_items.filter(is_active=True),
+        "documents": meeting.documents.filter(is_active=True),
         "present_count": present_count,
         "quorum_met": (
             present_count >= meeting.quorum_required
@@ -550,9 +555,104 @@ def meeting_detail(request, meeting_id):
             meeting=meeting,
             instance=MeetingActionItem(meeting=meeting),
         ),
+        "document_form": MeetingDocumentForm(
+            meeting=meeting,
+            instance=MeetingDocument(meeting=meeting),
+        ),
+        "documents": meeting.documents.filter(is_active=True).select_related(
+            "agenda_item", "created_by",
+        ),
         "communications": meeting.communications.filter(is_active=True)[:50],
     }
     return render(request, "meetings/meeting_detail.html", context)
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def document_add(request, meeting_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    form = MeetingDocumentForm(
+        request.POST,
+        request.FILES,
+        meeting=meeting,
+        instance=MeetingDocument(meeting=meeting),
+    )
+    if form.is_valid():
+        document = form.save(commit=False)
+        document.meeting = meeting
+        document.original_filename = request.FILES["file"].name[:255]
+        document.created_by = request.user
+        document.updated_by = request.user
+        document.save()
+        messages.success(request, _("The meeting document was uploaded successfully."))
+    else:
+        messages.error(request, _form_error_message(form))
+    return redirect(f"{meeting.get_absolute_url()}#documents")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def document_download(request, meeting_id, document_id):
+    _require_view_access(request.user)
+    document = get_object_or_404(
+        MeetingDocument.objects.select_related("meeting"),
+        pk=document_id,
+        meeting_id=meeting_id,
+        meeting__is_active=True,
+        is_active=True,
+    )
+    try:
+        document.file.open("rb")
+    except (FileNotFoundError, OSError):
+        raise Http404 from None
+    response = FileResponse(
+        document.file,
+        as_attachment=True,
+        filename=document.original_filename,
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def minutes_document_download(request, meeting_id):
+    _require_view_access(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    if not meeting.minutes_document:
+        raise Http404
+    try:
+        meeting.minutes_document.open("rb")
+    except (FileNotFoundError, OSError):
+        raise Http404 from None
+    response = FileResponse(
+        meeting.minutes_document,
+        as_attachment=True,
+        filename=Path(meeting.minutes_document.name).name,
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def document_archive(request, meeting_id, document_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    document = get_object_or_404(
+        MeetingDocument,
+        pk=document_id,
+        meeting=meeting,
+        is_active=True,
+    )
+    document.is_active = False
+    document.updated_by = request.user
+    document.save(update_fields=["is_active", "updated_by", "updated_at"])
+    messages.success(request, _("The meeting document was archived."))
+    return redirect(f"{meeting.get_absolute_url()}#documents")
 
 
 @login_required(login_url="accounts:staff_login")

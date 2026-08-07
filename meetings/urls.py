@@ -70,6 +70,26 @@ urlpatterns = [
         name="agenda_add",
     ),
     path(
+        "staff/meetings/<int:meeting_id>/documents/add/",
+        views.document_add,
+        name="document_add",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/minutes/document/download/",
+        views.minutes_document_download,
+        name="minutes_document_download",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/documents/<int:document_id>/download/",
+        views.document_download,
+        name="document_download",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/documents/<int:document_id>/archive/",
+        views.document_archive,
+        name="document_archive",
+    ),
+    path(
         "staff/meetings/<int:meeting_id>/participants/add/",
         views.attendee_add,
         name="attendee_add",

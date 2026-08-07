@@ -11,6 +11,7 @@ from .models import (
     MeetingAttendee,
     MeetingCommunicationLog,
     MeetingDecision,
+    MeetingDocument,
     MeetingSeries,
     MeetingSeriesAgendaTemplate,
 )
@@ -45,6 +46,15 @@ class MeetingAgendaItemInline(admin.TabularInline):
         "allocated_minutes", "is_active",
     )
     ordering = ("item_number",)
+
+
+class MeetingDocumentInline(admin.TabularInline):
+    model = MeetingDocument
+    extra = 0
+    fields = (
+        "document_type", "title_sw", "version", "is_confidential", "is_active",
+    )
+    ordering = ("document_type", "title_sw", "-version")
 
 
 class MeetingAttendeeInline(admin.TabularInline):
@@ -108,6 +118,7 @@ class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
         MeetingAttendeeInline,
         MeetingDecisionInline,
         MeetingActionItemInline,
+        MeetingDocumentInline,
     )
     fieldsets = (
         (_("Meeting information"), {"fields": (
@@ -187,6 +198,21 @@ class MeetingAttendeeAdmin(AuditAdminMixin, admin.ModelAdmin):
         "meeting__reference_number",
     )
     autocomplete_fields = ("meeting", "user")
+
+
+@admin.register(MeetingDocument)
+class MeetingDocumentAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "title_sw", "meeting", "document_type", "version", "is_confidential",
+        "is_active", "created_at",
+    )
+    list_filter = ("document_type", "is_confidential", "is_active", "meeting")
+    search_fields = (
+        "title_sw", "title_en", "original_filename", "meeting__reference_number",
+    )
+    autocomplete_fields = ("meeting", "agenda_item")
+    readonly_fields = AuditAdminMixin.readonly_fields + ("original_filename",)
+    ordering = ("meeting", "document_type", "title_sw", "-version")
 
 
 @admin.register(MeetingDecision)
