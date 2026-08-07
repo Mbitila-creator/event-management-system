@@ -59,6 +59,21 @@ urlpatterns = [
         name="invitation_send",
     ),
     path(
+        "staff/meetings/<int:meeting_id>/invitations/send-pending/",
+        views.invitation_bulk_send,
+        name="invitation_bulk_send",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/participants/<int:attendee_id>/remind/",
+        views.rsvp_reminder_send,
+        name="rsvp_reminder_send",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/invitations/remind-pending/",
+        views.rsvp_reminder_bulk_send,
+        name="rsvp_reminder_bulk_send",
+    ),
+    path(
         "staff/meetings/<int:meeting_id>/minutes/update/",
         views.minutes_update,
         name="minutes_update",
@@ -77,6 +92,16 @@ urlpatterns = [
         "staff/meetings/<int:meeting_id>/actions/<int:action_id>/update/",
         views.action_update,
         name="action_update",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/actions/<int:action_id>/remind/",
+        views.action_reminder_send,
+        name="action_reminder_send",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/actions/remind-due/",
+        views.action_reminder_bulk_send,
+        name="action_reminder_bulk_send",
     ),
     path(
         "meetings/invitations/<uuid:response_token>/",

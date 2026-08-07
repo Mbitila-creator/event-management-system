@@ -296,8 +296,8 @@ class MeetingActionItemForm(forms.ModelForm):
         model = MeetingActionItem
         fields = (
             "decision", "action_number", "description_sw", "description_en",
-            "responsible_user", "responsible_name", "due_date", "status",
-            "progress_notes",
+            "responsible_user", "responsible_name", "responsible_email",
+            "due_date", "status", "progress_notes",
         )
         widgets = {
             "description_sw": forms.Textarea(attrs={"rows": 3}),

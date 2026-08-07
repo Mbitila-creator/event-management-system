@@ -435,6 +435,10 @@ class MeetingActionItem(BaseModel):
         max_length=200,
         blank=True,
     )
+    responsible_email = models.EmailField(
+        _("responsible person's email"),
+        blank=True,
+    )
     due_date = models.DateField(_("due date"), null=True, blank=True)
     status = models.CharField(
         _("status"),
@@ -483,6 +487,8 @@ class MeetingActionItem(BaseModel):
                 self.responsible_user.get_full_name().strip()
                 or self.responsible_user.username
             )
+        if self.responsible_user_id and not self.responsible_email:
+            self.responsible_email = self.responsible_user.email
         if self.status == self.Status.COMPLETED and not self.completed_at:
             self.completed_at = timezone.now()
         self.full_clean()
@@ -490,3 +496,67 @@ class MeetingActionItem(BaseModel):
 
     def __str__(self):
         return f"{self.meeting.reference_number} - {self.action_number}"
+
+
+class MeetingCommunicationLog(BaseModel):
+    class CommunicationType(models.TextChoices):
+        INVITATION = "INVITATION", _("Meeting invitation")
+        RSVP_REMINDER = "RSVP_REMINDER", _("Attendance confirmation reminder")
+        ACTION_REMINDER = "ACTION_REMINDER", _("Action deadline reminder")
+
+    class DeliveryStatus(models.TextChoices):
+        SENT = "SENT", _("Sent")
+        FAILED = "FAILED", _("Failed")
+
+    meeting = models.ForeignKey(
+        Meeting,
+        verbose_name=_("meeting"),
+        related_name="communications",
+        on_delete=models.CASCADE,
+    )
+    attendee = models.ForeignKey(
+        MeetingAttendee,
+        verbose_name=_("meeting participant"),
+        related_name="communications",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    action_item = models.ForeignKey(
+        MeetingActionItem,
+        verbose_name=_("meeting action item"),
+        related_name="communications",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    communication_type = models.CharField(
+        _("communication type"),
+        max_length=30,
+        choices=CommunicationType.choices,
+    )
+    delivery_status = models.CharField(
+        _("delivery status"),
+        max_length=20,
+        choices=DeliveryStatus.choices,
+    )
+    recipient_name = models.CharField(_("recipient name"), max_length=200)
+    recipient_email = models.EmailField(_("recipient email"))
+    subject = models.CharField(_("subject"), max_length=300)
+    message = models.TextField(_("message"))
+    sent_at = models.DateTimeField(_("sent at"), default=timezone.now)
+    error_message = models.TextField(_("error message"), blank=True)
+
+    class Meta:
+        verbose_name = _("meeting communication")
+        verbose_name_plural = _("meeting communications")
+        ordering = ["-sent_at", "-created_at"]
+        indexes = [
+            models.Index(
+                fields=["meeting", "communication_type", "delivery_status"],
+                name="meeting_comm_status_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.meeting.reference_number} - {self.recipient_email}"

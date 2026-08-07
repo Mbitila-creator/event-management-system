@@ -34,7 +34,11 @@ from .models import (
     MeetingAttendee,
     MeetingDecision,
 )
-from .services import send_meeting_invitation
+from .services import (
+    send_action_reminder,
+    send_meeting_invitation,
+    send_rsvp_reminder,
+)
 
 
 MEETING_VIEW_ROLES = {
@@ -91,6 +95,7 @@ def _meeting_queryset():
     ).prefetch_related(
         "agenda_items", "attendees__user", "decisions__agenda_item",
         "action_items__decision", "action_items__responsible_user",
+        "communications",
     )
 
 
@@ -433,6 +438,7 @@ def meeting_detail(request, meeting_id):
             meeting=meeting,
             instance=MeetingActionItem(meeting=meeting),
         ),
+        "communications": meeting.communications.filter(is_active=True)[:50],
     }
     return render(request, "meetings/meeting_detail.html", context)
 
@@ -532,6 +538,148 @@ def invitation_send(request, meeting_id, attendee_id):
             _("The invitation could not be sent: %(error)s") % {"error": str(error)},
         )
     return redirect(f"{meeting.get_absolute_url()}#participants")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def invitation_bulk_send(request, meeting_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    attendees = meeting.attendees.filter(
+        is_active=True,
+        invitation_sent_at__isnull=True,
+    ).exclude(email="")
+    sent = 0
+    failed = 0
+    for attendee in attendees:
+        try:
+            sent += int(send_meeting_invitation(attendee, request=request))
+        except Exception:
+            failed += 1
+    messages.success(
+        request,
+        _("Invitations sent: %(sent)s; failed: %(failed)s.") % {
+            "sent": sent,
+            "failed": failed,
+        },
+    )
+    return redirect(f"{meeting.get_absolute_url()}#communications")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def rsvp_reminder_send(request, meeting_id, attendee_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    attendee = get_object_or_404(
+        MeetingAttendee,
+        pk=attendee_id,
+        meeting=meeting,
+        is_active=True,
+    )
+    try:
+        delivered = send_rsvp_reminder(attendee, request=request)
+        if delivered:
+            messages.success(request, _("The attendance reminder was sent."))
+        else:
+            messages.error(request, _("The email service did not confirm delivery."))
+    except Exception as error:
+        messages.error(
+            request,
+            _("The reminder could not be sent: %(error)s") % {"error": str(error)},
+        )
+    return redirect(f"{meeting.get_absolute_url()}#participants")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def rsvp_reminder_bulk_send(request, meeting_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    attendees = meeting.attendees.filter(
+        is_active=True,
+        invitation_sent_at__isnull=False,
+        response_status__in={
+            MeetingAttendee.ResponseStatus.INVITED,
+            MeetingAttendee.ResponseStatus.TENTATIVE,
+        },
+    ).exclude(email="")
+    sent = 0
+    failed = 0
+    for attendee in attendees:
+        try:
+            sent += int(send_rsvp_reminder(attendee, request=request))
+        except Exception:
+            failed += 1
+    messages.success(
+        request,
+        _("Attendance reminders sent: %(sent)s; failed: %(failed)s.") % {
+            "sent": sent,
+            "failed": failed,
+        },
+    )
+    return redirect(f"{meeting.get_absolute_url()}#communications")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def action_reminder_send(request, meeting_id, action_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    action = get_object_or_404(
+        MeetingActionItem.objects.select_related("responsible_user"),
+        pk=action_id,
+        meeting=meeting,
+        is_active=True,
+    )
+    try:
+        delivered = send_action_reminder(action, request=request)
+        if delivered:
+            messages.success(request, _("The action reminder was sent."))
+        else:
+            messages.error(request, _("The email service did not confirm delivery."))
+    except Exception as error:
+        messages.error(
+            request,
+            _("The reminder could not be sent: %(error)s") % {"error": str(error)},
+        )
+    return redirect(f"{meeting.get_absolute_url()}#actions")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def action_reminder_bulk_send(request, meeting_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    actions = meeting.action_items.select_related("responsible_user").filter(
+        is_active=True,
+        due_date__isnull=False,
+        due_date__lte=timezone.localdate() + timedelta(days=7),
+    ).exclude(
+        status__in={
+            MeetingActionItem.Status.COMPLETED,
+            MeetingActionItem.Status.CANCELLED,
+        },
+    )
+    sent = 0
+    failed = 0
+    for action in actions:
+        if not action.responsible_email and not (
+            action.responsible_user_id and action.responsible_user.email
+        ):
+            continue
+        try:
+            sent += int(send_action_reminder(action, request=request))
+        except Exception:
+            failed += 1
+    messages.success(
+        request,
+        _("Action reminders sent: %(sent)s; failed: %(failed)s.") % {
+            "sent": sent,
+            "failed": failed,
+        },
+    )
+    return redirect(f"{meeting.get_absolute_url()}#communications")
 
 
 @login_required(login_url="accounts:staff_login")

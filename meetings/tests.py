@@ -14,6 +14,7 @@ from .models import (
     MeetingActionItem,
     MeetingAgendaItem,
     MeetingAttendee,
+    MeetingCommunicationLog,
     MeetingDecision,
 )
 
@@ -420,6 +421,13 @@ class MeetingWorkflowTests(TestCase):
         self.assertIn(str(attendee.response_token), mail.outbox[0].body)
         attendee.refresh_from_db()
         self.assertIsNotNone(attendee.invitation_sent_at)
+        self.assertTrue(
+            MeetingCommunicationLog.objects.filter(
+                attendee=attendee,
+                communication_type=MeetingCommunicationLog.CommunicationType.INVITATION,
+                delivery_status=MeetingCommunicationLog.DeliveryStatus.SENT,
+            ).exists()
+        )
 
         self.client.logout()
         public_response = self.client.post(
@@ -434,6 +442,115 @@ class MeetingWorkflowTests(TestCase):
             MeetingAttendee.ResponseStatus.ACCEPTED,
         )
         self.assertIsNotNone(attendee.responded_at)
+
+    def test_manager_can_send_pending_invitations_in_bulk(self):
+        pending = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Asha Pending",
+            email="pending@example.com",
+            preferred_language="en",
+        )
+        already_sent = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Juma Sent",
+            email="sent@example.com",
+            invitation_sent_at=timezone.now(),
+        )
+        with self.settings(
+            EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        ):
+            response = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/"
+                "invitations/send-pending/",
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        pending.refresh_from_db()
+        self.assertIsNotNone(pending.invitation_sent_at)
+        self.assertFalse(
+            MeetingCommunicationLog.objects.filter(attendee=already_sent).exists()
+        )
+
+    def test_manager_can_send_attendance_reminder(self):
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Neema Mjumbe",
+            email="neema@example.com",
+            preferred_language="en",
+        )
+        with self.settings(
+            EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        ):
+            response = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/participants/"
+                f"{attendee.pk}/remind/",
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("confirm whether you will attend", mail.outbox[0].body)
+        self.assertIn(str(attendee.response_token), mail.outbox[0].body)
+        self.assertTrue(
+            MeetingCommunicationLog.objects.filter(
+                attendee=attendee,
+                communication_type=MeetingCommunicationLog.CommunicationType.RSVP_REMINDER,
+            ).exists()
+        )
+
+    def test_failed_delivery_is_recorded_in_communication_history(self):
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Delivery Failure",
+            email="failure@example.com",
+            preferred_language="en",
+        )
+        with self.settings(EMAIL_BACKEND="missing.email.Backend"):
+            response = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/participants/"
+                f"{attendee.pk}/invite/",
+            )
+        self.assertEqual(response.status_code, 302)
+        communication = MeetingCommunicationLog.objects.get(attendee=attendee)
+        self.assertEqual(
+            communication.delivery_status,
+            MeetingCommunicationLog.DeliveryStatus.FAILED,
+        )
+        self.assertTrue(communication.error_message)
+
+    def test_manager_can_send_action_deadline_reminder(self):
+        owner = User.objects.create_user(
+            username="action.reminder.owner",
+            email="john@example.com",
+            first_name="John",
+            last_name="Officer",
+            preferred_language="en",
+        )
+        action = MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="Andaa taarifa",
+            description_en="Prepare the report",
+            responsible_user=owner,
+            responsible_name="",
+            due_date=timezone.localdate() + timedelta(days=2),
+        )
+        with self.settings(
+            EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        ):
+            response = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/actions/"
+                f"{action.pk}/remind/",
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Prepare the report", mail.outbox[0].body)
+        communication = MeetingCommunicationLog.objects.get(action_item=action)
+        self.assertEqual(
+            communication.communication_type,
+            MeetingCommunicationLog.CommunicationType.ACTION_REMINDER,
+        )
+        detail = self.client.get(f"/en/staff/meetings/{self.meeting.pk}/")
+        self.assertContains(detail, "Communication history")
+        self.assertContains(detail, "john@example.com")
 
     def test_attendance_officer_can_record_attendance_but_not_manage_meeting(self):
         officer = User.objects.create_user(

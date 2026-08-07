@@ -9,6 +9,7 @@ from .models import (
     MeetingActionItem,
     MeetingAgendaItem,
     MeetingAttendee,
+    MeetingCommunicationLog,
     MeetingDecision,
 )
 
@@ -69,7 +70,7 @@ class MeetingActionItemInline(admin.TabularInline):
     extra = 0
     fields = (
         "action_number", "decision", "description_sw", "responsible_user",
-        "responsible_name", "due_date", "status", "is_active",
+        "responsible_name", "responsible_email", "due_date", "status", "is_active",
     )
     autocomplete_fields = ("responsible_user",)
     ordering = ("action_number",)
@@ -185,7 +186,7 @@ class MeetingActionItemAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_filter = ("status", "due_date", "meeting", "is_active")
     search_fields = (
         "meeting__reference_number", "description_sw", "description_en",
-        "responsible_name",
+        "responsible_name", "responsible_email",
     )
     autocomplete_fields = ("meeting", "decision", "responsible_user")
     ordering = ("meeting", "action_number")
@@ -193,3 +194,31 @@ class MeetingActionItemAdmin(AuditAdminMixin, admin.ModelAdmin):
     @admin.display(description=_("action"))
     def short_action(self, obj):
         return obj.description_sw[:90]
+
+
+@admin.register(MeetingCommunicationLog)
+class MeetingCommunicationLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "meeting", "communication_type", "recipient_name", "recipient_email",
+        "delivery_status", "sent_at",
+    )
+    list_filter = (
+        "communication_type", "delivery_status", "sent_at", "meeting",
+    )
+    search_fields = (
+        "meeting__reference_number", "recipient_name", "recipient_email",
+        "subject", "message",
+    )
+    readonly_fields = (
+        "meeting", "attendee", "action_item", "communication_type",
+        "delivery_status", "recipient_name", "recipient_email", "subject",
+        "message", "sent_at", "error_message", "created_by", "updated_by",
+        "created_at", "updated_at",
+    )
+    ordering = ("-sent_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

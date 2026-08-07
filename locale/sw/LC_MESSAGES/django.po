@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Event Management System 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-07 15:38+0300\n"
+"POT-Creation-Date: 2026-08-07 16:37+0300\n"
 "PO-Revision-Date: 2026-07-24 14:00+0300\n"
 "Last-Translator: Mbitila <mbitila@gmail.com>\n"
 "Language-Team: Kiswahili\n"
@@ -59,7 +59,7 @@ msgstr "Mkurugenzi Msaidizi"
 #: templates/accounts/staff_workspace.html:116
 #: templates/forms_builder/payment_receipt.html:13
 #: templates/forms_builder/payment_receipt_verification.html:5
-#: templates/meetings/meeting_detail.html:50
+#: templates/meetings/meeting_detail.html:51
 #: templates/meetings/meeting_print.html:16
 msgid "Participant"
 msgstr "Mshiriki"
@@ -635,7 +635,7 @@ msgstr "nembo ya tukio"
 msgid "event banner"
 msgstr "bango la tukio"
 
-#: events/models.py:315 meetings/models.py:369 meetings/models.py:440
+#: events/models.py:315 meetings/models.py:369 meetings/models.py:444
 msgid "status"
 msgstr "hali"
 
@@ -1276,7 +1276,7 @@ msgstr "uwasilishaji wa fomu"
 msgid "participant"
 msgstr "Mshiriki"
 
-#: forms_builder/models.py:581 meetings/admin.py:123
+#: forms_builder/models.py:581 meetings/admin.py:124
 msgid "participants"
 msgstr "washiriki"
 
@@ -1767,11 +1767,12 @@ msgstr "Cheti kimeidhinishwa"
 msgid "Certificate not authorized"
 msgstr "Cheti hakijaidhinishwa"
 
-#: forms_builder/models.py:1149 templates/meetings/meeting_detail.html:51
+#: forms_builder/models.py:1149 meetings/models.py:508
+#: templates/meetings/meeting_detail.html:52
 msgid "Sent"
 msgstr "Imetumwa"
 
-#: forms_builder/models.py:1150
+#: forms_builder/models.py:1150 meetings/models.py:509
 msgid "Failed"
 msgstr "Imeshindikana"
 
@@ -1783,7 +1784,7 @@ msgstr "Imerukwa"
 msgid "notification type"
 msgstr "aina ya taarifa"
 
-#: forms_builder/models.py:1173
+#: forms_builder/models.py:1173 meetings/models.py:544
 msgid "recipient email"
 msgstr "baruapepe ya mpokeaji"
 
@@ -1791,7 +1792,7 @@ msgstr "baruapepe ya mpokeaji"
 msgid "email subject"
 msgstr "kichwa cha baruapepe"
 
-#: forms_builder/models.py:1182
+#: forms_builder/models.py:1182 meetings/models.py:539
 msgid "delivery status"
 msgstr "hali ya utumaji"
 
@@ -1799,7 +1800,7 @@ msgstr "hali ya utumaji"
 msgid "delivery error"
 msgstr "kosa la utumaji"
 
-#: forms_builder/models.py:1192
+#: forms_builder/models.py:1192 meetings/models.py:547
 msgid "sent at"
 msgstr "imetumwa tarehe"
 
@@ -2140,31 +2141,31 @@ msgid ""
 msgstr ""
 "Kiasi cha malipo hakikuweza kukokotolewa. Wasiliana na mratibu wa tukio."
 
-#: meetings/admin.py:100
+#: meetings/admin.py:101
 msgid "Meeting information"
 msgstr "Taarifa za kikao"
 
-#: meetings/admin.py:104
+#: meetings/admin.py:105
 msgid "Meeting objectives"
 msgstr "Malengo ya kikao"
 
-#: meetings/admin.py:105
+#: meetings/admin.py:106
 msgid "Meeting minutes"
 msgstr "Kumbukumbu za kikao"
 
-#: meetings/admin.py:109
+#: meetings/admin.py:110
 msgid "Audit information"
 msgstr "Taarifa za ufuatiliaji"
 
-#: meetings/admin.py:119
+#: meetings/admin.py:120
 msgid "meeting date"
 msgstr "tarehe ya kikao"
 
-#: meetings/admin.py:174 meetings/models.py:416
+#: meetings/admin.py:175 meetings/models.py:416
 msgid "decision"
 msgstr "uamuzi"
 
-#: meetings/admin.py:193
+#: meetings/admin.py:194
 msgid "action"
 msgstr "hatua"
 
@@ -2223,12 +2224,12 @@ msgstr "Kikao kinaanza"
 msgid "Meeting ends"
 msgstr "Kikao kinaisha"
 
-#: meetings/forms.py:72 meetings/forms.py:339 meetings/views.py:305
+#: meetings/forms.py:72 meetings/forms.py:339 meetings/views.py:315
 #: templates/accounts/staff_workspace.html:47
 #: templates/accounts/staff_workspace.html:116
 #: templates/checkin/reports.html:79 templates/meetings/action_report.html:21
 #: templates/meetings/action_report.html:26
-#: templates/meetings/meeting_detail.html:71
+#: templates/meetings/meeting_detail.html:73
 #: templates/meetings/meeting_list.html:25
 #: templates/meetings/meeting_print.html:19
 msgid "Status"
@@ -2243,7 +2244,7 @@ msgid "Meeting type"
 msgstr "Aina ya kikao"
 
 #: meetings/forms.py:78 templates/meetings/invitation_response.html:13
-#: templates/meetings/meeting_detail.html:34
+#: templates/meetings/meeting_detail.html:35
 #: templates/meetings/meeting_list.html:36
 #: templates/meetings/meeting_print.html:12
 msgid "Chairperson"
@@ -2253,7 +2254,7 @@ msgstr "Mwenyekiti"
 msgid "Meeting secretary"
 msgstr "Katibu wa kikao"
 
-#: meetings/forms.py:85 templates/meetings/meeting_detail.html:36
+#: meetings/forms.py:85 templates/meetings/meeting_detail.html:37
 msgid "Required quorum"
 msgstr "Akidi inayohitajika"
 
@@ -2289,19 +2290,19 @@ msgstr "Tarehe ya mwisho ya kujibu mwaliko haiwezi kuwa baada ya kikao kuanza."
 msgid "Enter the participant's full name."
 msgstr "Weka jina kamili la mshiriki."
 
-#: meetings/forms.py:321 templates/meetings/meeting_detail.html:52
+#: meetings/forms.py:321 templates/meetings/meeting_detail.html:53
 #: templates/meetings/meeting_print.html:16
 msgid "Invitation response"
 msgstr "Jibu la mwaliko"
 
 #: meetings/forms.py:325 meetings/forms.py:332
-#: templates/meetings/meeting_detail.html:52
+#: templates/meetings/meeting_detail.html:53
 msgid "Attendance status"
 msgstr "Hali ya mahudhurio"
 
-#: meetings/forms.py:343 meetings/views.py:305
+#: meetings/forms.py:343 meetings/views.py:315
 #: templates/meetings/action_report.html:26
-#: templates/meetings/meeting_detail.html:71
+#: templates/meetings/meeting_detail.html:73
 msgid "Progress notes"
 msgstr "Maelezo ya maendeleo"
 
@@ -2422,7 +2423,7 @@ msgid "minutes approved at"
 msgstr "kumbukumbu ziliidhinishwa tarehe"
 
 #: meetings/models.py:114 meetings/models.py:165 meetings/models.py:228
-#: meetings/models.py:353 meetings/models.py:410
+#: meetings/models.py:353 meetings/models.py:410 meetings/models.py:513
 msgid "meeting"
 msgstr "kikao"
 
@@ -2495,7 +2496,7 @@ msgstr "Bado hajathibitisha"
 msgid "Not marked"
 msgstr "Haijawekwa"
 
-#: meetings/models.py:218 templates/meetings/meeting_detail.html:30
+#: meetings/models.py:218 templates/meetings/meeting_detail.html:31
 msgid "Present"
 msgstr "Amehudhuria"
 
@@ -2547,7 +2548,7 @@ msgstr "mwaliko ulitumwa tarehe"
 msgid "invitation responded at"
 msgstr "mwaliko ulijibiwa tarehe"
 
-#: meetings/models.py:304
+#: meetings/models.py:304 meetings/models.py:519
 msgid "meeting participant"
 msgstr "mshiriki wa kikao"
 
@@ -2603,7 +2604,7 @@ msgstr "Inasubiri"
 msgid "In progress"
 msgstr "Inaendelea"
 
-#: meetings/models.py:405 meetings/views.py:314
+#: meetings/models.py:405 meetings/views.py:324
 #: templates/meetings/action_report.html:16
 #: templates/meetings/action_report.html:21
 #: templates/meetings/action_report.html:27
@@ -2630,49 +2631,99 @@ msgstr "mtumiaji wa mfumo anayewajibika"
 msgid "responsible person"
 msgstr "mtu anayewajibika"
 
-#: meetings/models.py:438
+#: meetings/models.py:439
+msgid "responsible person's email"
+msgstr "baruapepe ya mtu anayewajibika"
+
+#: meetings/models.py:442
 msgid "due date"
 msgstr "tarehe ya mwisho"
 
-#: meetings/models.py:445
+#: meetings/models.py:449
 msgid "progress notes"
 msgstr "maelezo ya maendeleo"
 
-#: meetings/models.py:447
+#: meetings/models.py:451
 msgid "completed at"
 msgstr "ilikamilika tarehe"
 
-#: meetings/models.py:453
+#: meetings/models.py:457 meetings/models.py:527
 msgid "meeting action item"
 msgstr "hatua ya utekelezaji ya kikao"
 
-#: meetings/models.py:454
+#: meetings/models.py:458
 msgid "meeting action items"
 msgstr "hatua za utekelezaji za kikao"
 
-#: meetings/models.py:472
+#: meetings/models.py:476
 msgid "The decision must belong to this meeting."
 msgstr "Uamuzi lazima uwe wa kikao hiki."
 
-#: meetings/models.py:475
+#: meetings/models.py:479
 msgid "Enter a responsible person or select a system user."
 msgstr "Weka mtu anayewajibika au chagua mtumiaji wa mfumo."
 
-#: meetings/services.py:21
-msgid "Enter an email address before sending the invitation."
-msgstr "Weka anwani ya baruapepe kabla ya kutuma mwaliko."
+#: meetings/models.py:503 templates/meetings/invitation_response.html:4
+#: templates/meetings/invitation_response.html:10
+msgid "Meeting invitation"
+msgstr "Mwaliko wa kikao"
 
-#: meetings/services.py:38 templates/meetings/invitation_response.html:8
+#: meetings/models.py:504
+msgid "Attendance confirmation reminder"
+msgstr "Kikumbusho cha kuthibitisha mahudhurio"
+
+#: meetings/models.py:505
+msgid "Action deadline reminder"
+msgstr "Kikumbusho cha tarehe ya mwisho ya hatua"
+
+#: meetings/models.py:534
+msgid "communication type"
+msgstr "aina ya mawasiliano"
+
+#: meetings/models.py:543
+msgid "recipient name"
+msgstr "jina la mpokeaji"
+
+#: meetings/models.py:545
+msgid "subject"
+msgstr "kichwa"
+
+#: meetings/models.py:546
+msgid "message"
+msgstr "ujumbe"
+
+#: meetings/models.py:548
+msgid "error message"
+msgstr "ujumbe wa hitilafu"
+
+#: meetings/models.py:551
+msgid "meeting communication"
+msgstr "mawasiliano ya kikao"
+
+#: meetings/models.py:552
+msgid "meeting communications"
+msgstr "mawasiliano ya vikao"
+
+#: meetings/services.py:72 meetings/views.py:534 meetings/views.py:585
+#: meetings/views.py:640
+msgid "The email service did not confirm delivery."
+msgstr "Mfumo wa baruapepe haukuthibitisha utumaji."
+
+#: meetings/services.py:87 templates/meetings/invitation_response.html:8
 #: templates/meetings/meeting_list.html:7
 msgid "To be confirmed"
 msgstr "Itathibitishwa"
 
-#: meetings/services.py:39
+#: meetings/services.py:95
+msgid "Enter an email address before sending the invitation."
+msgstr "Weka anwani ya baruapepe kabla ya kutuma mwaliko."
+
+#: meetings/services.py:107
 #, python-format
 msgid "Meeting invitation — %(meeting)s"
 msgstr "Mwaliko wa kikao — %(meeting)s"
 
-#: meetings/services.py:41
+#: meetings/services.py:109
 #, python-format
 msgid ""
 "Dear %(name)s,\n"
@@ -2699,103 +2750,210 @@ msgstr ""
 "Thibitisha ushiriki wako kwa kutumia kiungo hiki salama:\n"
 "%(response_url)s"
 
-#: meetings/views.py:104
+#: meetings/services.py:150
+msgid "This participant has already submitted a final response."
+msgstr "Mshiriki huyu tayari amewasilisha jibu la mwisho."
+
+#: meetings/services.py:153
+msgid "Enter an email address before sending the reminder."
+msgstr "Weka anwani ya baruapepe kabla ya kutuma kikumbusho."
+
+#: meetings/services.py:163
+#, python-format
+msgid "Reminder: confirm attendance — %(meeting)s"
+msgstr "Kikumbusho: thibitisha mahudhurio — %(meeting)s"
+
+#: meetings/services.py:167
+#, python-format
+msgid ""
+"Dear %(name)s,\n"
+"\n"
+"This is a reminder to confirm whether you will attend %(meeting)s.\n"
+"\n"
+"Reference: %(reference)s\n"
+"Date and time: %(date)s\n"
+"Venue: %(venue)s\n"
+"\n"
+"Submit your response using this secure link:\n"
+"%(response_url)s"
+msgstr ""
+"Ndugu %(name)s,\n"
+"\n"
+"Hiki ni kikumbusho cha kuthibitisha kama utahudhuria %(meeting)s.\n"
+"\n"
+"Kumbukumbu: %(reference)s\n"
+"Tarehe na saa: %(date)s\n"
+"Mahali: %(venue)s\n"
+"\n"
+"Wasilisha jibu lako kwa kutumia kiungo hiki salama:\n"
+"%(response_url)s"
+
+#: meetings/services.py:198
+msgid "A reminder cannot be sent for a closed action."
+msgstr "Kikumbusho hakiwezi kutumwa kwa hatua iliyofungwa."
+
+#: meetings/services.py:203
+msgid "Enter an email address for the responsible person."
+msgstr "Weka anwani ya baruapepe ya mtu anayewajibika."
+
+#: meetings/services.py:220 templates/meetings/meeting_detail.html:7
+msgid "Not specified"
+msgstr "Haijabainishwa"
+
+#: meetings/services.py:222
+#, python-format
+msgid "Action reminder — %(meeting)s"
+msgstr "Kikumbusho cha hatua — %(meeting)s"
+
+#: meetings/services.py:226
+#, python-format
+msgid ""
+"Dear %(name)s,\n"
+"\n"
+"This is a reminder about an action assigned from %(meeting)s.\n"
+"\n"
+"Reference: %(reference)s\n"
+"Action: %(action)s\n"
+"Due date: %(due_date)s\n"
+"Current status: %(status)s\n"
+"\n"
+"Please complete the action or provide a progress update."
+msgstr ""
+"Ndugu %(name)s,\n"
+"\n"
+"Hiki ni kikumbusho kuhusu hatua uliyopangiwa kutoka %(meeting)s.\n"
+"\n"
+"Kumbukumbu: %(reference)s\n"
+"Hatua: %(action)s\n"
+"Tarehe ya mwisho: %(due_date)s\n"
+"Hali ya sasa: %(status)s\n"
+"\n"
+"Tafadhali kamilisha hatua hiyo au toa taarifa ya maendeleo."
+
+#: meetings/views.py:109
 msgid "Check the information entered and try again."
 msgstr "Kagua taarifa ulizoingiza kisha ujaribu tena."
 
-#: meetings/views.py:303
+#: meetings/views.py:313
 msgid "Meeting reference"
 msgstr "Kumbukumbu ya kikao"
 
-#: meetings/views.py:303 templates/meetings/action_report.html:20
+#: meetings/views.py:313 templates/meetings/action_report.html:20
 #: templates/meetings/action_report.html:26
 msgid "Meeting"
 msgstr "Kikao"
 
-#: meetings/views.py:303
+#: meetings/views.py:313
 msgid "Action number"
 msgstr "Namba ya hatua"
 
-#: meetings/views.py:304 templates/meetings/action_report.html:26
-#: templates/meetings/meeting_detail.html:71
+#: meetings/views.py:314 templates/meetings/action_report.html:26
+#: templates/meetings/meeting_detail.html:73
 #: templates/meetings/meeting_print.html:19
 msgid "Action"
 msgstr "Hatua"
 
-#: meetings/views.py:304 templates/meetings/action_report.html:26
-#: templates/meetings/meeting_detail.html:71
+#: meetings/views.py:314 templates/meetings/action_report.html:26
+#: templates/meetings/meeting_detail.html:73
 #: templates/meetings/meeting_print.html:19
 msgid "Responsible person"
 msgstr "Mtu anayewajibika"
 
-#: meetings/views.py:304 templates/meetings/action_report.html:26
-#: templates/meetings/meeting_detail.html:71
+#: meetings/views.py:314 templates/meetings/action_report.html:26
+#: templates/meetings/meeting_detail.html:73
 #: templates/meetings/meeting_print.html:19
 msgid "Due date"
 msgstr "Tarehe ya mwisho"
 
-#: meetings/views.py:358
+#: meetings/views.py:368
 msgid "The meeting was created successfully."
 msgstr "Kikao kimeundwa kwa mafanikio."
 
-#: meetings/views.py:362 templates/meetings/meeting_list.html:13
+#: meetings/views.py:372 templates/meetings/meeting_list.html:13
 msgid "Create meeting"
 msgstr "Unda kikao"
 
-#: meetings/views.py:363
+#: meetings/views.py:373
 msgid "Create meeting and continue"
 msgstr "Unda kikao na uendelee"
 
-#: meetings/views.py:374
+#: meetings/views.py:384
 msgid "The meeting details were updated successfully."
 msgstr "Taarifa za kikao zimesasishwa kwa mafanikio."
 
-#: meetings/views.py:379
+#: meetings/views.py:389
 msgid "Edit meeting"
 msgstr "Hariri kikao"
 
-#: meetings/views.py:380
+#: meetings/views.py:390
 msgid "Save meeting changes"
 msgstr "Hifadhi mabadiliko ya kikao"
 
-#: meetings/views.py:447
+#: meetings/views.py:458
 msgid "The agenda item was added."
 msgstr "Kipengele cha ajenda kimeongezwa."
 
-#: meetings/views.py:465
+#: meetings/views.py:476
 msgid "The participant was added to the invitation list."
 msgstr "Mshiriki ameongezwa kwenye orodha ya mialiko."
 
-#: meetings/views.py:501
+#: meetings/views.py:512
 msgid "The participant status was updated."
 msgstr "Hali ya mshiriki imesasishwa."
 
-#: meetings/views.py:521
+#: meetings/views.py:532
 msgid "The meeting invitation was sent."
 msgstr "Mwaliko wa kikao umetumwa."
 
-#: meetings/views.py:523
-msgid "The email service did not confirm delivery."
-msgstr "Mfumo wa baruapepe haukuthibitisha utumaji."
-
-#: meetings/views.py:527
+#: meetings/views.py:538
 #, python-format
 msgid "The invitation could not be sent: %(error)s"
 msgstr "Mwaliko haukuweza kutumwa: %(error)s"
 
-#: meetings/views.py:548
+#: meetings/views.py:561
+#, python-format
+msgid "Invitations sent: %(sent)s; failed: %(failed)s."
+msgstr "Mialiko iliyotumwa: %(sent)s; iliyoshindikana: %(failed)s."
+
+#: meetings/views.py:583
+msgid "The attendance reminder was sent."
+msgstr "Kikumbusho cha mahudhurio kimetumwa."
+
+#: meetings/views.py:589 meetings/views.py:644
+#, python-format
+msgid "The reminder could not be sent: %(error)s"
+msgstr "Kikumbusho hakikuweza kutumwa: %(error)s"
+
+#: meetings/views.py:616
+#, python-format
+msgid "Attendance reminders sent: %(sent)s; failed: %(failed)s."
+msgstr ""
+"Vikumbusho vya mahudhurio vilivyotumwa: %(sent)s; vilivyoshindikana: "
+"%(failed)s."
+
+#: meetings/views.py:638
+msgid "The action reminder was sent."
+msgstr "Kikumbusho cha hatua kimetumwa."
+
+#: meetings/views.py:677
+#, python-format
+msgid "Action reminders sent: %(sent)s; failed: %(failed)s."
+msgstr ""
+"Vikumbusho vya hatua vilivyotumwa: %(sent)s; vilivyoshindikana: %(failed)s."
+
+#: meetings/views.py:701
 msgid "The meeting minutes were updated."
 msgstr "Kumbukumbu za kikao zimesasishwa."
 
-#: meetings/views.py:570
+#: meetings/views.py:723
 msgid "The meeting decision was recorded."
 msgstr "Uamuzi wa kikao umehifadhiwa."
 
-#: meetings/views.py:592
+#: meetings/views.py:745
 msgid "The action item was assigned."
 msgstr "Hatua ya utekelezaji imepangiwa mhusika."
 
-#: meetings/views.py:620
+#: meetings/views.py:773
 msgid "The action progress was updated."
 msgstr "Maendeleo ya hatua yamesasishwa."
 
@@ -3294,7 +3452,7 @@ msgstr "Maelezo"
 #: templates/accounts/staff_workspace.html:59
 #: templates/accounts/staff_workspace.html:84
 #: templates/accounts/staff_workspace.html:116
-#: templates/meetings/meeting_detail.html:50
+#: templates/meetings/meeting_detail.html:51
 #: templates/meetings/meeting_list.html:38
 msgid "Actions"
 msgstr "Vitendo"
@@ -3398,7 +3556,7 @@ msgid "For example: attendance requirement was not met"
 msgstr "Kwa mfano: hakutimiza kiwango cha mahudhurio"
 
 #: templates/accounts/staff_workspace.html:149
-#: templates/meetings/meeting_detail.html:65
+#: templates/meetings/meeting_detail.html:67
 msgid "Record decision"
 msgstr "Hifadhi uamuzi"
 
@@ -3423,7 +3581,7 @@ msgid "Users"
 msgstr "Watumiaji"
 
 #: templates/admin/base_site.html:33 templates/admin/index.html:80
-#: templates/meetings/meeting_detail.html:28
+#: templates/meetings/meeting_detail.html:29
 #: templates/meetings/meeting_list.html:38
 #: templates/meetings/meeting_print.html:16
 msgid "Participants"
@@ -3593,7 +3751,7 @@ msgstr "Weka Malipo"
 
 #: templates/admin/index.html:90 templates/checkin/reports.html:80
 #: templates/forms_builder/participant_portal.html:17
-#: templates/meetings/meeting_detail.html:50
+#: templates/meetings/meeting_detail.html:51
 #: templates/meetings/meeting_print.html:12
 #: templates/meetings/meeting_print.html:16
 msgid "Attendance"
@@ -4494,7 +4652,7 @@ msgstr "Hatua zote"
 
 #: templates/meetings/action_report.html:14
 #: templates/meetings/action_report.html:21
-#: templates/meetings/meeting_detail.html:31
+#: templates/meetings/meeting_detail.html:32
 msgid "Open actions"
 msgstr "Hatua zilizo wazi"
 
@@ -4511,11 +4669,6 @@ msgstr "Pakua CSV"
 msgid "No action items match the selected filters."
 msgstr ""
 "Hakuna hatua za utekelezaji zinazolingana na vichujio vilivyochaguliwa."
-
-#: templates/meetings/invitation_response.html:4
-#: templates/meetings/invitation_response.html:10
-msgid "Meeting invitation"
-msgstr "Mwaliko wa kikao"
 
 #: templates/meetings/invitation_response.html:12
 #, python-format
@@ -4583,10 +4736,6 @@ msgstr "Jumamosi"
 msgid "Sunday"
 msgstr "Jumapili"
 
-#: templates/meetings/meeting_detail.html:7
-msgid "Not specified"
-msgstr "Haijabainishwa"
-
 #: templates/meetings/meeting_detail.html:11
 #: templates/meetings/meeting_print.html:9
 msgid "Print meeting pack"
@@ -4605,13 +4754,13 @@ msgid "Overview"
 msgstr "Muhtasari"
 
 #: templates/meetings/meeting_detail.html:18
-#: templates/meetings/meeting_detail.html:66
+#: templates/meetings/meeting_detail.html:68
 #: templates/meetings/meeting_print.html:15
 msgid "Agenda"
 msgstr "Ajenda"
 
 #: templates/meetings/meeting_detail.html:19
-#: templates/meetings/meeting_detail.html:49
+#: templates/meetings/meeting_detail.html:50
 msgid "Invitations and attendance"
 msgstr "Mialiko na mahudhurio"
 
@@ -4630,196 +4779,249 @@ msgstr "Maamuzi"
 msgid "Action follow-up"
 msgstr "Ufuatiliaji wa hatua"
 
-#: templates/meetings/meeting_detail.html:26
+#: templates/meetings/meeting_detail.html:23
+msgid "Communications"
+msgstr "Mawasiliano"
+
+#: templates/meetings/meeting_detail.html:27
 msgid "Step 1"
 msgstr "Hatua ya 1"
 
-#: templates/meetings/meeting_detail.html:26
+#: templates/meetings/meeting_detail.html:27
 msgid "Meeting overview"
 msgstr "Muhtasari wa kikao"
 
-#: templates/meetings/meeting_detail.html:29
+#: templates/meetings/meeting_detail.html:30
 msgid "Accepted invitations"
 msgstr "Mialiko iliyokubaliwa"
 
-#: templates/meetings/meeting_detail.html:35
+#: templates/meetings/meeting_detail.html:36
 #: templates/meetings/meeting_print.html:12
 msgid "Secretary"
 msgstr "Katibu"
 
-#: templates/meetings/meeting_detail.html:37
+#: templates/meetings/meeting_detail.html:38
 #: templates/meetings/meeting_print.html:12
 msgid "Quorum status"
 msgstr "Hali ya akidi"
 
-#: templates/meetings/meeting_detail.html:37
+#: templates/meetings/meeting_detail.html:38
 #: templates/meetings/meeting_print.html:12
 msgid "Not applicable"
 msgstr "Haitumiki"
 
-#: templates/meetings/meeting_detail.html:37
+#: templates/meetings/meeting_detail.html:38
 #: templates/meetings/meeting_print.html:12
 msgid "Quorum met"
 msgstr "Akidi imetimia"
 
-#: templates/meetings/meeting_detail.html:37
+#: templates/meetings/meeting_detail.html:38
 #: templates/meetings/meeting_print.html:12
 msgid "Quorum not met"
 msgstr "Akidi haijatimia"
 
-#: templates/meetings/meeting_detail.html:38
+#: templates/meetings/meeting_detail.html:39
 msgid "Invitation deadline"
 msgstr "Tarehe ya mwisho ya mwaliko"
 
-#: templates/meetings/meeting_detail.html:39
+#: templates/meetings/meeting_detail.html:40
 msgid "Minutes status"
 msgstr "Hali ya kumbukumbu za kikao"
 
-#: templates/meetings/meeting_detail.html:44
+#: templates/meetings/meeting_detail.html:45
 msgid "Step 2"
 msgstr "Hatua ya 2"
 
-#: templates/meetings/meeting_detail.html:44
+#: templates/meetings/meeting_detail.html:45
 msgid "Prepare the agenda"
 msgstr "Andaa ajenda"
 
-#: templates/meetings/meeting_detail.html:44
+#: templates/meetings/meeting_detail.html:45
 msgid "Add agenda item"
 msgstr "Ongeza kipengele cha ajenda"
 
-#: templates/meetings/meeting_detail.html:45
+#: templates/meetings/meeting_detail.html:46
 #: templates/meetings/meeting_print.html:15
 msgid "Agenda item"
 msgstr "Kipengele cha ajenda"
 
-#: templates/meetings/meeting_detail.html:45
+#: templates/meetings/meeting_detail.html:46
 #: templates/meetings/meeting_print.html:15
 msgid "Presenter"
 msgstr "Mwasilishaji"
 
-#: templates/meetings/meeting_detail.html:45
+#: templates/meetings/meeting_detail.html:46
 #: templates/meetings/meeting_print.html:15
 msgid "Time allocated"
 msgstr "Muda uliotengwa"
 
-#: templates/meetings/meeting_detail.html:45
+#: templates/meetings/meeting_detail.html:46
 #: templates/meetings/meeting_print.html:15
 msgid "minutes"
 msgstr "dakika"
 
-#: templates/meetings/meeting_detail.html:45
+#: templates/meetings/meeting_detail.html:46
 #: templates/meetings/meeting_print.html:15
 msgid "No agenda items have been added."
 msgstr "Hakuna vipengele vya ajenda vilivyoongezwa."
 
-#: templates/meetings/meeting_detail.html:49
+#: templates/meetings/meeting_detail.html:50
 msgid "Step 3"
 msgstr "Hatua ya 3"
 
-#: templates/meetings/meeting_detail.html:49
+#: templates/meetings/meeting_detail.html:50
 msgid "Add participant"
 msgstr "Ongeza mshiriki"
 
-#: templates/meetings/meeting_detail.html:49
+#: templates/meetings/meeting_detail.html:50
 msgid "Add to invitation list"
 msgstr "Ongeza kwenye orodha ya mialiko"
 
 #: templates/meetings/meeting_detail.html:50
+msgid "Send pending invitations"
+msgstr "Tuma mialiko inayosubiri"
+
+#: templates/meetings/meeting_detail.html:50
+msgid "Remind pending responses"
+msgstr "Kumbusha majibu yanayosubiri"
+
+#: templates/meetings/meeting_detail.html:51
 msgid "Contact"
 msgstr "Mawasiliano"
 
-#: templates/meetings/meeting_detail.html:50
+#: templates/meetings/meeting_detail.html:51
 msgid "Invitation"
 msgstr "Mwaliko"
 
-#: templates/meetings/meeting_detail.html:52
-#: templates/meetings/meeting_detail.html:71
+#: templates/meetings/meeting_detail.html:53
+#: templates/meetings/meeting_detail.html:73
 msgid "Update"
 msgstr "Sasisha"
 
-#: templates/meetings/meeting_detail.html:52
+#: templates/meetings/meeting_detail.html:53
 msgid "Save status"
 msgstr "Hifadhi hali"
 
-#: templates/meetings/meeting_detail.html:53
+#: templates/meetings/meeting_detail.html:54
 msgid "Resend invitation"
 msgstr "Tuma mwaliko tena"
 
-#: templates/meetings/meeting_detail.html:53
+#: templates/meetings/meeting_detail.html:54
 msgid "Send invitation"
 msgstr "Tuma mwaliko"
 
-#: templates/meetings/meeting_detail.html:54
+#: templates/meetings/meeting_detail.html:55
+#: templates/meetings/meeting_detail.html:73
+msgid "Send reminder"
+msgstr "Tuma kikumbusho"
+
+#: templates/meetings/meeting_detail.html:56
 #: templates/meetings/meeting_print.html:16
 msgid "No participants have been added."
 msgstr "Hakuna washiriki walioongezwa."
 
-#: templates/meetings/meeting_detail.html:59
+#: templates/meetings/meeting_detail.html:61
 msgid "Step 4"
 msgstr "Hatua ya 4"
 
-#: templates/meetings/meeting_detail.html:59
+#: templates/meetings/meeting_detail.html:61
 msgid "Record and approve minutes"
 msgstr "Andika na idhinisha kumbukumbu"
 
-#: templates/meetings/meeting_detail.html:60
+#: templates/meetings/meeting_detail.html:62
 msgid "Save meeting minutes"
 msgstr "Hifadhi kumbukumbu za kikao"
 
-#: templates/meetings/meeting_detail.html:60
+#: templates/meetings/meeting_detail.html:62
 #: templates/meetings/meeting_print.html:17
 msgid "No minutes have been recorded."
 msgstr "Hakuna kumbukumbu za kikao zilizohifadhiwa."
 
-#: templates/meetings/meeting_detail.html:61
+#: templates/meetings/meeting_detail.html:63
 msgid "Open signed minutes document"
 msgstr "Fungua hati ya kumbukumbu iliyosainiwa"
 
-#: templates/meetings/meeting_detail.html:65
+#: templates/meetings/meeting_detail.html:67
 msgid "Step 5"
 msgstr "Hatua ya 5"
 
-#: templates/meetings/meeting_detail.html:65
+#: templates/meetings/meeting_detail.html:67
 msgid "Record meeting decisions"
 msgstr "Hifadhi maamuzi ya kikao"
 
-#: templates/meetings/meeting_detail.html:65
+#: templates/meetings/meeting_detail.html:67
 msgid "Add decision"
 msgstr "Ongeza uamuzi"
 
-#: templates/meetings/meeting_detail.html:66
+#: templates/meetings/meeting_detail.html:68
 #: templates/meetings/meeting_print.html:18
 msgid "No decisions have been recorded."
 msgstr "Hakuna maamuzi yaliyohifadhiwa."
 
-#: templates/meetings/meeting_detail.html:70
+#: templates/meetings/meeting_detail.html:72
 msgid "Step 6"
 msgstr "Hatua ya 6"
 
-#: templates/meetings/meeting_detail.html:70
+#: templates/meetings/meeting_detail.html:72
 msgid "Assign and follow action items"
 msgstr "Panga na fuatilia hatua za utekelezaji"
 
-#: templates/meetings/meeting_detail.html:70
+#: templates/meetings/meeting_detail.html:72
 msgid "Add action item"
 msgstr "Ongeza hatua ya utekelezaji"
 
-#: templates/meetings/meeting_detail.html:70
+#: templates/meetings/meeting_detail.html:72
 msgid "Assign action item"
 msgstr "Panga hatua ya utekelezaji"
 
-#: templates/meetings/meeting_detail.html:71
+#: templates/meetings/meeting_detail.html:72
+msgid "Remind actions due within 7 days"
+msgstr "Kumbusha hatua zenye mwisho ndani ya siku 7"
+
+#: templates/meetings/meeting_detail.html:73
 msgid "Progress"
 msgstr "Maendeleo"
 
-#: templates/meetings/meeting_detail.html:71
+#: templates/meetings/meeting_detail.html:73
 msgid "Save progress"
 msgstr "Hifadhi maendeleo"
 
-#: templates/meetings/meeting_detail.html:71
+#: templates/meetings/meeting_detail.html:73
 #: templates/meetings/meeting_print.html:19
 msgid "No action items have been assigned."
 msgstr "Hakuna hatua za utekelezaji zilizopangwa."
+
+#: templates/meetings/meeting_detail.html:77
+msgid "Step 7"
+msgstr "Hatua ya 7"
+
+#: templates/meetings/meeting_detail.html:77
+msgid "Communication history"
+msgstr "Historia ya mawasiliano"
+
+#: templates/meetings/meeting_detail.html:78
+msgid "Sent at"
+msgstr "Imetumwa tarehe"
+
+#: templates/meetings/meeting_detail.html:78
+msgid "Communication"
+msgstr "Mawasiliano"
+
+#: templates/meetings/meeting_detail.html:78
+msgid "Recipient"
+msgstr "Mpokeaji"
+
+#: templates/meetings/meeting_detail.html:78
+msgid "Subject"
+msgstr "Kichwa"
+
+#: templates/meetings/meeting_detail.html:78
+msgid "Delivery status"
+msgstr "Hali ya utumaji"
+
+#: templates/meetings/meeting_detail.html:78
+msgid "No meeting communications have been sent."
+msgstr "Hakuna mawasiliano ya kikao yaliyotumwa."
 
 #: templates/meetings/meeting_form.html:7
 msgid "Back to meetings"
