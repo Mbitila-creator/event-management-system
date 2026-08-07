@@ -6,7 +6,7 @@ from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import FileResponse, Http404, HttpResponse
@@ -30,6 +30,8 @@ from .forms import (
     MeetingDocumentForm,
     MeetingMinutesForm,
     MeetingOccurrenceForm,
+    MeetingResourceBookingForm,
+    MeetingResourceForm,
     MeetingSeriesAgendaTemplateForm,
     MeetingSeriesForm,
     MeetingWorkflowForm,
@@ -43,6 +45,8 @@ from .models import (
     MeetingDecision,
     MeetingDocument,
     MeetingMinutesReview,
+    MeetingResource,
+    MeetingResourceBooking,
     MeetingSeries,
 )
 from .services import (
@@ -128,6 +132,7 @@ def _meeting_queryset():
         "communications",
         "documents__agenda_item",
         "minutes_reviews__created_by",
+        "resource_bookings__resource", "resource_bookings__confirmed_by",
     )
 
 
@@ -296,6 +301,60 @@ def meeting_calendar(request):
         "previous_month": previous_month,
         "next_month": following_month,
         "meeting_count": len(meetings),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def resource_list(request):
+    _require_view_access(request.user)
+    resources = MeetingResource.objects.annotate(
+        booking_count=Count(
+            "bookings",
+            filter=Q(bookings__is_active=True),
+            distinct=True,
+        ),
+    ).order_by("name_sw", "code")
+    return render(request, "meetings/resource_list.html", {
+        "resources": resources,
+        "can_manage": _can_manage(request.user),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+def resource_create(request):
+    _require_manager(request.user)
+    form = MeetingResourceForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        resource = form.save(commit=False)
+        resource.created_by = request.user
+        resource.updated_by = request.user
+        resource.save()
+        messages.success(request, _("The meeting resource was created."))
+        return redirect("meetings:resource_list")
+    return render(request, "meetings/resource_form.html", {
+        "form": form,
+        "page_title": _("Create meeting resource"),
+        "submit_label": _("Create resource"),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+def resource_edit(request, resource_id):
+    _require_manager(request.user)
+    resource = get_object_or_404(MeetingResource, pk=resource_id)
+    form = MeetingResourceForm(request.POST or None, instance=resource)
+    if request.method == "POST" and form.is_valid():
+        resource = form.save(commit=False)
+        resource.updated_by = request.user
+        resource.save()
+        messages.success(request, _("The meeting resource was updated."))
+        return redirect("meetings:resource_list")
+    return render(request, "meetings/resource_form.html", {
+        "form": form,
+        "resource": resource,
+        "page_title": _("Edit meeting resource"),
+        "submit_label": _("Save resource changes"),
     })
 
 
@@ -495,6 +554,9 @@ def meeting_print(request, meeting_id):
         "decisions": meeting.decisions.filter(is_active=True),
         "action_items": meeting.action_items.filter(is_active=True),
         "documents": meeting.documents.filter(is_active=True),
+        "resource_bookings": meeting.resource_bookings.filter(
+            is_active=True,
+        ).select_related("resource"),
         "present_count": present_count,
         "quorum_met": (
             present_count >= meeting.quorum_required
@@ -601,9 +663,80 @@ def meeting_detail(request, meeting_id):
         "documents": meeting.documents.filter(is_active=True).select_related(
             "agenda_item", "created_by",
         ),
+        "resource_booking_form": MeetingResourceBookingForm(
+            meeting=meeting,
+            instance=MeetingResourceBooking(meeting=meeting),
+        ),
+        "resource_bookings": meeting.resource_bookings.filter(
+            is_active=True,
+        ).select_related("resource", "confirmed_by"),
         "communications": meeting.communications.filter(is_active=True)[:50],
     }
     return render(request, "meetings/meeting_detail.html", context)
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def resource_booking_add(request, meeting_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    form = MeetingResourceBookingForm(
+        request.POST,
+        meeting=meeting,
+        instance=MeetingResourceBooking(meeting=meeting),
+    )
+    if form.is_valid():
+        booking = form.save(commit=False)
+        booking.meeting = meeting
+        booking.created_by = request.user
+        booking.updated_by = request.user
+        booking.save()
+        messages.success(request, _("The resource booking was requested."))
+    else:
+        messages.error(request, _form_error_message(form))
+    return redirect(f"{meeting.get_absolute_url()}#logistics")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+@transaction.atomic
+def resource_booking_update(request, meeting_id, booking_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    booking = get_object_or_404(
+        MeetingResourceBooking.objects.select_for_update().select_related(
+            "resource", "meeting__event",
+        ),
+        pk=booking_id,
+        meeting=meeting,
+        is_active=True,
+    )
+    action = request.POST.get("action", "").upper()
+    if action == "CONFIRM":
+        booking.status = MeetingResourceBooking.Status.CONFIRMED
+        booking.confirmed_by = request.user
+        booking.confirmed_at = timezone.now()
+        success_message = _("The resource booking was confirmed.")
+    elif action == "DECLINE":
+        booking.status = MeetingResourceBooking.Status.DECLINED
+        booking.confirmed_by = request.user
+        booking.confirmed_at = timezone.now()
+        success_message = _("The resource booking was marked unavailable.")
+    elif action == "CANCEL":
+        booking.status = MeetingResourceBooking.Status.CANCELLED
+        booking.confirmed_by = None
+        booking.confirmed_at = None
+        success_message = _("The resource booking was cancelled.")
+    else:
+        raise PermissionDenied
+    booking.updated_by = request.user
+    try:
+        booking.save()
+    except ValidationError as error:
+        messages.error(request, "; ".join(error.messages))
+    else:
+        messages.success(request, success_message)
+    return redirect(f"{meeting.get_absolute_url()}#logistics")
 
 
 @login_required(login_url="accounts:staff_login")

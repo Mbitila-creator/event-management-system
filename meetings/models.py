@@ -4,7 +4,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -206,6 +206,25 @@ class Meeting(BaseModel):
             if not self.online_join_url:
                 errors["online_join_url"] = _(
                     "Enter the joining link for an online or hybrid meeting."
+                )
+        if (
+            self.event_id
+            and self.event.venue_id
+            and self.event.status != Event.Status.CANCELLED
+            and self.attendance_mode != self.AttendanceMode.ONLINE
+        ):
+            conflicts = Event.objects.filter(
+                venue_id=self.event.venue_id,
+                starts_at__lt=self.event.ends_at,
+                ends_at__gt=self.event.starts_at,
+            ).exclude(
+                pk=self.event_id,
+            ).exclude(
+                status=Event.Status.CANCELLED,
+            )
+            if conflicts.exists():
+                errors["event"] = _(
+                    "This venue is already booked during the selected time."
                 )
         if errors:
             raise ValidationError(errors)
@@ -564,6 +583,148 @@ class MeetingMinutesReview(BaseModel):
 
     def __str__(self):
         return f"{self.meeting.reference_number} - {self.get_action_display()}"
+
+
+class MeetingResource(BaseModel):
+    code = models.CharField(_("resource code"), max_length=50, unique=True)
+    name_sw = models.CharField(_("resource name in Kiswahili"), max_length=200)
+    name_en = models.CharField(_("resource name in English"), max_length=200)
+    description_sw = models.TextField(_("description in Kiswahili"), blank=True)
+    description_en = models.TextField(_("description in English"), blank=True)
+    total_quantity = models.PositiveIntegerField(_("available quantity"), default=1)
+    storage_location = models.CharField(
+        _("storage location"), max_length=250, blank=True,
+    )
+
+    class Meta:
+        verbose_name = _("meeting resource")
+        verbose_name_plural = _("meeting resources")
+        ordering = ["name_sw", "code"]
+
+    def clean(self):
+        if self.total_quantity == 0:
+            raise ValidationError({
+                "total_quantity": _("Available quantity must be greater than zero."),
+            })
+
+    def save(self, *args, **kwargs):
+        self.code = self.code.strip().upper()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.code} - {self.name_sw}"
+
+
+class MeetingResourceBooking(BaseModel):
+    class Status(models.TextChoices):
+        REQUESTED = "REQUESTED", _("Requested")
+        CONFIRMED = "CONFIRMED", _("Confirmed")
+        DECLINED = "DECLINED", _("Unavailable")
+        CANCELLED = "CANCELLED", _("Cancelled")
+
+    meeting = models.ForeignKey(
+        Meeting,
+        verbose_name=_("meeting"),
+        related_name="resource_bookings",
+        on_delete=models.CASCADE,
+    )
+    resource = models.ForeignKey(
+        MeetingResource,
+        verbose_name=_("meeting resource"),
+        related_name="bookings",
+        on_delete=models.PROTECT,
+    )
+    quantity = models.PositiveIntegerField(_("quantity required"), default=1)
+    status = models.CharField(
+        _("booking status"),
+        max_length=20,
+        choices=Status.choices,
+        default=Status.REQUESTED,
+    )
+    notes = models.TextField(_("booking notes"), blank=True)
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("confirmed by"),
+        related_name="confirmed_meeting_resources",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    confirmed_at = models.DateTimeField(
+        _("confirmed at"), null=True, blank=True,
+    )
+
+    class Meta:
+        verbose_name = _("meeting resource booking")
+        verbose_name_plural = _("meeting resource bookings")
+        ordering = ["meeting", "resource__name_sw"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["meeting", "resource"],
+                condition=Q(
+                    is_active=True,
+                    status__in=["REQUESTED", "CONFIRMED"],
+                ),
+                name="unique_active_resource_per_meeting",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["resource", "status", "is_active"],
+                name="meeting_resource_status_idx",
+            ),
+        ]
+
+    def overlapping_confirmed_quantity(self):
+        if not self.meeting_id or not self.resource_id:
+            return 0
+        bookings = MeetingResourceBooking.objects.filter(
+            resource_id=self.resource_id,
+            status=self.Status.CONFIRMED,
+            is_active=True,
+            meeting__is_active=True,
+            meeting__event__starts_at__lt=self.meeting.event.ends_at,
+            meeting__event__ends_at__gt=self.meeting.event.starts_at,
+        ).exclude(meeting__event__status=Event.Status.CANCELLED)
+        if self.pk:
+            bookings = bookings.exclude(pk=self.pk)
+        return bookings.aggregate(total=Sum("quantity"))["total"] or 0
+
+    def available_quantity(self):
+        if not self.resource_id:
+            return 0
+        return max(
+            self.resource.total_quantity - self.overlapping_confirmed_quantity(),
+            0,
+        )
+
+    def clean(self):
+        errors = {}
+        if self.quantity == 0:
+            errors["quantity"] = _("Required quantity must be greater than zero.")
+        if self.resource_id and self.quantity > self.resource.total_quantity:
+            errors["quantity"] = _(
+                "The requested quantity exceeds the total available quantity."
+            )
+        if (
+            self.status == self.Status.CONFIRMED
+            and self.resource_id
+            and self.meeting_id
+            and self.quantity > self.available_quantity()
+        ):
+            errors["quantity"] = _(
+                "This resource is not available in the requested quantity at the meeting time."
+            )
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.meeting.reference_number} - {self.resource.code}"
 
 
 class MeetingAttendee(BaseModel):

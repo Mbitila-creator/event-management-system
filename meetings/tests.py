@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
-from events.models import Event, EventCategory
+from events.models import Event, EventCategory, Venue
 
 from .models import (
     Meeting,
@@ -21,6 +21,8 @@ from .models import (
     MeetingDecision,
     MeetingDocument,
     MeetingMinutesReview,
+    MeetingResource,
+    MeetingResourceBooking,
     MeetingSeries,
     MeetingSeriesAgendaTemplate,
 )
@@ -891,6 +893,116 @@ class MeetingWorkflowTests(TestCase):
         self.assertEqual(occurrence.online_platform, Meeting.OnlinePlatform.ZOOM)
         self.assertEqual(occurrence.online_join_url, series.online_join_url)
         self.assertEqual(occurrence.online_passcode, "Monthly-Access")
+
+    def test_meeting_workflow_blocks_an_overlapping_venue_booking(self):
+        venue = Venue.objects.create(name="Boardroom One")
+        self.event.venue = venue
+        self.event.save()
+        starts_at = timezone.localtime(self.event.starts_at + timedelta(minutes=30))
+        response = self.client.post(
+            "/en/staff/meetings/new/",
+            {
+                "code": "VENUE-CLASH",
+                "reference_number": "VC/001/2026",
+                "title_sw": "Kikao Kinachogongana",
+                "title_en": "Clashing Meeting",
+                "starts_at": starts_at.strftime("%Y-%m-%dT%H:%M"),
+                "ends_at": (starts_at + timedelta(hours=1)).strftime(
+                    "%Y-%m-%dT%H:%M"
+                ),
+                "venue": venue.pk,
+                "status": Event.Status.DRAFT,
+                "meeting_type": Meeting.MeetingType.MANAGEMENT,
+                "attendance_mode": Meeting.AttendanceMode.IN_PERSON,
+                "chairperson_name": "Mwenyekiti",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "This venue is already booked during the selected time.",
+        )
+        self.assertFalse(Event.objects.filter(code="VENUE-CLASH").exists())
+
+    def test_resource_confirmation_prevents_overbooking(self):
+        resource = MeetingResource.objects.create(
+            code="PROJECTOR",
+            name_sw="Projektor",
+            name_en="Projector",
+            total_quantity=2,
+        )
+        booking_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/resources/add/",
+            {"resource": resource.pk, "quantity": "2", "notes": "Main hall"},
+        )
+        self.assertEqual(booking_response.status_code, 302)
+        booking = MeetingResourceBooking.objects.get(meeting=self.meeting)
+        self.assertEqual(booking.status, MeetingResourceBooking.Status.REQUESTED)
+
+        confirm_response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/resources/"
+            f"{booking.pk}/update/",
+            {"action": "CONFIRM"},
+        )
+        self.assertEqual(confirm_response.status_code, 302)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, MeetingResourceBooking.Status.CONFIRMED)
+        self.assertEqual(booking.confirmed_by, self.manager)
+
+        other_event = Event.objects.create(
+            category=self.category,
+            code="RESOURCE-OVERLAP",
+            title_sw="Kikao Kingine",
+            title_en="Another Meeting",
+            starts_at=self.event.starts_at + timedelta(minutes=15),
+            ends_at=self.event.ends_at + timedelta(minutes=15),
+        )
+        other_meeting = Meeting.objects.create(
+            event=other_event,
+            reference_number="RES/002/2026",
+            chairperson_name="Mwenyekiti",
+        )
+        other_booking = MeetingResourceBooking.objects.create(
+            meeting=other_meeting,
+            resource=resource,
+            quantity=1,
+        )
+        response = self.client.post(
+            f"/en/staff/meetings/{other_meeting.pk}/resources/"
+            f"{other_booking.pk}/update/",
+            {"action": "CONFIRM"},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "This resource is not available in the requested quantity",
+        )
+        other_booking.refresh_from_db()
+        self.assertEqual(
+            other_booking.status,
+            MeetingResourceBooking.Status.REQUESTED,
+        )
+
+    def test_manager_can_create_resource_from_resource_register(self):
+        response = self.client.post(
+            "/en/staff/meetings/resources/new/",
+            {
+                "code": "MIC-01",
+                "name_sw": "Kipaza sauti",
+                "name_en": "Microphone",
+                "total_quantity": "8",
+                "storage_location": "Store A",
+                "is_active": "on",
+            },
+        )
+        self.assertRedirects(
+            response,
+            "/en/staff/meetings/resources/",
+            fetch_redirect_response=False,
+        )
+        resource = MeetingResource.objects.get(code="MIC-01")
+        self.assertEqual(resource.total_quantity, 8)
 
     def test_manager_can_send_pending_invitations_in_bulk(self):
         pending = MeetingAttendee.objects.create(

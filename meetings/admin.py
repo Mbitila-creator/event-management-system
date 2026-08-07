@@ -13,6 +13,8 @@ from .models import (
     MeetingDecision,
     MeetingDocument,
     MeetingMinutesReview,
+    MeetingResource,
+    MeetingResourceBooking,
     MeetingSeries,
     MeetingSeriesAgendaTemplate,
 )
@@ -68,6 +70,17 @@ class MeetingMinutesReviewInline(admin.TabularInline):
 
     def has_add_permission(self, request, obj=None):
         return False
+
+
+class MeetingResourceBookingInline(admin.TabularInline):
+    model = MeetingResourceBooking
+    extra = 0
+    fields = (
+        "resource", "quantity", "status", "notes", "confirmed_by",
+        "confirmed_at", "is_active",
+    )
+    autocomplete_fields = ("resource", "confirmed_by")
+    ordering = ("resource__name_sw",)
 
 
 class MeetingAttendeeInline(admin.TabularInline):
@@ -135,6 +148,7 @@ class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
         MeetingActionItemInline,
         MeetingDocumentInline,
         MeetingMinutesReviewInline,
+        MeetingResourceBookingInline,
     )
     fieldsets = (
         (_("Meeting information"), {"fields": (
@@ -261,6 +275,32 @@ class MeetingMinutesReviewAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(MeetingResource)
+class MeetingResourceAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "code", "name_sw", "name_en", "total_quantity", "storage_location",
+        "is_active",
+    )
+    list_filter = ("is_active",)
+    search_fields = ("code", "name_sw", "name_en", "storage_location")
+    ordering = ("name_sw", "code")
+
+
+@admin.register(MeetingResourceBooking)
+class MeetingResourceBookingAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "meeting", "resource", "quantity", "status", "confirmed_by",
+        "confirmed_at", "is_active",
+    )
+    list_filter = ("status", "resource", "is_active")
+    search_fields = (
+        "meeting__reference_number", "resource__code", "resource__name_sw",
+        "resource__name_en",
+    )
+    autocomplete_fields = ("meeting", "resource", "confirmed_by")
+    ordering = ("-meeting__event__starts_at", "resource__name_sw")
 
 
 @admin.register(MeetingDecision)

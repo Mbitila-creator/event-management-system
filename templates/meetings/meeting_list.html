@@ -10,6 +10,7 @@
     <div class="meeting-hero-actions">
         <a class="meeting-secondary-button" href="{% url 'meetings:series_list' %}">{% translate "Meeting series" %}</a>
         <a class="meeting-secondary-button" href="{% url 'meetings:meeting_calendar' %}">{% translate "Calendar" %}</a>
+        <a class="meeting-secondary-button" href="{% url 'meetings:resource_list' %}">{% translate "Resources" %}</a>
         <a class="meeting-secondary-button" href="{% url 'meetings:action_report' %}">{% translate "Action report" %}</a>
         {% if can_manage %}<a class="meeting-primary-button" href="{% url 'meetings:meeting_create' %}">＋ {% translate "Create meeting" %}</a>{% endif %}
     </div>

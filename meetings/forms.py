@@ -18,6 +18,8 @@ from .models import (
     MeetingAttendee,
     MeetingDecision,
     MeetingDocument,
+    MeetingResource,
+    MeetingResourceBooking,
     MeetingSeries,
     MeetingSeriesAgendaTemplate,
 )
@@ -234,6 +236,8 @@ class MeetingWorkflowForm(forms.Form):
         starts_at = cleaned.get("starts_at")
         ends_at = cleaned.get("ends_at")
         deadline = cleaned.get("invitation_deadline")
+        venue = cleaned.get("venue")
+        attendance_mode = cleaned.get("attendance_mode")
         if starts_at and ends_at and ends_at <= starts_at:
             self.add_error("ends_at", _("The meeting must end after it starts."))
         if starts_at and deadline and deadline > starts_at:
@@ -254,6 +258,24 @@ class MeetingWorkflowForm(forms.Form):
                 self.add_error(
                     "online_join_url",
                     _("Enter the joining link for an online or hybrid meeting."),
+                )
+        if (
+            venue
+            and starts_at
+            and ends_at
+            and attendance_mode != Meeting.AttendanceMode.ONLINE
+        ):
+            conflicts = Event.objects.filter(
+                venue=venue,
+                starts_at__lt=ends_at,
+                ends_at__gt=starts_at,
+            ).exclude(status=Event.Status.CANCELLED)
+            if self.instance:
+                conflicts = conflicts.exclude(pk=self.instance.event_id)
+            if conflicts.exists():
+                self.add_error(
+                    "venue",
+                    _("This venue is already booked during the selected time."),
                 )
         return cleaned
 
@@ -341,6 +363,32 @@ class MeetingDocumentForm(forms.ModelForm):
 
     def clean_file(self):
         return validate_meeting_upload(self.cleaned_data["file"])
+
+
+class MeetingResourceForm(forms.ModelForm):
+    class Meta:
+        model = MeetingResource
+        fields = (
+            "code", "name_sw", "name_en", "description_sw", "description_en",
+            "total_quantity", "storage_location", "is_active",
+        )
+        widgets = {
+            "description_sw": forms.Textarea(attrs={"rows": 2}),
+            "description_en": forms.Textarea(attrs={"rows": 2}),
+        }
+
+
+class MeetingResourceBookingForm(forms.ModelForm):
+    class Meta:
+        model = MeetingResourceBooking
+        fields = ("resource", "quantity", "notes")
+        widgets = {"notes": forms.Textarea(attrs={"rows": 2})}
+
+    def __init__(self, *args, meeting, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["resource"].queryset = MeetingResource.objects.filter(
+            is_active=True,
+        ).order_by("name_sw", "code")
 
 
 class MeetingAttendeeForm(forms.ModelForm):
@@ -589,6 +637,23 @@ class MeetingOccurrenceForm(forms.Form):
                 "invitation_deadline",
                 _("The invitation deadline cannot be after the meeting starts."),
             )
+        if (
+            self.series.venue
+            and starts_at
+            and self.series.attendance_mode != Meeting.AttendanceMode.ONLINE
+        ):
+            ends_at = starts_at + timedelta(
+                minutes=self.series.default_duration_minutes,
+            )
+            if Event.objects.filter(
+                venue=self.series.venue,
+                starts_at__lt=ends_at,
+                ends_at__gt=starts_at,
+            ).exclude(status=Event.Status.CANCELLED).exists():
+                self.add_error(
+                    "starts_at",
+                    _("The default venue is already booked during this time."),
+                )
         return cleaned
 
     @transaction.atomic
