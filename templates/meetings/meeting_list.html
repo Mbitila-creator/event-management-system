@@ -34,7 +34,7 @@
     {% for meeting in meetings %}
         <article class="meeting-list-card">
             <div class="meeting-list-card-main">
-                <div class="meeting-card-kickers"><span>{{ meeting.reference_number }}</span><span>{{ meeting.get_meeting_type_display }}</span><span>{{ meeting.get_attendance_mode_display }}</span><span class="meeting-status meeting-status-{{ meeting.event.status|lower }}">{{ meeting.event.get_status_display }}</span><span>{% translate "Minutes" %}: {{ meeting.get_minutes_status_display }}</span></div>
+                <div class="meeting-card-kickers"><span>{{ meeting.reference_number }}</span><span>{{ meeting.get_meeting_type_display }}</span><span>{{ meeting.get_attendance_mode_display }}</span><span class="meeting-status meeting-status-{{ meeting.event.status|lower }}">{{ meeting.event.get_status_display }}</span><span>{% translate "Minutes" %}: {{ meeting.get_minutes_status_display }}</span><span>{% translate "Closure" %}: {{ meeting.get_closure_status_display }}</span></div>
                 <h2>{% if request.LANGUAGE_CODE == 'en' %}{{ meeting.event.title_en }}{% else %}{{ meeting.event.title_sw }}{% endif %}</h2>
                 <dl><div><dt>{% translate "Date" %}</dt><dd>{{ meeting.event.starts_at|date:"d M Y, H:i" }}</dd></div><div><dt>{% translate "Venue" %}</dt><dd>{{ meeting.event.venue|default:venue_tbc }}</dd></div><div><dt>{% translate "Chairperson" %}</dt><dd>{{ meeting.chairperson_name }}</dd></div></dl>
             </div>

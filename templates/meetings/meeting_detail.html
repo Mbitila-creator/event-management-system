@@ -24,6 +24,7 @@
     <a href="#documents"><strong>8</strong><span>{% translate "Documents" %}</span></a>
     <a href="#logistics"><strong>9</strong><span>{% translate "Logistics" %}</span></a>
     <a href="#checkin"><strong>10</strong><span>{% translate "Check-in" %}</span></a>
+    <a href="#evaluation"><strong>11</strong><span>{% translate "Evaluation and closure" %}</span></a>
 </nav>
 
 <section id="overview" class="meeting-workflow-section">
@@ -120,5 +121,21 @@
         <dl><div><dt>{% translate "Opens" %}</dt><dd>{{ meeting.checkin_opens_at|date:"d M Y, H:i"|default:"—" }}</dd></div><div><dt>{% translate "Closes" %}</dt><dd>{{ meeting.checkin_closes_at|date:"d M Y, H:i"|default:"—" }}</dd></div><div><dt>{% translate "Checked in" %}</dt><dd>{{ present_count }} / {{ participant_count }}</dd></div></dl>
     </div>
     <p class="meeting-section-note meeting-checkin-note">{% translate "Open a participant's QR pass in Step 3, then scan it with a phone signed in as an Attendance Officer or Event Administrator." %}</p>
+</section>
+
+<section id="evaluation" class="meeting-workflow-section">
+    <div class="meeting-section-heading"><div><span>{% translate "Step 11" %}</span><h2>{% translate "Meeting evaluation and formal closure" %}</h2></div><div class="meeting-section-tools"><span class="meeting-pill {% if meeting.closure_status == 'CLOSED' %}success{% else %}warning{% endif %}">{{ meeting.get_closure_status_display }}</span><a class="meeting-export-button" href="{% url 'meetings:feedback_report_csv' meeting.pk %}">{% translate "Download feedback CSV" %}</a></div></div>
+    <div class="meeting-feedback-summary">
+        <article><span>{% translate "Responses" %}</span><strong>{{ feedback_summary.count }}</strong></article>
+        <article><span>{% translate "Overall rating" %}</span><strong>{% if feedback_summary.overall_rating %}{{ feedback_summary.overall_rating|floatformat:1 }} / 5{% else %}—{% endif %}</strong></article>
+        <article><span>{% translate "Agenda and content" %}</span><strong>{% if feedback_summary.content_rating %}{{ feedback_summary.content_rating|floatformat:1 }} / 5{% else %}—{% endif %}</strong></article>
+        <article><span>{% translate "Chairing and facilitation" %}</span><strong>{% if feedback_summary.facilitation_rating %}{{ feedback_summary.facilitation_rating|floatformat:1 }} / 5{% else %}—{% endif %}</strong></article>
+    </div>
+    {% if meeting.evaluation_enabled %}<p class="meeting-section-note">{% translate "Only participants marked present can submit one evaluation." %}{% if meeting.evaluation_deadline %} {% translate "Deadline" %}: {{ meeting.evaluation_deadline|date:"d M Y, H:i" }}.{% endif %}</p>{% else %}<p class="meeting-section-note">{% translate "Participant evaluation is disabled for this meeting." %}</p>{% endif %}
+    <div class="meeting-table-scroll"><table><thead><tr><th>{% translate "Respondent" %}</th><th>{% translate "Overall" %}</th><th>{% translate "Average" %}</th><th>{% translate "Comments" %}</th><th>{% translate "Recommendations" %}</th><th>{% translate "Submitted" %}</th></tr></thead><tbody>{% for feedback in feedback_responses %}<tr><td>{% if feedback.is_anonymous %}<span class="meeting-pill">{% translate "Anonymous" %}</span>{% else %}<strong>{{ feedback.attendee.full_name }}</strong><small>{{ feedback.attendee.organization }}</small>{% endif %}</td><td>{{ feedback.overall_rating }} / 5</td><td>{{ feedback.average_rating }} / 5</td><td>{{ feedback.comments|default:"—" }}</td><td>{{ feedback.recommendations|default:"—" }}</td><td>{{ feedback.submitted_at|date:"d M Y, H:i" }}</td></tr>{% empty %}<tr><td colspan="6" class="meeting-empty-cell">{% translate "No participant feedback has been submitted." %}</td></tr>{% endfor %}</tbody></table></div>
+    <div class="meeting-closure-panel">
+        {% if meeting.closure_status == 'CLOSED' %}<div class="meeting-closure-complete"><span>✓</span><div><h3>{% translate "Meeting formally closed" %}</h3><p>{{ meeting.closed_at|date:"d M Y, H:i" }}{% if meeting.closed_by %} · {{ meeting.closed_by }}{% endif %}</p>{% if request.LANGUAGE_CODE == 'en' and meeting.closure_summary_en %}<p>{{ meeting.closure_summary_en|linebreaksbr }}</p>{% elif meeting.closure_summary_sw %}<p>{{ meeting.closure_summary_sw|linebreaksbr }}</p>{% endif %}</div>{% if can_manage %}<form method="post" action="{% url 'meetings:meeting_reopen' meeting.pk %}">{% csrf_token %}<button type="submit" class="meeting-link-button meeting-neutral-button">{% translate "Reopen meeting" %}</button></form>{% endif %}</div>
+        {% else %}<div class="meeting-closure-checklist"><h3>{% translate "Closure readiness" %}</h3>{% if closure_blockers %}<ul>{% for blocker in closure_blockers %}<li>○ {{ blocker }}</li>{% endfor %}</ul>{% else %}<p class="meeting-pill success">✓ {% translate "The meeting has ended and its minutes are approved." %}</p>{% endif %}</div>{% if can_close_meeting %}<details><summary>{% translate "Close meeting formally" %}</summary><form method="post" action="{% url 'meetings:meeting_close' meeting.pk %}" class="meeting-inline-form meeting-wide-form">{% csrf_token %}{{ closure_form.as_div }}<button type="submit">{% translate "Confirm formal closure" %}</button></form></details>{% endif %}{% endif %}
+    </div>
 </section>
 {% endblock %}

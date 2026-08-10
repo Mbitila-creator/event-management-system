@@ -12,6 +12,7 @@ from .models import (
     MeetingCommunicationLog,
     MeetingDecision,
     MeetingDocument,
+    MeetingFeedback,
     MeetingMinutesReview,
     MeetingResource,
     MeetingResourceBooking,
@@ -95,6 +96,22 @@ class MeetingAttendeeInline(admin.TabularInline):
     ordering = ("full_name",)
 
 
+class MeetingFeedbackInline(admin.TabularInline):
+    model = MeetingFeedback
+    extra = 0
+    fields = (
+        "attendee", "overall_rating", "organization_rating", "content_rating",
+        "facilitation_rating", "venue_platform_rating", "is_anonymous",
+        "submitted_at",
+    )
+    readonly_fields = fields
+    ordering = ("-submitted_at",)
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 class MeetingDecisionInline(admin.TabularInline):
     model = MeetingDecision
     extra = 0
@@ -140,7 +157,9 @@ class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
         "reference_number", "event__code", "event__title_sw", "event__title_en",
         "chairperson_name", "secretary_name",
     )
-    autocomplete_fields = ("event", "series", "minutes_approved_by")
+    autocomplete_fields = (
+        "event", "series", "minutes_approved_by", "closed_by",
+    )
     date_hierarchy = "event__starts_at"
     inlines = (
         MeetingAgendaItemInline,
@@ -150,6 +169,7 @@ class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
         MeetingDocumentInline,
         MeetingMinutesReviewInline,
         MeetingResourceBookingInline,
+        MeetingFeedbackInline,
     )
     fieldsets = (
         (_("Meeting information"), {"fields": (
@@ -164,6 +184,10 @@ class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
         )}),
         (_("Secure meeting check-in"), {"fields": (
             "checkin_enabled", "checkin_opens_at", "checkin_closes_at",
+        )}),
+        (_("Evaluation and closure"), {"fields": (
+            "evaluation_enabled", "evaluation_deadline", "closure_status",
+            "closure_summary_sw", "closure_summary_en", "closed_by", "closed_at",
         )}),
         (_("Meeting minutes"), {"fields": (
             "minutes_status", "minutes_sw", "minutes_en", "minutes_document",
@@ -241,6 +265,34 @@ class MeetingAttendeeAdmin(AuditAdminMixin, admin.ModelAdmin):
         "meeting__reference_number",
     )
     autocomplete_fields = ("meeting", "user", "checked_in_by")
+
+
+@admin.register(MeetingFeedback)
+class MeetingFeedbackAdmin(admin.ModelAdmin):
+    list_display = (
+        "meeting", "attendee", "overall_rating", "is_anonymous", "submitted_at",
+    )
+    list_filter = ("overall_rating", "is_anonymous", "meeting", "submitted_at")
+    search_fields = (
+        "meeting__reference_number", "attendee__full_name", "comments",
+        "recommendations",
+    )
+    autocomplete_fields = ("meeting", "attendee")
+    readonly_fields = (
+        "meeting", "attendee", "organization_rating", "content_rating",
+        "facilitation_rating", "venue_platform_rating", "overall_rating",
+        "comments", "recommendations", "is_anonymous", "submitted_at",
+        "created_at", "updated_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(MeetingDocument)

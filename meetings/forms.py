@@ -18,6 +18,7 @@ from .models import (
     MeetingAttendee,
     MeetingDecision,
     MeetingDocument,
+    MeetingFeedback,
     MeetingResource,
     MeetingResourceBooking,
     MeetingSeries,
@@ -155,6 +156,20 @@ class MeetingWorkflowForm(forms.Form):
             attrs={"type": "datetime-local"},
         ),
     )
+    evaluation_enabled = forms.BooleanField(
+        label=_("Enable participant evaluation"),
+        required=False,
+        initial=True,
+    )
+    evaluation_deadline = forms.DateTimeField(
+        label=_("Evaluation deadline"),
+        required=False,
+        input_formats=[DATETIME_FORMAT],
+        widget=forms.DateTimeInput(
+            format=DATETIME_FORMAT,
+            attrs={"type": "datetime-local"},
+        ),
+    )
     chairperson_name = forms.CharField(label=_("Chairperson"), max_length=200)
     secretary_name = forms.CharField(
         label=_("Meeting secretary"),
@@ -235,6 +250,14 @@ class MeetingWorkflowForm(forms.Form):
                     if instance.checkin_closes_at
                     else ""
                 ),
+                "evaluation_enabled": instance.evaluation_enabled,
+                "evaluation_deadline": (
+                    timezone.localtime(instance.evaluation_deadline).strftime(
+                        DATETIME_FORMAT
+                    )
+                    if instance.evaluation_deadline
+                    else ""
+                ),
                 "chairperson_name": instance.chairperson_name,
                 "secretary_name": instance.secretary_name,
                 "quorum_required": instance.quorum_required,
@@ -276,6 +299,7 @@ class MeetingWorkflowForm(forms.Form):
         deadline = cleaned.get("invitation_deadline")
         checkin_opens_at = cleaned.get("checkin_opens_at")
         checkin_closes_at = cleaned.get("checkin_closes_at")
+        evaluation_deadline = cleaned.get("evaluation_deadline")
         venue = cleaned.get("venue")
         attendance_mode = cleaned.get("attendance_mode")
         if starts_at and ends_at and ends_at <= starts_at:
@@ -293,6 +317,11 @@ class MeetingWorkflowForm(forms.Form):
             self.add_error(
                 "checkin_closes_at",
                 _("The check-in closing time must be after the opening time."),
+            )
+        if ends_at and evaluation_deadline and evaluation_deadline <= ends_at:
+            self.add_error(
+                "evaluation_deadline",
+                _("The evaluation deadline must be after the meeting ends."),
             )
         if cleaned.get("attendance_mode") in {
             Meeting.AttendanceMode.ONLINE,
@@ -370,6 +399,7 @@ class MeetingWorkflowForm(forms.Form):
             "online_passcode", "online_instructions_sw",
             "online_instructions_en", "checkin_enabled",
             "checkin_opens_at", "checkin_closes_at",
+            "evaluation_enabled", "evaluation_deadline",
         ):
             setattr(meeting, field, self.cleaned_data[field])
         if not meeting.pk:
@@ -464,6 +494,40 @@ class MeetingAttendeeForm(forms.ModelForm):
         if not full_name:
             raise forms.ValidationError(_("Enter the participant's full name."))
         return full_name
+
+
+class MeetingFeedbackForm(forms.ModelForm):
+    class Meta:
+        model = MeetingFeedback
+        fields = (
+            "organization_rating", "content_rating", "facilitation_rating",
+            "venue_platform_rating", "overall_rating", "comments",
+            "recommendations", "is_anonymous",
+        )
+        widgets = {
+            "organization_rating": forms.RadioSelect,
+            "content_rating": forms.RadioSelect,
+            "facilitation_rating": forms.RadioSelect,
+            "venue_platform_rating": forms.RadioSelect,
+            "overall_rating": forms.RadioSelect,
+            "comments": forms.Textarea(attrs={"rows": 3}),
+            "recommendations": forms.Textarea(attrs={"rows": 3}),
+        }
+
+
+class MeetingClosureForm(forms.Form):
+    closure_summary_sw = forms.CharField(
+        label=_("Closure summary in Kiswahili"),
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    closure_summary_en = forms.CharField(
+        label=_("Closure summary in English"),
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    confirm_closure = forms.BooleanField(
+        label=_("I confirm that the approved minutes are final."),
+    )
 
 
 class MeetingMinutesForm(forms.ModelForm):

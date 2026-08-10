@@ -39,6 +39,10 @@
         <label>{{ form.checkin_opens_at.label_tag }}{{ form.checkin_opens_at }}{{ form.checkin_opens_at.errors }}</label>
         <label>{{ form.checkin_closes_at.label_tag }}{{ form.checkin_closes_at }}{{ form.checkin_closes_at.errors }}</label>
     </div></fieldset>
+    <fieldset><legend>{% translate "Participant evaluation" %}</legend><p class="meeting-fieldset-note">{% translate "Present participants can submit one evaluation after the meeting ends. The deadline is optional." %}</p><div class="meeting-form-grid">
+        <label class="meeting-checkbox">{{ form.evaluation_enabled }}<span>{{ form.evaluation_enabled.label }}</span>{{ form.evaluation_enabled.errors }}</label>
+        <label>{{ form.evaluation_deadline.label_tag }}{{ form.evaluation_deadline }}{{ form.evaluation_deadline.errors }}</label>
+    </div></fieldset>
     <fieldset><legend>{% translate "Leadership and governance" %}</legend><div class="meeting-form-grid">
         <label>{{ form.meeting_type.label_tag }}{{ form.meeting_type }}{{ form.meeting_type.errors }}</label>
         <label>{{ form.quorum_required.label_tag }}{{ form.quorum_required }}{{ form.quorum_required.errors }}</label>

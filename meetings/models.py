@@ -51,6 +51,10 @@ class Meeting(BaseModel):
         WEBEX = "WEBEX", _("Cisco Webex")
         OTHER = "OTHER", _("Other platform")
 
+    class ClosureStatus(models.TextChoices):
+        OPEN = "OPEN", _("Open for post-meeting work")
+        CLOSED = "CLOSED", _("Formally closed")
+
     event = models.OneToOneField(
         Event,
         verbose_name=_("event"),
@@ -115,6 +119,42 @@ class Meeting(BaseModel):
     )
     checkin_closes_at = models.DateTimeField(
         _("check-in closes at"),
+        null=True,
+        blank=True,
+    )
+    evaluation_enabled = models.BooleanField(
+        _("participant evaluation enabled"),
+        default=False,
+    )
+    evaluation_deadline = models.DateTimeField(
+        _("evaluation deadline"),
+        null=True,
+        blank=True,
+    )
+    closure_status = models.CharField(
+        _("meeting closure status"),
+        max_length=20,
+        choices=ClosureStatus.choices,
+        default=ClosureStatus.OPEN,
+    )
+    closure_summary_sw = models.TextField(
+        _("closure summary in Kiswahili"),
+        blank=True,
+    )
+    closure_summary_en = models.TextField(
+        _("closure summary in English"),
+        blank=True,
+    )
+    closed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("meeting closed by"),
+        related_name="closed_meetings",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    closed_at = models.DateTimeField(
+        _("meeting closed at"),
         null=True,
         blank=True,
     )
@@ -217,6 +257,14 @@ class Meeting(BaseModel):
             errors["checkin_closes_at"] = _(
                 "The check-in closing time must be after the opening time."
             )
+        if (
+            self.evaluation_deadline
+            and self.event_id
+            and self.evaluation_deadline <= self.event.ends_at
+        ):
+            errors["evaluation_deadline"] = _(
+                "The evaluation deadline must be after the meeting ends."
+            )
         if self.attendance_mode in {
             self.AttendanceMode.ONLINE,
             self.AttendanceMode.HYBRID,
@@ -258,6 +306,8 @@ class Meeting(BaseModel):
             and not self.minutes_approved_at
         ):
             self.minutes_approved_at = timezone.now()
+        if self.closure_status == self.ClosureStatus.CLOSED and not self.closed_at:
+            self.closed_at = timezone.now()
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -905,6 +955,107 @@ class MeetingAttendee(BaseModel):
 
     def __str__(self):
         return f"{self.full_name} - {self.meeting.reference_number}"
+
+
+class MeetingFeedback(BaseModel):
+    class Rating(models.IntegerChoices):
+        VERY_POOR = 1, _("Very poor")
+        POOR = 2, _("Poor")
+        SATISFACTORY = 3, _("Satisfactory")
+        GOOD = 4, _("Good")
+        EXCELLENT = 5, _("Excellent")
+
+    meeting = models.ForeignKey(
+        Meeting,
+        verbose_name=_("meeting"),
+        related_name="feedback_responses",
+        on_delete=models.CASCADE,
+    )
+    attendee = models.OneToOneField(
+        MeetingAttendee,
+        verbose_name=_("meeting participant"),
+        related_name="feedback",
+        on_delete=models.CASCADE,
+    )
+    organization_rating = models.PositiveSmallIntegerField(
+        _("organization and logistics rating"),
+        choices=Rating.choices,
+    )
+    content_rating = models.PositiveSmallIntegerField(
+        _("agenda and content rating"),
+        choices=Rating.choices,
+    )
+    facilitation_rating = models.PositiveSmallIntegerField(
+        _("chairing and facilitation rating"),
+        choices=Rating.choices,
+    )
+    venue_platform_rating = models.PositiveSmallIntegerField(
+        _("venue or online platform rating"),
+        choices=Rating.choices,
+    )
+    overall_rating = models.PositiveSmallIntegerField(
+        _("overall meeting rating"),
+        choices=Rating.choices,
+    )
+    comments = models.TextField(_("feedback comments"), blank=True)
+    recommendations = models.TextField(
+        _("recommendations for future meetings"),
+        blank=True,
+    )
+    is_anonymous = models.BooleanField(
+        _("hide my identity in staff feedback reports"),
+        default=False,
+    )
+    submitted_at = models.DateTimeField(
+        _("feedback submitted at"),
+        default=timezone.now,
+    )
+
+    class Meta:
+        verbose_name = _("meeting feedback")
+        verbose_name_plural = _("meeting feedback")
+        ordering = ["-submitted_at"]
+        indexes = [
+            models.Index(
+                fields=["meeting", "submitted_at"],
+                name="meeting_feedback_date_idx",
+            ),
+        ]
+
+    def clean(self):
+        errors = {}
+        if self.attendee_id and self.meeting_id:
+            if self.attendee.meeting_id != self.meeting_id:
+                errors["attendee"] = _(
+                    "The participant must belong to this meeting."
+                )
+            if (
+                self.attendee.attendance_status
+                != MeetingAttendee.AttendanceStatus.PRESENT
+            ):
+                errors["attendee"] = _(
+                    "Only a participant marked present can submit feedback."
+                )
+        if errors:
+            raise ValidationError(errors)
+
+    @property
+    def average_rating(self):
+        values = (
+            self.organization_rating,
+            self.content_rating,
+            self.facilitation_rating,
+            self.venue_platform_rating,
+            self.overall_rating,
+        )
+        return round(sum(values) / len(values), 1)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.meeting.reference_number} - {self.submitted_at:%Y-%m-%d}"
 
 
 class MeetingDecision(BaseModel):

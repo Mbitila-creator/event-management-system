@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Avg, Count, Q
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -32,6 +32,7 @@ from .forms import (
     MeetingAttendeeForm,
     MeetingDecisionForm,
     MeetingDocumentForm,
+    MeetingFeedbackForm,
     MeetingMinutesForm,
     MeetingOccurrenceForm,
     MeetingResourceBookingForm,
@@ -39,6 +40,7 @@ from .forms import (
     MeetingSeriesAgendaTemplateForm,
     MeetingSeriesForm,
     MeetingWorkflowForm,
+    MeetingClosureForm,
     MinutesApprovalForm,
     MinutesReturnForm,
 )
@@ -48,6 +50,7 @@ from .models import (
     MeetingAttendee,
     MeetingDecision,
     MeetingDocument,
+    MeetingFeedback,
     MeetingMinutesReview,
     MeetingResource,
     MeetingResourceBooking,
@@ -156,6 +159,35 @@ def _attendee_checkin_url(request, attendee):
         kwargs={"response_token": attendee.response_token},
     )
     return request.build_absolute_uri(f"{path}?auto=1")
+
+
+def _meeting_feedback_state(meeting, attendee=None, moment=None):
+    moment = moment or timezone.now()
+    if not meeting.evaluation_enabled:
+        return False, _("Participant evaluation is not enabled for this meeting.")
+    if meeting.event.status == Event.Status.CANCELLED:
+        return False, _("Evaluation is not available for a cancelled meeting.")
+    if moment < meeting.event.ends_at:
+        return False, _("The evaluation form will open after the meeting ends.")
+    if meeting.evaluation_deadline and moment > meeting.evaluation_deadline:
+        return False, _("The evaluation period has closed.")
+    if (
+        attendee
+        and attendee.attendance_status
+        != MeetingAttendee.AttendanceStatus.PRESENT
+    ):
+        return False, _("Only participants marked present can submit feedback.")
+    return True, ""
+
+
+def _meeting_closure_blockers(meeting, moment=None):
+    moment = moment or timezone.now()
+    blockers = []
+    if moment < meeting.event.ends_at:
+        blockers.append(_("The meeting has not ended yet."))
+    if meeting.minutes_status != Meeting.MinutesStatus.APPROVED:
+        blockers.append(_("The meeting minutes have not been approved."))
+    return blockers
 
 
 def _meeting_queryset():
@@ -583,6 +615,9 @@ def meeting_print(request, meeting_id):
     present_count = attendees.filter(
         attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
     ).count()
+    feedback_summary = meeting.feedback_responses.filter(
+        is_active=True,
+    ).aggregate(count=Count("id"), overall_rating=Avg("overall_rating"))
     return render(request, "meetings/meeting_print.html", {
         "meeting": meeting,
         "agenda_items": meeting.agenda_items.filter(is_active=True),
@@ -594,6 +629,7 @@ def meeting_print(request, meeting_id):
             is_active=True,
         ).select_related("resource"),
         "present_count": present_count,
+        "feedback_summary": feedback_summary,
         "quorum_met": (
             present_count >= meeting.quorum_required
             if meeting.quorum_required
@@ -646,6 +682,18 @@ def meeting_detail(request, meeting_id):
         attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
     ).count()
     checkin_allowed, checkin_message = _meeting_checkin_state(meeting)
+    feedbacks = meeting.feedback_responses.filter(is_active=True).select_related(
+        "attendee",
+    )
+    feedback_summary = feedbacks.aggregate(
+        count=Count("id"),
+        overall_rating=Avg("overall_rating"),
+        organization_rating=Avg("organization_rating"),
+        content_rating=Avg("content_rating"),
+        facilitation_rating=Avg("facilitation_rating"),
+        venue_platform_rating=Avg("venue_platform_rating"),
+    )
+    closure_blockers = _meeting_closure_blockers(meeting)
     context = {
         "meeting": meeting,
         "agenda_items": meeting.agenda_items.filter(is_active=True),
@@ -712,6 +760,18 @@ def meeting_detail(request, meeting_id):
             is_active=True,
         ).select_related("resource", "confirmed_by"),
         "communications": meeting.communications.filter(is_active=True)[:50],
+        "feedback_responses": feedbacks[:30],
+        "feedback_summary": feedback_summary,
+        "closure_blockers": closure_blockers,
+        "can_close_meeting": bool(
+            _can_manage(request.user)
+            and not closure_blockers
+            and meeting.closure_status != Meeting.ClosureStatus.CLOSED
+        ),
+        "closure_form": MeetingClosureForm(initial={
+            "closure_summary_sw": meeting.closure_summary_sw,
+            "closure_summary_en": meeting.closure_summary_en,
+        }),
     }
     return render(request, "meetings/meeting_detail.html", context)
 
@@ -1392,12 +1452,28 @@ def invitation_response(request, response_token):
     checkin_url = (
         _attendee_checkin_url(request, attendee) if show_checkin_pass else ""
     )
+    feedback_allowed, _feedback_message = _meeting_feedback_state(
+        attendee.meeting,
+        attendee,
+    )
+    has_feedback = MeetingFeedback.objects.filter(
+        attendee=attendee,
+        is_active=True,
+    ).exists()
     return render(request, "meetings/invitation_response.html", {
         "attendee": attendee,
         "meeting": attendee.meeting,
         "form": form,
         "submitted": submitted,
         "checkin_qr": _qr_data_uri(checkin_url) if checkin_url else "",
+        "feedback_url": (
+            reverse(
+                "meetings:meeting_feedback",
+                kwargs={"response_token": attendee.response_token},
+            )
+            if feedback_allowed or has_feedback
+            else ""
+        ),
     })
 
 
@@ -1517,3 +1593,142 @@ def attendance_register_csv(request, meeting_id):
             attendee.get_checkin_method_display() if attendee.checkin_method else "",
         )])
     return response
+
+
+@require_http_methods(["GET", "POST"])
+def meeting_feedback(request, response_token):
+    attendee = get_object_or_404(
+        MeetingAttendee.objects.select_related(
+            "meeting__event", "meeting__event__venue",
+        ),
+        response_token=response_token,
+        is_active=True,
+        meeting__is_active=True,
+    )
+    meeting = attendee.meeting
+    existing = MeetingFeedback.objects.filter(
+        attendee=attendee,
+        is_active=True,
+    ).first()
+    feedback_allowed, feedback_message = _meeting_feedback_state(
+        meeting,
+        attendee,
+    )
+    form = MeetingFeedbackForm(request.POST or None)
+    submitted = existing is not None
+    if (
+        request.method == "POST"
+        and feedback_allowed
+        and existing is None
+        and form.is_valid()
+    ):
+        with transaction.atomic():
+            locked_attendee = MeetingAttendee.objects.select_for_update().get(
+                pk=attendee.pk,
+            )
+            existing = MeetingFeedback.objects.filter(
+                attendee=locked_attendee,
+                is_active=True,
+            ).first()
+            if existing is None:
+                feedback = form.save(commit=False)
+                feedback.meeting = meeting
+                feedback.attendee = locked_attendee
+                feedback.save()
+                existing = feedback
+        submitted = True
+    return render(request, "meetings/meeting_feedback.html", {
+        "attendee": attendee,
+        "meeting": meeting,
+        "form": form,
+        "feedback": existing,
+        "feedback_allowed": feedback_allowed,
+        "feedback_message": feedback_message,
+        "submitted": submitted,
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def feedback_report_csv(request, meeting_id):
+    _require_view_access(request.user)
+    meeting = get_object_or_404(_meeting_queryset(), pk=meeting_id, is_active=True)
+    feedbacks = meeting.feedback_responses.filter(is_active=True).select_related(
+        "attendee",
+    )
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response.write("\ufeff")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{meeting.reference_number.replace("/", "-")}'
+        '-feedback-report.csv"'
+    )
+    writer = csv.writer(response)
+    writer.writerow([
+        _("Meeting reference"), _("Respondent"), _("Organization and logistics"),
+        _("Agenda and content"), _("Chairing and facilitation"),
+        _("Venue or online platform"), _("Overall rating"),
+        _("Comments"), _("Recommendations"), _("Submitted at"),
+    ])
+    for feedback in feedbacks:
+        respondent = _("Anonymous") if feedback.is_anonymous else feedback.attendee.full_name
+        writer.writerow([_safe_csv_value(value) for value in (
+            meeting.reference_number,
+            respondent,
+            feedback.organization_rating,
+            feedback.content_rating,
+            feedback.facilitation_rating,
+            feedback.venue_platform_rating,
+            feedback.overall_rating,
+            feedback.comments,
+            feedback.recommendations,
+            timezone.localtime(feedback.submitted_at).isoformat(),
+        )])
+    return response
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def meeting_close(request, meeting_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(_meeting_queryset(), pk=meeting_id, is_active=True)
+    if meeting.closure_status == Meeting.ClosureStatus.CLOSED:
+        messages.error(request, _("This meeting is already formally closed."))
+        return redirect(f"{meeting.get_absolute_url()}#evaluation")
+    blockers = _meeting_closure_blockers(meeting)
+    if blockers:
+        messages.error(request, " ".join(str(blocker) for blocker in blockers))
+        return redirect(f"{meeting.get_absolute_url()}#evaluation")
+    form = MeetingClosureForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, _form_error_message(form))
+        return redirect(f"{meeting.get_absolute_url()}#evaluation")
+    with transaction.atomic():
+        meeting.closure_status = Meeting.ClosureStatus.CLOSED
+        meeting.closure_summary_sw = form.cleaned_data["closure_summary_sw"]
+        meeting.closure_summary_en = form.cleaned_data["closure_summary_en"]
+        meeting.closed_by = request.user
+        meeting.closed_at = timezone.now()
+        meeting.updated_by = request.user
+        meeting.save()
+        meeting.event.status = Event.Status.COMPLETED
+        meeting.event.updated_by = request.user
+        meeting.event.save(update_fields=["status", "updated_by", "updated_at"])
+    messages.success(request, _("The meeting was formally closed."))
+    return redirect(f"{meeting.get_absolute_url()}#evaluation")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def meeting_reopen(request, meeting_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    if meeting.closure_status != Meeting.ClosureStatus.CLOSED:
+        messages.error(request, _("This meeting is not formally closed."))
+        return redirect(f"{meeting.get_absolute_url()}#evaluation")
+    meeting.closure_status = Meeting.ClosureStatus.OPEN
+    meeting.closed_by = None
+    meeting.closed_at = None
+    meeting.updated_by = request.user
+    meeting.save()
+    messages.success(request, _("The meeting was reopened for post-meeting work."))
+    return redirect(f"{meeting.get_absolute_url()}#evaluation")

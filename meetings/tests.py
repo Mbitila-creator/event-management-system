@@ -20,6 +20,7 @@ from .models import (
     MeetingCommunicationLog,
     MeetingDecision,
     MeetingDocument,
+    MeetingFeedback,
     MeetingMinutesReview,
     MeetingResource,
     MeetingResourceBooking,
@@ -127,6 +128,36 @@ class MeetingModelTests(TestCase):
         )
         self.assertEqual(attendee.full_name, "Asha Juma")
         self.assertEqual(attendee.email, "member@example.com")
+
+    def test_only_present_attendee_can_have_feedback(self):
+        meeting = self.create_meeting()
+        attendee = MeetingAttendee.objects.create(
+            meeting=meeting,
+            full_name="Mtoa Maoni",
+        )
+        with self.assertRaises(ValidationError):
+            MeetingFeedback.objects.create(
+                meeting=meeting,
+                attendee=attendee,
+                organization_rating=4,
+                content_rating=4,
+                facilitation_rating=5,
+                venue_platform_rating=4,
+                overall_rating=5,
+            )
+
+        attendee.attendance_status = MeetingAttendee.AttendanceStatus.PRESENT
+        attendee.save()
+        feedback = MeetingFeedback.objects.create(
+            meeting=meeting,
+            attendee=attendee,
+            organization_rating=4,
+            content_rating=4,
+            facilitation_rating=5,
+            venue_platform_rating=4,
+            overall_rating=5,
+        )
+        self.assertEqual(feedback.average_rating, 4.4)
 
     def test_decision_agenda_item_must_belong_to_same_meeting(self):
         meeting = self.create_meeting()
@@ -1292,6 +1323,139 @@ class MeetingWorkflowTests(TestCase):
         self.assertIn("CSV Participant", csv_body)
         self.assertIn("QR scan", csv_body)
         self.assertIn("meeting.manager", csv_body)
+
+    def test_present_attendee_submits_one_anonymous_evaluation(self):
+        self.event.starts_at = timezone.now() - timedelta(hours=3)
+        self.event.ends_at = timezone.now() - timedelta(hours=1)
+        self.event.save()
+        self.meeting.evaluation_enabled = True
+        self.meeting.save()
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Anonymous Evaluator",
+            organization="MoEST",
+            attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
+        )
+        feedback_url = f"/en/meetings/feedback/{attendee.response_token}/"
+        response = self.client.post(feedback_url, {
+            "organization_rating": "4",
+            "content_rating": "5",
+            "facilitation_rating": "4",
+            "venue_platform_rating": "3",
+            "overall_rating": "5",
+            "comments": "Well organized.",
+            "recommendations": "Share papers earlier.",
+            "is_anonymous": "on",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Thank you for your feedback.")
+        feedback = MeetingFeedback.objects.get(attendee=attendee)
+        self.assertTrue(feedback.is_anonymous)
+        self.assertEqual(feedback.overall_rating, 5)
+
+        second = self.client.post(feedback_url, {
+            "organization_rating": "1",
+            "content_rating": "1",
+            "facilitation_rating": "1",
+            "venue_platform_rating": "1",
+            "overall_rating": "1",
+        })
+        self.assertContains(second, "cannot be submitted again")
+        self.assertEqual(MeetingFeedback.objects.filter(attendee=attendee).count(), 1)
+        feedback.refresh_from_db()
+        self.assertEqual(feedback.overall_rating, 5)
+
+        self.client.force_login(self.manager)
+        detail = self.client.get(f"/en/staff/meetings/{self.meeting.pk}/")
+        self.assertContains(detail, "5.0 / 5")
+        self.assertContains(detail, "Anonymous")
+        export = self.client.get(
+            reverse("meetings:feedback_report_csv", args=[self.meeting.pk]),
+        )
+        csv_body = export.content.decode("utf-8-sig")
+        self.assertIn("Anonymous", csv_body)
+        self.assertNotIn("Anonymous Evaluator", csv_body)
+
+    def test_evaluation_rejects_absent_attendee_and_expired_deadline(self):
+        self.event.starts_at = timezone.now() - timedelta(hours=4)
+        self.event.ends_at = timezone.now() - timedelta(hours=2)
+        self.event.save()
+        self.meeting.evaluation_enabled = True
+        self.meeting.evaluation_deadline = timezone.now() - timedelta(hours=1)
+        self.meeting.save()
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Late Evaluator",
+            attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
+        )
+        response = self.client.get(
+            f"/en/meetings/feedback/{attendee.response_token}/",
+        )
+        self.assertContains(response, "The evaluation period has closed.")
+
+        self.meeting.evaluation_deadline = timezone.now() + timedelta(days=1)
+        self.meeting.save()
+        attendee.attendance_status = MeetingAttendee.AttendanceStatus.ABSENT
+        attendee.save()
+        response = self.client.get(
+            f"/en/meetings/feedback/{attendee.response_token}/",
+        )
+        self.assertContains(
+            response,
+            "Only participants marked present can submit feedback.",
+        )
+        self.assertFalse(MeetingFeedback.objects.exists())
+
+    def test_formal_closure_requires_ended_meeting_and_approved_minutes(self):
+        close_url = reverse("meetings:meeting_close", args=[self.meeting.pk])
+        payload = {
+            "closure_summary_sw": "Kikao kimefungwa rasmi.",
+            "closure_summary_en": "The meeting was formally closed.",
+            "confirm_closure": "on",
+        }
+        blocked = self.client.post(close_url, payload)
+        self.assertEqual(blocked.status_code, 302)
+        self.meeting.refresh_from_db()
+        self.assertEqual(self.meeting.closure_status, Meeting.ClosureStatus.OPEN)
+
+        self.event.starts_at = timezone.now() - timedelta(hours=3)
+        self.event.ends_at = timezone.now() - timedelta(hours=1)
+        self.event.save()
+        self.meeting.minutes_sw = "Kumbukumbu zilizoidhinishwa."
+        self.meeting.minutes_status = Meeting.MinutesStatus.APPROVED
+        self.meeting.minutes_approved_by = self.manager
+        self.meeting.save()
+        closed = self.client.post(close_url, payload)
+        self.assertEqual(closed.status_code, 302)
+        self.meeting.refresh_from_db()
+        self.event.refresh_from_db()
+        self.assertEqual(self.meeting.closure_status, Meeting.ClosureStatus.CLOSED)
+        self.assertEqual(self.meeting.closed_by, self.manager)
+        self.assertIsNotNone(self.meeting.closed_at)
+        self.assertEqual(self.event.status, Event.Status.COMPLETED)
+
+        reopened = self.client.post(
+            reverse("meetings:meeting_reopen", args=[self.meeting.pk]),
+        )
+        self.assertEqual(reopened.status_code, 302)
+        self.meeting.refresh_from_db()
+        self.assertEqual(self.meeting.closure_status, Meeting.ClosureStatus.OPEN)
+        self.assertIsNone(self.meeting.closed_by)
+        self.assertIsNone(self.meeting.closed_at)
+
+        report_officer = User.objects.create_user(
+            username="meeting.closure.viewer",
+            email="meeting.closure.viewer@example.com",
+            role=User.Role.REPORT_OFFICER,
+        )
+        self.client.force_login(report_officer)
+        forbidden = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/close/",
+            payload,
+        )
+        self.assertEqual(forbidden.status_code, 403)
+        self.meeting.refresh_from_db()
+        self.assertEqual(self.meeting.closure_status, Meeting.ClosureStatus.OPEN)
 
     def test_registration_officer_cannot_access_meeting_workspace(self):
         officer = User.objects.create_user(
