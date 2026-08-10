@@ -278,6 +278,7 @@ def send_upcoming_meeting_reminder(attendee, request=None):
 
 def send_action_reminder(action, request=None):
     if action.status in {
+        action.Status.AWAITING_REVIEW,
         action.Status.COMPLETED,
         action.Status.CANCELLED,
     }:
@@ -339,7 +340,11 @@ def send_action_reminder(action, request=None):
 
 def send_action_escalation(action, request=None):
     today = timezone.localdate()
-    if action.status in {action.Status.COMPLETED, action.Status.CANCELLED}:
+    if action.status in {
+        action.Status.AWAITING_REVIEW,
+        action.Status.COMPLETED,
+        action.Status.CANCELLED,
+    }:
         raise ValueError(_("An escalation cannot be sent for a closed action."))
     if not action.due_date or action.due_date >= today:
         raise ValueError(_("Only overdue actions can be escalated."))
@@ -393,7 +398,10 @@ def send_action_escalation(action, request=None):
             body=body,
             request=request,
         )
-        if delivered and action.status != action.Status.OVERDUE:
+        if delivered and action.status not in {
+            action.Status.OVERDUE,
+            action.Status.RETURNED,
+        }:
             action.status = action.Status.OVERDUE
             action.updated_by = _actor(request)
             action.save(update_fields=["status", "updated_by", "updated_at"])

@@ -7490,3 +7490,108 @@ msgstr "Pakua ushahidi"
 #: templates/meetings/personal_workspace.html:40
 msgid "Completion"
 msgstr "Ukamilishaji"
+
+#: meetings/models.py:1175
+msgid "Awaiting completion review"
+msgstr "Inasubiri mapitio ya ukamilishaji"
+
+#: meetings/forms.py:656
+msgid "Choose completed when a manager records 100 percent progress."
+msgstr "Chagua Imekamilika wakati msimamizi anaporekodi maendeleo ya asilimia 100."
+
+#: meetings/forms.py:669
+msgid "Submit completion for verification"
+msgstr "Wasilisha ukamilishaji kwa uthibitisho"
+
+#: meetings/forms.py:698
+msgid "Enter a progress update before saving this action."
+msgstr "Weka taarifa ya maendeleo kabla ya kuhifadhi hatua hii."
+
+#: meetings/forms.py:707 meetings/models.py:1266 meetings/models.py:1360
+msgid "Submit the action for completion review when progress reaches 100 percent."
+msgstr "Wasilisha hatua kwa mapitio ya ukamilishaji maendeleo yanapofikia asilimia 100."
+
+#: meetings/forms.py:720
+msgid "Review decision"
+msgstr "Uamuzi wa mapitio"
+
+#: meetings/forms.py:722
+msgid "Verify completion"
+msgstr "Thibitisha ukamilishaji"
+
+#: meetings/forms.py:727 templates/meetings/meeting_detail.html:98
+msgid "Review comment"
+msgstr "Maoni ya mapitio"
+
+#: meetings/forms.py:740 meetings/models.py:1417
+msgid "Enter correction instructions before returning the action."
+msgstr "Weka maelekezo ya marekebisho kabla ya kurejesha hatua."
+
+#: meetings/models.py:1356
+msgid "Completion review actions must show 100 percent progress."
+msgstr "Hatua zilizo katika mapitio ya ukamilishaji lazima zionyeshe maendeleo ya asilimia 100."
+
+#: meetings/models.py:1386
+msgid "Completion verified"
+msgstr "Ukamilishaji umethibitishwa"
+
+#: meetings/models.py:1396
+msgid "review outcome"
+msgstr "matokeo ya mapitio"
+
+#: meetings/models.py:1404
+msgid "meeting action completion review"
+msgstr "mapitio ya ukamilishaji wa hatua ya kikao"
+
+#: meetings/models.py:1405
+msgid "meeting action completion reviews"
+msgstr "mapitio ya ukamilishaji wa hatua za kikao"
+
+#: meetings/views.py:775
+msgid "An action awaiting review or already closed cannot be changed."
+msgstr "Hatua inayosubiri mapitio au iliyofungwa tayari haiwezi kubadilishwa."
+
+#: meetings/views.py:822
+msgid "The action completion was verified and closed."
+msgstr "Ukamilishaji wa hatua umethibitishwa na hatua imefungwa."
+
+#: meetings/views.py:825
+msgid "The action was returned for correction."
+msgstr "Hatua imerejeshwa kwa marekebisho."
+
+#: meetings/views.py:2444
+msgid "Use the completion review controls for an action awaiting verification."
+msgstr "Tumia vidhibiti vya mapitio ya ukamilishaji kwa hatua inayosubiri uthibitisho."
+
+#: templates/meetings/meeting_detail.html:98
+msgid "Completion verification required"
+msgstr "Uthibitisho wa ukamilishaji unahitajika"
+
+#: templates/meetings/meeting_detail.html:98
+msgid "Review the progress evidence, then verify completion or return the action with correction instructions."
+msgstr "Kagua ushahidi wa maendeleo, kisha thibitisha ukamilishaji au rejesha hatua pamoja na maelekezo ya marekebisho."
+
+#: templates/meetings/meeting_detail.html:98
+msgid "Verify and close"
+msgstr "Thibitisha na ufunge"
+
+#: templates/meetings/meeting_detail.html:98
+msgid "Correction instructions"
+msgstr "Maelekezo ya marekebisho"
+
+#: templates/meetings/meeting_detail.html:101
+#: templates/meetings/personal_workspace.html:40
+msgid "Completion review history"
+msgstr "Historia ya mapitio ya ukamilishaji"
+
+#: templates/meetings/personal_workspace.html:41
+msgid "Completion submitted"
+msgstr "Ukamilishaji umewasilishwa"
+
+#: templates/meetings/personal_workspace.html:41
+msgid "A meeting manager must verify the evidence before this action is formally closed."
+msgstr "Msimamizi wa kikao lazima athibitishe ushahidi kabla ya hatua hii kufungwa rasmi."
+
+#: templates/meetings/personal_workspace.html:41
+msgid "Correct and resubmit"
+msgstr "Sahihisha na uwasilishe tena"

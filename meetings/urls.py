@@ -266,6 +266,11 @@ urlpatterns = [
         name="action_update",
     ),
     path(
+        "staff/meetings/<int:meeting_id>/actions/<int:action_id>/completion-review/",
+        views.action_completion_review,
+        name="action_completion_review",
+    ),
+    path(
         "staff/meetings/<int:meeting_id>/actions/<int:action_id>/remind/",
         views.action_reminder_send,
         name="action_reminder_send",

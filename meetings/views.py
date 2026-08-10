@@ -24,6 +24,7 @@ from accounts.models import User
 from events.models import Event
 
 from .forms import (
+    ActionCompletionReviewForm,
     ActionProgressForm,
     AttendanceOnlyForm,
     AttendeeProgressForm,
@@ -48,6 +49,7 @@ from .forms import (
 )
 from .models import (
     Meeting,
+    MeetingActionCompletionReview,
     MeetingActionItem,
     MeetingActionProgressUpdate,
     MeetingAttendee,
@@ -244,13 +246,16 @@ def _report_actions(request):
         MeetingActionItem.Status.COMPLETED,
         MeetingActionItem.Status.CANCELLED,
     }
+    overdue_excluded_statuses = closed_statuses | {
+        MeetingActionItem.Status.AWAITING_REVIEW,
+    }
     if selected_status == "OPEN":
         actions = actions.exclude(status__in=closed_statuses)
     elif selected_status == "OVERDUE":
         actions = actions.filter(
             Q(status=MeetingActionItem.Status.OVERDUE)
             | Q(due_date__lt=timezone.localdate()),
-        ).exclude(status__in=closed_statuses)
+        ).exclude(status__in=overdue_excluded_statuses)
     elif selected_status in MeetingActionItem.Status.values:
         actions = actions.filter(status=selected_status)
     else:
@@ -267,7 +272,7 @@ def _report_actions(request):
             or (
                 action.due_date
                 and action.due_date < today
-                and action.status not in closed_statuses
+                and action.status not in overdue_excluded_statuses
             )
         )
     return rows, selected_status, selected_meeting
@@ -671,6 +676,7 @@ def personal_meeting_workspace(request):
         "meeting", "meeting__event", "decision",
     ).prefetch_related(
         "progress_updates__created_by",
+        "completion_reviews__created_by",
     ).filter(
         is_active=True,
         meeting__is_active=True,
@@ -681,13 +687,16 @@ def personal_meeting_workspace(request):
         MeetingActionItem.Status.COMPLETED,
         MeetingActionItem.Status.CANCELLED,
     }
+    overdue_excluded_statuses = closed_statuses | {
+        MeetingActionItem.Status.AWAITING_REVIEW,
+    }
     all_actions = actions
     if selected_status == "OPEN":
         actions = actions.exclude(status__in=closed_statuses)
     elif selected_status == "OVERDUE":
         actions = actions.filter(
             Q(status=MeetingActionItem.Status.OVERDUE) | Q(due_date__lt=today),
-        ).exclude(status__in=closed_statuses)
+        ).exclude(status__in=overdue_excluded_statuses)
     elif selected_status == MeetingActionItem.Status.COMPLETED:
         actions = actions.filter(status=MeetingActionItem.Status.COMPLETED)
     elif selected_status != "ALL":
@@ -696,7 +705,7 @@ def personal_meeting_workspace(request):
     action_rows = list(actions.order_by("due_date", "meeting__event__starts_at"))
     for action in action_rows:
         action.is_personal_overdue = bool(
-            action.status not in closed_statuses
+            action.status not in overdue_excluded_statuses
             and action.due_date
             and action.due_date < today
         )
@@ -706,7 +715,10 @@ def personal_meeting_workspace(request):
         action.progress_form = PersonalActionProgressForm(initial={
             "status": (
                 MeetingActionItem.Status.IN_PROGRESS
-                if action.status == MeetingActionItem.Status.OVERDUE
+                if action.status in {
+                    MeetingActionItem.Status.OVERDUE,
+                    MeetingActionItem.Status.RETURNED,
+                }
                 else action.status
             ),
             "progress_notes": action.progress_notes,
@@ -716,6 +728,11 @@ def personal_meeting_workspace(request):
             update
             for update in action.progress_updates.all()
             if update.is_active
+        ][:10]
+        action.completion_review_history = [
+            review
+            for review in action.completion_reviews.all()
+            if review.is_active
         ][:10]
     return render(request, "meetings/personal_workspace.html", {
         "upcoming_participations": upcoming_participations,
@@ -727,7 +744,7 @@ def personal_meeting_workspace(request):
             "open_actions": all_actions.exclude(status__in=closed_statuses).count(),
             "overdue_actions": all_actions.filter(
                 Q(status=MeetingActionItem.Status.OVERDUE) | Q(due_date__lt=today),
-            ).exclude(status__in=closed_statuses).count(),
+            ).exclude(status__in=overdue_excluded_statuses).count(),
             "completed_actions": all_actions.filter(
                 status=MeetingActionItem.Status.COMPLETED,
             ).count(),
@@ -749,21 +766,21 @@ def personal_action_update(request, action_id):
         meeting__is_active=True,
     )
     if action.status in {
+        MeetingActionItem.Status.AWAITING_REVIEW,
         MeetingActionItem.Status.COMPLETED,
         MeetingActionItem.Status.CANCELLED,
     }:
-        messages.error(request, _("A closed action cannot be changed from the personal workspace."))
+        messages.error(
+            request,
+            _("An action awaiting review or already closed cannot be changed."),
+        )
         return redirect("meetings:personal_meeting_workspace")
     form = PersonalActionProgressForm(request.POST, request.FILES)
     if form.is_valid():
         action.status = form.cleaned_data["status"]
         action.progress_notes = form.cleaned_data["progress_notes"].strip()
         action.completion_percentage = form.cleaned_data["completion_percentage"]
-        action.completed_at = (
-            timezone.now()
-            if action.status == MeetingActionItem.Status.COMPLETED
-            else None
-        )
+        action.completed_at = None
         action.updated_by = request.user
         action.save()
         evidence = form.cleaned_data.get("evidence_file")
@@ -781,6 +798,53 @@ def personal_action_update(request, action_id):
     else:
         messages.error(request, _form_error_message(form))
     return redirect("meetings:personal_meeting_workspace")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+@transaction.atomic
+def action_completion_review(request, meeting_id, action_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    action = get_object_or_404(
+        MeetingActionItem.objects.select_for_update(),
+        pk=action_id,
+        meeting=meeting,
+        is_active=True,
+        status=MeetingActionItem.Status.AWAITING_REVIEW,
+    )
+    form = ActionCompletionReviewForm(request.POST)
+    if form.is_valid():
+        outcome = form.cleaned_data["outcome"]
+        comment = form.cleaned_data["comment"].strip()
+        if outcome == MeetingActionCompletionReview.Outcome.VERIFIED:
+            action.status = MeetingActionItem.Status.COMPLETED
+            success_message = _("The action completion was verified and closed.")
+        else:
+            action.status = MeetingActionItem.Status.RETURNED
+            success_message = _("The action was returned for correction.")
+        action.progress_notes = comment or action.progress_notes
+        action.updated_by = request.user
+        action.save()
+        MeetingActionCompletionReview.objects.create(
+            action=action,
+            outcome=outcome,
+            comment=comment,
+            created_by=request.user,
+            updated_by=request.user,
+        )
+        MeetingActionProgressUpdate.objects.create(
+            action=action,
+            status=action.status,
+            completion_percentage=action.completion_percentage,
+            notes=comment,
+            created_by=request.user,
+            updated_by=request.user,
+        )
+        messages.success(request, success_message)
+    else:
+        messages.error(request, _form_error_message(form))
+    return redirect(f"{meeting.get_absolute_url()}#actions")
 
 
 @login_required(login_url="accounts:staff_login")
@@ -1089,6 +1153,9 @@ def action_report(request):
         MeetingActionItem.Status.COMPLETED,
         MeetingActionItem.Status.CANCELLED,
     }
+    overdue_excluded_statuses = closed_statuses | {
+        MeetingActionItem.Status.AWAITING_REVIEW,
+    }
     context = {
         "actions": actions,
         "selected_status": selected_status,
@@ -1106,7 +1173,7 @@ def action_report(request):
             "overdue": all_actions.filter(
                 Q(status=MeetingActionItem.Status.OVERDUE)
                 | Q(due_date__lt=timezone.localdate()),
-            ).exclude(status__in=closed_statuses).count(),
+            ).exclude(status__in=overdue_excluded_statuses).count(),
         },
     }
     return render(request, "meetings/action_report.html", context)
@@ -1159,6 +1226,7 @@ def follow_up_center(request):
     closed_statuses = {
         MeetingActionItem.Status.COMPLETED,
         MeetingActionItem.Status.CANCELLED,
+        MeetingActionItem.Status.AWAITING_REVIEW,
     }
     open_actions = MeetingActionItem.objects.select_related(
         "meeting", "meeting__event", "responsible_user",
@@ -1540,6 +1608,11 @@ def meeting_detail(request, meeting_id):
                 "created_by",
             )[:10]
         )
+        action.completion_review_history = list(
+            action.completion_reviews.filter(is_active=True).select_related(
+                "created_by",
+            )[:10]
+        )
     present_count = attendees.filter(
         attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
     ).count()
@@ -1602,6 +1675,7 @@ def meeting_detail(request, meeting_id):
             meeting=meeting,
             instance=MeetingActionItem(meeting=meeting),
         ),
+        "action_completion_review_form": ActionCompletionReviewForm(),
         "document_form": MeetingDocumentForm(
             meeting=meeting,
             instance=MeetingDocument(meeting=meeting),
@@ -2044,6 +2118,7 @@ def action_reminder_bulk_send(request, meeting_id):
         due_date__lte=timezone.localdate() + timedelta(days=7),
     ).exclude(
         status__in={
+            MeetingActionItem.Status.AWAITING_REVIEW,
             MeetingActionItem.Status.COMPLETED,
             MeetingActionItem.Status.CANCELLED,
         },
@@ -2106,6 +2181,7 @@ def action_escalation_bulk_send(request):
         due_date__lt=timezone.localdate(),
     ).exclude(
         status__in={
+            MeetingActionItem.Status.AWAITING_REVIEW,
             MeetingActionItem.Status.COMPLETED,
             MeetingActionItem.Status.CANCELLED,
         },
@@ -2362,6 +2438,12 @@ def action_update(request, meeting_id, action_id):
         meeting=meeting,
         is_active=True,
     )
+    if action.status == MeetingActionItem.Status.AWAITING_REVIEW:
+        messages.error(
+            request,
+            _("Use the completion review controls for an action awaiting verification."),
+        )
+        return redirect(f"{meeting.get_absolute_url()}#actions")
     form = ActionProgressForm(request.POST)
     if form.is_valid():
         action.status = form.cleaned_data["status"]

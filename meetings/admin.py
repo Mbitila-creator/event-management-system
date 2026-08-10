@@ -6,6 +6,7 @@ from events.models import Event
 
 from .models import (
     Meeting,
+    MeetingActionCompletionReview,
     MeetingActionItem,
     MeetingActionProgressUpdate,
     MeetingAgendaItem,
@@ -435,6 +436,32 @@ class MeetingActionProgressUpdateAdmin(admin.ModelAdmin):
         "created_at", "updated_at", "is_active",
     )
     ordering = ("-reported_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(MeetingActionCompletionReview)
+class MeetingActionCompletionReviewAdmin(admin.ModelAdmin):
+    list_display = (
+        "action", "outcome", "reviewed_at", "created_by", "is_active",
+    )
+    list_filter = ("outcome", "reviewed_at", "action__meeting", "is_active")
+    search_fields = (
+        "action__meeting__reference_number", "action__description_sw",
+        "action__description_en", "comment", "created_by__username",
+    )
+    readonly_fields = (
+        "action", "outcome", "comment", "reviewed_at", "created_by",
+        "updated_by", "created_at", "updated_at", "is_active",
+    )
+    ordering = ("-reviewed_at",)
 
     def has_add_permission(self, request):
         return False

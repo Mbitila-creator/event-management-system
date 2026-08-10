@@ -14,6 +14,7 @@ from events.models import Event, EventCategory, Venue
 
 from .models import (
     Meeting,
+    MeetingActionCompletionReview,
     MeetingActionItem,
     MeetingActionProgressUpdate,
     MeetingAgendaItem,
@@ -1624,6 +1625,37 @@ class MeetingWorkflowTests(TestCase):
             ).exists()
         )
 
+    def test_action_awaiting_review_is_not_reminded_or_escalated(self):
+        action = MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="Hatua inayosubiri mapitio",
+            description_en="Action awaiting manager review",
+            responsible_name="Responsible Officer",
+            responsible_email="responsible@example.com",
+            due_date=timezone.localdate() - timedelta(days=3),
+            status=MeetingActionItem.Status.AWAITING_REVIEW,
+        )
+        center = self.client.get("/en/staff/meetings/follow-up/")
+        self.assertEqual(center.status_code, 200)
+        self.assertNotContains(center, "Action awaiting manager review")
+
+        with self.settings(
+            EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        ):
+            reminder = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/actions/remind-due/",
+            )
+            escalation = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/actions/"
+                f"{action.pk}/escalate/",
+            )
+        self.assertEqual(reminder.status_code, 302)
+        self.assertEqual(escalation.status_code, 302)
+        self.assertEqual(len(mail.outbox), 0)
+        action.refresh_from_db()
+        self.assertEqual(action.status, MeetingActionItem.Status.AWAITING_REVIEW)
+
     def test_non_manager_can_view_follow_up_but_cannot_send_escalation(self):
         action = MeetingActionItem.objects.create(
             meeting=self.meeting,
@@ -1743,7 +1775,7 @@ class MeetingWorkflowTests(TestCase):
         updated = self.client.post(
             f"/en/staff/meetings/my-actions/{own_action.pk}/update/",
             {
-                "status": MeetingActionItem.Status.COMPLETED,
+                "status": MeetingActionItem.Status.AWAITING_REVIEW,
                 "completion_percentage": "100",
                 "progress_notes": "Work completed and submitted.",
             },
@@ -1754,23 +1786,48 @@ class MeetingWorkflowTests(TestCase):
             fetch_redirect_response=False,
         )
         own_action.refresh_from_db()
-        self.assertEqual(own_action.status, MeetingActionItem.Status.COMPLETED)
+        self.assertEqual(
+            own_action.status,
+            MeetingActionItem.Status.AWAITING_REVIEW,
+        )
         self.assertEqual(own_action.updated_by, owner)
-        self.assertIsNotNone(own_action.completed_at)
+        self.assertIsNone(own_action.completed_at)
         self.assertEqual(own_action.completion_percentage, 100)
         self.assertTrue(
             MeetingActionProgressUpdate.objects.filter(
                 action=own_action,
-                status=MeetingActionItem.Status.COMPLETED,
+                status=MeetingActionItem.Status.AWAITING_REVIEW,
                 completion_percentage=100,
                 created_by=owner,
             ).exists()
         )
 
+        self.client.force_login(self.manager)
+        reviewed = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/actions/"
+            f"{own_action.pk}/completion-review/",
+            {
+                "outcome": MeetingActionCompletionReview.Outcome.VERIFIED,
+                "comment": "Evidence checked and accepted.",
+            },
+        )
+        self.assertEqual(reviewed.status_code, 302)
+        own_action.refresh_from_db()
+        self.assertEqual(own_action.status, MeetingActionItem.Status.COMPLETED)
+        self.assertIsNotNone(own_action.completed_at)
+        self.assertTrue(
+            MeetingActionCompletionReview.objects.filter(
+                action=own_action,
+                outcome=MeetingActionCompletionReview.Outcome.VERIFIED,
+                created_by=self.manager,
+            ).exists()
+        )
+
+        self.client.force_login(owner)
         forbidden = self.client.post(
             f"/en/staff/meetings/my-actions/{other_action.pk}/update/",
             {
-                "status": MeetingActionItem.Status.COMPLETED,
+                "status": MeetingActionItem.Status.AWAITING_REVIEW,
                 "completion_percentage": "100",
                 "progress_notes": "Unauthorized update",
             },
@@ -1778,6 +1835,92 @@ class MeetingWorkflowTests(TestCase):
         self.assertEqual(forbidden.status_code, 404)
         other_action.refresh_from_db()
         self.assertEqual(other_action.status, MeetingActionItem.Status.PENDING)
+
+    def test_manager_returns_completion_and_owner_can_resubmit(self):
+        owner = User.objects.create_user(
+            username="returned.action.owner",
+            email="returned.action.owner@example.com",
+            role=User.Role.PARTICIPANT,
+            preferred_language="en",
+        )
+        action = MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="Kamilisha taarifa",
+            description_en="Complete the report",
+            responsible_user=owner,
+            responsible_name="",
+            due_date=timezone.localdate() + timedelta(days=2),
+        )
+        self.client.force_login(owner)
+        submitted = self.client.post(
+            f"/en/staff/meetings/my-actions/{action.pk}/update/",
+            {
+                "status": MeetingActionItem.Status.AWAITING_REVIEW,
+                "completion_percentage": "100",
+                "progress_notes": "Final report submitted.",
+            },
+        )
+        self.assertEqual(submitted.status_code, 302)
+
+        blocked = self.client.post(
+            f"/en/staff/meetings/my-actions/{action.pk}/update/",
+            {
+                "status": MeetingActionItem.Status.IN_PROGRESS,
+                "completion_percentage": "80",
+                "progress_notes": "Attempted change while under review.",
+            },
+        )
+        self.assertEqual(blocked.status_code, 302)
+        action.refresh_from_db()
+        self.assertEqual(action.status, MeetingActionItem.Status.AWAITING_REVIEW)
+
+        unauthorized = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/actions/"
+            f"{action.pk}/completion-review/",
+            {"outcome": "RETURNED", "comment": "Change it."},
+        )
+        self.assertEqual(unauthorized.status_code, 403)
+
+        self.client.force_login(self.manager)
+        missing_comment = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/actions/"
+            f"{action.pk}/completion-review/",
+            {"outcome": "RETURNED", "comment": ""},
+        )
+        self.assertEqual(missing_comment.status_code, 302)
+        action.refresh_from_db()
+        self.assertEqual(action.status, MeetingActionItem.Status.AWAITING_REVIEW)
+
+        returned = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/actions/"
+            f"{action.pk}/completion-review/",
+            {
+                "outcome": MeetingActionCompletionReview.Outcome.RETURNED,
+                "comment": "Attach the signed approval page.",
+            },
+        )
+        self.assertEqual(returned.status_code, 302)
+        action.refresh_from_db()
+        self.assertEqual(action.status, MeetingActionItem.Status.RETURNED)
+        self.assertEqual(action.completion_percentage, 100)
+        self.assertIsNone(action.completed_at)
+
+        self.client.force_login(owner)
+        workspace = self.client.get("/en/staff/meetings/my-workspace/")
+        self.assertContains(workspace, "Correct and resubmit")
+        self.assertContains(workspace, "Attach the signed approval page.")
+        resubmitted = self.client.post(
+            f"/en/staff/meetings/my-actions/{action.pk}/update/",
+            {
+                "status": MeetingActionItem.Status.AWAITING_REVIEW,
+                "completion_percentage": "100",
+                "progress_notes": "Signed approval page attached.",
+            },
+        )
+        self.assertEqual(resubmitted.status_code, 302)
+        action.refresh_from_db()
+        self.assertEqual(action.status, MeetingActionItem.Status.AWAITING_REVIEW)
 
     def test_action_progress_evidence_is_audited_and_protected(self):
         owner = User.objects.create_user(

@@ -625,7 +625,13 @@ class AttendanceOnlyForm(forms.Form):
 class ActionProgressForm(forms.Form):
     status = forms.ChoiceField(
         label=_("Status"),
-        choices=MeetingActionItem.Status.choices,
+        choices=(
+            (MeetingActionItem.Status.PENDING, _("Pending")),
+            (MeetingActionItem.Status.IN_PROGRESS, _("In progress")),
+            (MeetingActionItem.Status.COMPLETED, _("Completed")),
+            (MeetingActionItem.Status.OVERDUE, _("Overdue")),
+            (MeetingActionItem.Status.CANCELLED, _("Cancelled")),
+        ),
     )
     progress_notes = forms.CharField(
         label=_("Progress notes"),
@@ -647,7 +653,7 @@ class ActionProgressForm(forms.Form):
         elif percentage == 100:
             self.add_error(
                 "completion_percentage",
-                _("Set the action status to completed when progress reaches 100 percent."),
+                _("Choose completed when a manager records 100 percent progress."),
             )
         return cleaned_data
 
@@ -658,7 +664,10 @@ class PersonalActionProgressForm(forms.Form):
         choices=(
             (MeetingActionItem.Status.PENDING, _("Pending")),
             (MeetingActionItem.Status.IN_PROGRESS, _("In progress")),
-            (MeetingActionItem.Status.COMPLETED, _("Completed")),
+            (
+                MeetingActionItem.Status.AWAITING_REVIEW,
+                _("Submit completion for verification"),
+            ),
         ),
     )
     progress_notes = forms.CharField(
@@ -683,22 +692,19 @@ class PersonalActionProgressForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        if (
-            cleaned_data.get("status") != MeetingActionItem.Status.COMPLETED
-            and not cleaned_data.get("progress_notes", "").strip()
-        ):
+        if not cleaned_data.get("progress_notes", "").strip():
             self.add_error(
                 "progress_notes",
-                _("Enter a progress update before saving an open action."),
+                _("Enter a progress update before saving this action."),
             )
         status = cleaned_data.get("status")
         percentage = cleaned_data.get("completion_percentage")
-        if status == MeetingActionItem.Status.COMPLETED:
+        if status == MeetingActionItem.Status.AWAITING_REVIEW:
             cleaned_data["completion_percentage"] = 100
         elif percentage == 100:
             self.add_error(
                 "completion_percentage",
-                _("Set the action status to completed when progress reaches 100 percent."),
+                _("Submit the action for completion review when progress reaches 100 percent."),
             )
         return cleaned_data
 
@@ -707,6 +713,33 @@ class PersonalActionProgressForm(forms.Form):
         if uploaded_file:
             return validate_meeting_upload(uploaded_file)
         return uploaded_file
+
+
+class ActionCompletionReviewForm(forms.Form):
+    outcome = forms.ChoiceField(
+        label=_("Review decision"),
+        choices=(
+            ("VERIFIED", _("Verify completion")),
+            ("RETURNED", _("Return for correction")),
+        ),
+    )
+    comment = forms.CharField(
+        label=_("Review comment"),
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if (
+            cleaned_data.get("outcome") == "RETURNED"
+            and not cleaned_data.get("comment", "").strip()
+        ):
+            self.add_error(
+                "comment",
+                _("Enter correction instructions before returning the action."),
+            )
+        return cleaned_data
 
 
 class InvitationResponseForm(forms.Form):

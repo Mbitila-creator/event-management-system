@@ -1172,6 +1172,8 @@ class MeetingActionItem(BaseModel):
     class Status(models.TextChoices):
         PENDING = "PENDING", _("Pending")
         IN_PROGRESS = "IN_PROGRESS", _("In progress")
+        AWAITING_REVIEW = "AWAITING_REVIEW", _("Awaiting completion review")
+        RETURNED = "RETURNED", _("Returned for correction")
         COMPLETED = "COMPLETED", _("Completed")
         OVERDUE = "OVERDUE", _("Overdue")
         CANCELLED = "CANCELLED", _("Cancelled")
@@ -1254,12 +1256,14 @@ class MeetingActionItem(BaseModel):
             errors["responsible_name"] = _(
                 "Enter a responsible person or select a system user."
             )
-        if (
-            self.status != self.Status.COMPLETED
-            and self.completion_percentage == 100
-        ):
+        full_progress_statuses = {
+            self.Status.AWAITING_REVIEW,
+            self.Status.RETURNED,
+            self.Status.COMPLETED,
+        }
+        if self.status not in full_progress_statuses and self.completion_percentage == 100:
             errors["completion_percentage"] = _(
-                "Set the action status to completed when progress reaches 100 percent."
+                "Submit the action for completion review when progress reaches 100 percent."
             )
         if errors:
             raise ValidationError(errors)
@@ -1272,9 +1276,16 @@ class MeetingActionItem(BaseModel):
             )
         if self.responsible_user_id and not self.responsible_email:
             self.responsible_email = self.responsible_user.email
-        if self.status == self.Status.COMPLETED and not self.completed_at:
-            self.completed_at = timezone.now()
         if self.status == self.Status.COMPLETED:
+            if not self.completed_at:
+                self.completed_at = timezone.now()
+        else:
+            self.completed_at = None
+        if self.status in {
+            self.Status.AWAITING_REVIEW,
+            self.Status.RETURNED,
+            self.Status.COMPLETED,
+        }:
             self.completion_percentage = 100
         self.full_clean()
         super().save(*args, **kwargs)
@@ -1335,13 +1346,18 @@ class MeetingActionProgressUpdate(BaseModel):
 
     def clean(self):
         errors = {}
-        if self.status == MeetingActionItem.Status.COMPLETED and self.completion_percentage != 100:
+        full_progress_statuses = {
+            MeetingActionItem.Status.AWAITING_REVIEW,
+            MeetingActionItem.Status.RETURNED,
+            MeetingActionItem.Status.COMPLETED,
+        }
+        if self.status in full_progress_statuses and self.completion_percentage != 100:
             errors["completion_percentage"] = _(
-                "Completed actions must show 100 percent progress."
+                "Completion review actions must show 100 percent progress."
             )
-        if self.status != MeetingActionItem.Status.COMPLETED and self.completion_percentage == 100:
+        if self.status not in full_progress_statuses and self.completion_percentage == 100:
             errors["completion_percentage"] = _(
-                "Set the action status to completed when progress reaches 100 percent."
+                "Submit the action for completion review when progress reaches 100 percent."
             )
         uploaded_file = getattr(self.evidence_file, "_file", None)
         if uploaded_file:
@@ -1363,6 +1379,50 @@ class MeetingActionProgressUpdate(BaseModel):
 
     def __str__(self):
         return f"{self.action} - {self.completion_percentage}%"
+
+
+class MeetingActionCompletionReview(BaseModel):
+    class Outcome(models.TextChoices):
+        VERIFIED = "VERIFIED", _("Completion verified")
+        RETURNED = "RETURNED", _("Returned for correction")
+
+    action = models.ForeignKey(
+        MeetingActionItem,
+        verbose_name=_("meeting action item"),
+        related_name="completion_reviews",
+        on_delete=models.CASCADE,
+    )
+    outcome = models.CharField(
+        _("review outcome"),
+        max_length=20,
+        choices=Outcome.choices,
+    )
+    comment = models.TextField(_("review comment"), blank=True)
+    reviewed_at = models.DateTimeField(_("reviewed at"), default=timezone.now)
+
+    class Meta:
+        verbose_name = _("meeting action completion review")
+        verbose_name_plural = _("meeting action completion reviews")
+        ordering = ["-reviewed_at", "-created_at"]
+        indexes = [
+            models.Index(
+                fields=["action", "reviewed_at"],
+                name="meeting_action_review_idx",
+            ),
+        ]
+
+    def clean(self):
+        if self.outcome == self.Outcome.RETURNED and not self.comment.strip():
+            raise ValidationError({
+                "comment": _("Enter correction instructions before returning the action."),
+            })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.action} - {self.get_outcome_display()}"
 
 
 class MeetingCommunicationLog(BaseModel):
