@@ -48,6 +48,11 @@ urlpatterns = [
         name="follow_up_center",
     ),
     path(
+        "staff/meetings/readiness/",
+        views.readiness_center,
+        name="readiness_center",
+    ),
+    path(
         "staff/meetings/follow-up/actions/escalate-overdue/",
         views.action_escalation_bulk_send,
         name="action_escalation_bulk_send",

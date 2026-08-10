@@ -1206,6 +1206,190 @@ def follow_up_center(request):
     })
 
 
+def _meeting_readiness_checks(meeting):
+    access_ready = bool(
+        (
+            meeting.attendance_mode == Meeting.AttendanceMode.ONLINE
+            or meeting.event.venue_id
+        )
+        and (
+            meeting.attendance_mode == Meeting.AttendanceMode.IN_PERSON
+            or (meeting.online_platform and meeting.online_join_url)
+        )
+    )
+    required_participants = meeting.quorum_required or 1
+    participant_ready = meeting.readiness_participant_total >= required_participants
+    confirmations_ready = meeting.readiness_accepted_total >= required_participants
+    invitations_ready = bool(
+        meeting.readiness_participant_total
+        and meeting.readiness_invitation_total >= meeting.readiness_participant_total
+    )
+    resources_ready = bool(
+        not meeting.readiness_resource_total
+        or meeting.readiness_confirmed_resource_total
+        >= meeting.readiness_resource_total
+    )
+    return [
+        {
+            "label": _("Meeting objectives"),
+            "passed": bool(meeting.objectives_sw.strip() or meeting.objectives_en.strip()),
+            "success": _("Meeting objectives are recorded."),
+            "action": _("Add the purpose and objectives of the meeting."),
+        },
+        {
+            "label": _("Venue and online access"),
+            "passed": access_ready,
+            "success": _("Venue and access details are complete."),
+            "action": _("Complete the venue or online joining details."),
+        },
+        {
+            "label": _("Agenda preparation"),
+            "passed": meeting.readiness_agenda_total > 0,
+            "success": _("The meeting agenda has been prepared."),
+            "action": _("Add at least one agenda item."),
+        },
+        {
+            "label": _("Invitation list"),
+            "passed": participant_ready,
+            "success": _("The required participants are on the invitation list."),
+            "action": _("Add enough participants to meet the required quorum."),
+        },
+        {
+            "label": _("Invitation delivery"),
+            "passed": invitations_ready,
+            "success": _("All participant invitations have been sent."),
+            "action": _("Send all pending participant invitations."),
+        },
+        {
+            "label": _("Attendance confirmations"),
+            "passed": confirmations_ready,
+            "success": _("The required attendance has been confirmed."),
+            "action": _("Follow up pending responses until quorum is confirmed."),
+        },
+        {
+            "label": _("Meeting resources"),
+            "passed": resources_ready,
+            "success": _("All requested resources are confirmed."),
+            "action": _("Resolve all pending meeting resource requests."),
+        },
+        {
+            "label": _("Participant meeting pack"),
+            "passed": meeting.readiness_pack_total > 0,
+            "success": _("Participant documents have been released."),
+            "action": _("Release at least one non-confidential participant document."),
+        },
+    ]
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def readiness_center(request):
+    _require_view_access(request.user)
+    selected_period = request.GET.get("period", "30").strip()
+    if selected_period not in {"7", "30", "90", "ALL"}:
+        selected_period = "30"
+    selected_type = request.GET.get("type", "").strip().upper()
+    now = timezone.now()
+    meetings = Meeting.objects.select_related(
+        "event", "event__venue",
+    ).filter(
+        is_active=True,
+        event__starts_at__gte=now,
+    ).exclude(
+        event__status__in={Event.Status.CANCELLED, Event.Status.COMPLETED},
+    )
+    if selected_period != "ALL":
+        meetings = meetings.filter(
+            event__starts_at__lte=now + timedelta(days=int(selected_period)),
+        )
+    if selected_type in Meeting.MeetingType.values:
+        meetings = meetings.filter(meeting_type=selected_type)
+    else:
+        selected_type = ""
+    meetings = meetings.annotate(
+        readiness_agenda_total=Count(
+            "agenda_items",
+            filter=Q(agenda_items__is_active=True),
+            distinct=True,
+        ),
+        readiness_participant_total=Count(
+            "attendees",
+            filter=Q(attendees__is_active=True),
+            distinct=True,
+        ),
+        readiness_invitation_total=Count(
+            "attendees",
+            filter=Q(
+                attendees__is_active=True,
+                attendees__invitation_sent_at__isnull=False,
+            ),
+            distinct=True,
+        ),
+        readiness_accepted_total=Count(
+            "attendees",
+            filter=Q(
+                attendees__is_active=True,
+                attendees__response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
+            ),
+            distinct=True,
+        ),
+        readiness_resource_total=Count(
+            "resource_bookings",
+            filter=Q(
+                resource_bookings__is_active=True,
+                resource_bookings__status__in={
+                    MeetingResourceBooking.Status.REQUESTED,
+                    MeetingResourceBooking.Status.CONFIRMED,
+                },
+            ),
+            distinct=True,
+        ),
+        readiness_confirmed_resource_total=Count(
+            "resource_bookings",
+            filter=Q(
+                resource_bookings__is_active=True,
+                resource_bookings__status=MeetingResourceBooking.Status.CONFIRMED,
+            ),
+            distinct=True,
+        ),
+        readiness_pack_total=Count(
+            "documents",
+            filter=Q(
+                documents__is_active=True,
+                documents__is_confidential=False,
+            ),
+            distinct=True,
+        ),
+    ).order_by("event__starts_at")
+    rows = list(meetings[:200])
+    summary = {"total": len(rows), "ready": 0, "attention": 0, "critical": 0}
+    for meeting in rows:
+        meeting.readiness_checks = _meeting_readiness_checks(meeting)
+        passed = sum(check["passed"] for check in meeting.readiness_checks)
+        meeting.readiness_score = int((passed * 100) / len(meeting.readiness_checks))
+        meeting.readiness_blockers = len(meeting.readiness_checks) - passed
+        if meeting.readiness_score == 100:
+            meeting.readiness_code = "ready"
+            meeting.readiness_label = _("Ready")
+            summary["ready"] += 1
+        elif meeting.readiness_score >= 50:
+            meeting.readiness_code = "attention"
+            meeting.readiness_label = _("Needs attention")
+            summary["attention"] += 1
+        else:
+            meeting.readiness_code = "critical"
+            meeting.readiness_label = _("Critical gaps")
+            summary["critical"] += 1
+    return render(request, "meetings/readiness_center.html", {
+        "meetings": rows,
+        "summary": summary,
+        "selected_period": selected_period,
+        "selected_type": selected_type,
+        "meeting_type_choices": Meeting.MeetingType.choices,
+        "can_manage": _can_manage(request.user),
+    })
+
+
 @login_required(login_url="accounts:staff_login")
 @require_GET
 def meeting_print(request, meeting_id):

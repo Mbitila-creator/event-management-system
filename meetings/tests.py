@@ -1859,6 +1859,50 @@ class MeetingWorkflowTests(TestCase):
             )
             self.assertEqual(unauthorized.status_code, 404)
 
+    def test_readiness_center_identifies_gaps_and_recognizes_ready_meeting(self):
+        incomplete = self.client.get("/en/staff/meetings/readiness/")
+        self.assertEqual(incomplete.status_code, 200)
+        self.assertContains(incomplete, "Meeting readiness centre")
+        self.assertContains(incomplete, self.meeting.reference_number)
+        self.assertContains(incomplete, "Critical gaps")
+        self.assertContains(incomplete, "Add at least one agenda item")
+
+        venue = Venue.objects.create(name="Readiness Boardroom")
+        self.event.venue = venue
+        self.event.save()
+        self.meeting.objectives_sw = "Kukamilisha maandalizi ya utekelezaji."
+        self.meeting.objectives_en = "Complete implementation preparation."
+        self.meeting.quorum_required = 1
+        self.meeting.save()
+        MeetingAgendaItem.objects.create(
+            meeting=self.meeting,
+            item_number=1,
+            title_sw="Maandalizi",
+            title_en="Preparation",
+        )
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Ready Participant",
+            email="ready.participant@example.com",
+            response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
+            invitation_sent_at=timezone.now(),
+        )
+        MeetingDocument.objects.create(
+            meeting=self.meeting,
+            document_type=MeetingDocument.DocumentType.MEETING_NOTICE,
+            title_sw="Taarifa ya kikao",
+            title_en="Meeting notice",
+            file="meetings/documents/readiness-notice.pdf",
+            original_filename="readiness-notice.pdf",
+            is_confidential=False,
+        )
+        ready = self.client.get("/en/staff/meetings/readiness/")
+        self.assertEqual(ready.status_code, 200)
+        self.assertContains(ready, "100%")
+        self.assertContains(ready, "Ready")
+        self.assertNotContains(ready, "Add at least one agenda item")
+        self.assertEqual(attendee.meeting, self.meeting)
+
     def test_registration_officer_cannot_access_meeting_workspace(self):
         officer = User.objects.create_user(
             username="registration.only",
@@ -1874,6 +1918,8 @@ class MeetingWorkflowTests(TestCase):
         dashboard = self.client.get("/en/staff/meetings/dashboard/")
         decisions = self.client.get("/en/staff/meetings/reports/decisions/")
         follow_up = self.client.get("/en/staff/meetings/follow-up/")
+        readiness = self.client.get("/en/staff/meetings/readiness/")
         self.assertEqual(dashboard.status_code, 403)
         self.assertEqual(decisions.status_code, 403)
         self.assertEqual(follow_up.status_code, 403)
+        self.assertEqual(readiness.status_code, 403)
