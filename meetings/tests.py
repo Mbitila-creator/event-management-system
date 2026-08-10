@@ -1246,7 +1246,7 @@ class MeetingWorkflowTests(TestCase):
             "meetings:attendee_checkin",
             args=[declined.response_token],
         )
-        response = self.client.get(f"{declined_url}?auto=1")
+        response = self.client.get(f"{declined_url}?auto=1", follow=True)
         self.assertContains(response, "Check-in not allowed")
         declined.refresh_from_db()
         self.assertIsNone(declined.checked_in_at)
@@ -1262,7 +1262,7 @@ class MeetingWorkflowTests(TestCase):
             "meetings:attendee_checkin",
             args=[accepted.response_token],
         )
-        response = self.client.get(f"{closed_url}?auto=1")
+        response = self.client.get(f"{closed_url}?auto=1", follow=True)
         self.assertContains(response, "The meeting check-in window is closed.")
         accepted.refresh_from_db()
         self.assertIsNone(accepted.checked_in_at)
@@ -1457,6 +1457,97 @@ class MeetingWorkflowTests(TestCase):
         self.meeting.refresh_from_db()
         self.assertEqual(self.meeting.closure_status, Meeting.ClosureStatus.OPEN)
 
+    def test_executive_dashboard_consolidates_meeting_performance(self):
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Dashboard Participant",
+            attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
+        )
+        MeetingFeedback.objects.create(
+            meeting=self.meeting,
+            attendee=attendee,
+            organization_rating=4,
+            content_rating=5,
+            facilitation_rating=4,
+            venue_platform_rating=4,
+            overall_rating=5,
+        )
+        decision = MeetingDecision.objects.create(
+            meeting=self.meeting,
+            decision_number=1,
+            decision_sw="Idhinisha mpango wa utekelezaji.",
+            decision_en="Approve the implementation plan.",
+            status=MeetingDecision.Status.APPROVED,
+        )
+        MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            decision=decision,
+            action_number=1,
+            description_sw="Tekeleza mpango.",
+            responsible_name="Afisa Mipango",
+            status=MeetingActionItem.Status.COMPLETED,
+        )
+        self.meeting.minutes_status = Meeting.MinutesStatus.APPROVED
+        self.meeting.closure_status = Meeting.ClosureStatus.CLOSED
+        self.meeting.save()
+        date_from = (timezone.localdate() - timedelta(days=30)).isoformat()
+        date_to = (timezone.localdate() + timedelta(days=30)).isoformat()
+        response = self.client.get(
+            "/en/staff/meetings/dashboard/",
+            {"date_from": date_from, "date_to": date_to},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Executive meetings dashboard")
+        self.assertContains(response, self.meeting.reference_number)
+        self.assertContains(response, "100.0%")
+        self.assertContains(response, "5.0 / 5")
+
+    def test_decisions_register_filters_and_exports_implementation(self):
+        implemented = MeetingDecision.objects.create(
+            meeting=self.meeting,
+            decision_number=1,
+            decision_sw="=Uamuzi wa utekelezaji",
+            decision_en="Implementation decision",
+            status=MeetingDecision.Status.APPROVED,
+        )
+        MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            decision=implemented,
+            action_number=1,
+            description_sw="Tekeleza uamuzi.",
+            responsible_name="Katibu",
+            status=MeetingActionItem.Status.COMPLETED,
+        )
+        MeetingDecision.objects.create(
+            meeting=self.meeting,
+            decision_number=2,
+            decision_sw="Uamuzi ulioahirishwa",
+            status=MeetingDecision.Status.DEFERRED,
+        )
+        response = self.client.get("/en/staff/meetings/reports/decisions/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Institutional meeting decisions register")
+        self.assertContains(response, "Implementation decision")
+        self.assertContains(response, "Implemented")
+
+        filtered = self.client.get(
+            "/en/staff/meetings/reports/decisions/",
+            {"status": MeetingDecision.Status.DEFERRED},
+        )
+        self.assertContains(filtered, "Uamuzi ulioahirishwa")
+        self.assertNotContains(filtered, "Implementation decision")
+
+        export = self.client.get(
+            "/en/staff/meetings/reports/decisions/export/",
+        )
+        csv_body = export.content.decode("utf-8-sig")
+        self.assertIn("Implementation decision", csv_body)
+        english_export = self.client.get(
+            "/sw/staff/meetings/reports/decisions/export/",
+        )
+        swahili_csv = english_export.content.decode("utf-8-sig")
+        self.assertIn("'=Uamuzi wa utekelezaji", swahili_csv)
+
     def test_registration_officer_cannot_access_meeting_workspace(self):
         officer = User.objects.create_user(
             username="registration.only",
@@ -1469,3 +1560,7 @@ class MeetingWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 403)
         report = self.client.get("/en/staff/meetings/reports/actions/")
         self.assertEqual(report.status_code, 403)
+        dashboard = self.client.get("/en/staff/meetings/dashboard/")
+        decisions = self.client.get("/en/staff/meetings/reports/decisions/")
+        self.assertEqual(dashboard.status_code, 403)
+        self.assertEqual(decisions.status_code, 403)

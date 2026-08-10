@@ -12,6 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Avg, Count, Q
+from django.db.models.functions import TruncMonth
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -271,6 +272,290 @@ def _safe_csv_value(value):
     if rendered.startswith(("=", "+", "-", "@")):
         return f"'{rendered}"
     return rendered
+
+
+def _report_date(raw_value, fallback):
+    try:
+        return date.fromisoformat(raw_value)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _decision_register_rows(request):
+    decisions = MeetingDecision.objects.select_related(
+        "meeting", "meeting__event", "agenda_item",
+    ).filter(is_active=True, meeting__is_active=True).annotate(
+        action_total=Count(
+            "action_items",
+            filter=Q(action_items__is_active=True),
+            distinct=True,
+        ),
+        action_completed=Count(
+            "action_items",
+            filter=Q(
+                action_items__is_active=True,
+                action_items__status=MeetingActionItem.Status.COMPLETED,
+            ),
+            distinct=True,
+        ),
+    )
+    search_query = request.GET.get("q", "").strip()
+    selected_status = request.GET.get("status", "").strip().upper()
+    selected_meeting = request.GET.get("meeting", "").strip()
+    date_from = _report_date(request.GET.get("date_from"), None)
+    date_to = _report_date(request.GET.get("date_to"), None)
+    if search_query:
+        decisions = decisions.filter(
+            Q(decision_sw__icontains=search_query)
+            | Q(decision_en__icontains=search_query)
+            | Q(meeting__reference_number__icontains=search_query)
+            | Q(meeting__event__title_sw__icontains=search_query)
+            | Q(meeting__event__title_en__icontains=search_query)
+        )
+    if selected_status in MeetingDecision.Status.values:
+        decisions = decisions.filter(status=selected_status)
+    else:
+        selected_status = ""
+    if selected_meeting.isdigit():
+        decisions = decisions.filter(meeting_id=selected_meeting)
+    else:
+        selected_meeting = ""
+    if date_from:
+        decisions = decisions.filter(meeting__event__starts_at__date__gte=date_from)
+    if date_to:
+        decisions = decisions.filter(meeting__event__starts_at__date__lte=date_to)
+    rows = list(decisions.order_by("-meeting__event__starts_at", "decision_number"))
+    for decision in rows:
+        if decision.action_total == 0:
+            decision.implementation_code = "NO_ACTION"
+            decision.implementation_label = _("No action assigned")
+            decision.implementation_class = "neutral"
+        elif decision.action_completed == decision.action_total:
+            decision.implementation_code = "IMPLEMENTED"
+            decision.implementation_label = _("Implemented")
+            decision.implementation_class = "success"
+        elif decision.action_completed:
+            decision.implementation_code = "PARTIAL"
+            decision.implementation_label = _("Partly implemented")
+            decision.implementation_class = "warning"
+        else:
+            decision.implementation_code = "PENDING"
+            decision.implementation_label = _("Implementation pending")
+            decision.implementation_class = "warning"
+    return {
+        "rows": rows,
+        "search_query": search_query,
+        "selected_status": selected_status,
+        "selected_meeting": selected_meeting,
+        "date_from": date_from,
+        "date_to": date_to,
+    }
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def executive_dashboard(request):
+    _require_view_access(request.user)
+    today = timezone.localdate()
+    default_from = today.replace(month=1, day=1)
+    date_from = _report_date(request.GET.get("date_from"), default_from)
+    date_to = _report_date(request.GET.get("date_to"), today)
+    meeting_type = request.GET.get("type", "").strip().upper()
+    if date_to < date_from:
+        date_from, date_to = date_to, date_from
+    meetings = Meeting.objects.filter(
+        is_active=True,
+        event__starts_at__date__gte=date_from,
+        event__starts_at__date__lte=date_to,
+    )
+    if meeting_type in Meeting.MeetingType.values:
+        meetings = meetings.filter(meeting_type=meeting_type)
+    else:
+        meeting_type = ""
+    meeting_ids = meetings.values_list("pk", flat=True)
+    attendees = MeetingAttendee.objects.filter(
+        is_active=True,
+        meeting_id__in=meeting_ids,
+    )
+    actions = MeetingActionItem.objects.filter(
+        is_active=True,
+        meeting_id__in=meeting_ids,
+    )
+    decisions = MeetingDecision.objects.filter(
+        is_active=True,
+        meeting_id__in=meeting_ids,
+    )
+    feedbacks = MeetingFeedback.objects.filter(
+        is_active=True,
+        meeting_id__in=meeting_ids,
+    )
+    total_meetings = meetings.count()
+    total_attendees = attendees.count()
+    present_attendees = attendees.filter(
+        attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
+    ).count()
+    total_actions = actions.count()
+    completed_actions = actions.filter(
+        status=MeetingActionItem.Status.COMPLETED,
+    ).count()
+    metrics = {
+        "total_meetings": total_meetings,
+        "closed_meetings": meetings.filter(
+            closure_status=Meeting.ClosureStatus.CLOSED,
+        ).count(),
+        "approved_minutes": meetings.filter(
+            minutes_status=Meeting.MinutesStatus.APPROVED,
+        ).count(),
+        "attendance_rate": round(
+            (present_attendees / total_attendees) * 100, 1,
+        ) if total_attendees else 0,
+        "feedback_count": feedbacks.count(),
+        "feedback_average": feedbacks.aggregate(
+            value=Avg("overall_rating"),
+        )["value"],
+        "decision_count": decisions.count(),
+        "approved_decisions": decisions.filter(
+            status=MeetingDecision.Status.APPROVED,
+        ).count(),
+        "action_count": total_actions,
+        "action_completion_rate": round(
+            (completed_actions / total_actions) * 100, 1,
+        ) if total_actions else 0,
+    }
+    metrics["closure_rate"] = round(
+        (metrics["closed_meetings"] / total_meetings) * 100, 1,
+    ) if total_meetings else 0
+    metrics["minutes_approval_rate"] = round(
+        (metrics["approved_minutes"] / total_meetings) * 100, 1,
+    ) if total_meetings else 0
+    monthly_rows = meetings.annotate(
+        month=TruncMonth("event__starts_at"),
+    ).values("month").annotate(
+        total=Count("id", distinct=True),
+        closed=Count(
+            "id",
+            filter=Q(closure_status=Meeting.ClosureStatus.CLOSED),
+            distinct=True,
+        ),
+    ).order_by("month")
+    performance_rows = meetings.select_related("event", "event__venue").annotate(
+        participant_total=Count(
+            "attendees", filter=Q(attendees__is_active=True), distinct=True,
+        ),
+        present_total=Count(
+            "attendees",
+            filter=Q(
+                attendees__is_active=True,
+                attendees__attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
+            ),
+            distinct=True,
+        ),
+        decision_total=Count(
+            "decisions", filter=Q(decisions__is_active=True), distinct=True,
+        ),
+        action_total=Count(
+            "action_items", filter=Q(action_items__is_active=True), distinct=True,
+        ),
+        completed_action_total=Count(
+            "action_items",
+            filter=Q(
+                action_items__is_active=True,
+                action_items__status=MeetingActionItem.Status.COMPLETED,
+            ),
+            distinct=True,
+        ),
+        feedback_total=Count(
+            "feedback_responses",
+            filter=Q(feedback_responses__is_active=True),
+            distinct=True,
+        ),
+        feedback_average=Avg(
+            "feedback_responses__overall_rating",
+            filter=Q(feedback_responses__is_active=True),
+        ),
+    ).order_by("-event__starts_at")[:100]
+    return render(request, "meetings/executive_dashboard.html", {
+        "metrics": metrics,
+        "monthly_rows": monthly_rows,
+        "performance_rows": performance_rows,
+        "date_from": date_from,
+        "date_to": date_to,
+        "selected_type": meeting_type,
+        "meeting_type_choices": Meeting.MeetingType.choices,
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def decision_register(request):
+    _require_view_access(request.user)
+    report = _decision_register_rows(request)
+    rows = report["rows"]
+    report["summary"] = {
+        "total": len(rows),
+        "approved": sum(
+            decision.status == MeetingDecision.Status.APPROVED
+            for decision in rows
+        ),
+        "implemented": sum(
+            decision.implementation_code == "IMPLEMENTED"
+            for decision in rows
+        ),
+        "pending": sum(
+            decision.action_total > decision.action_completed
+            for decision in rows
+        ),
+    }
+    report.update({
+        "meetings": Meeting.objects.filter(is_active=True).select_related(
+            "event",
+        ).order_by("-event__starts_at"),
+        "status_choices": MeetingDecision.Status.choices,
+    })
+    return render(request, "meetings/decision_register.html", report)
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def decision_register_csv(request):
+    _require_view_access(request.user)
+    rows = _decision_register_rows(request)["rows"]
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response.write("\ufeff")
+    response["Content-Disposition"] = (
+        'attachment; filename="institutional-meeting-decisions.csv"'
+    )
+    writer = csv.writer(response)
+    writer.writerow([
+        _("Meeting reference"), _("Meeting date"), _("Meeting"),
+        _("Decision number"), _("Decision"), _("Decision status"),
+        _("Assigned actions"), _("Completed actions"),
+        _("Implementation status"),
+    ])
+    language = request.LANGUAGE_CODE
+    for decision in rows:
+        decision_text = (
+            decision.decision_en
+            if language == "en" and decision.decision_en
+            else decision.decision_sw
+        )
+        meeting_title = (
+            decision.meeting.event.title_en
+            if language == "en"
+            else decision.meeting.event.title_sw
+        )
+        writer.writerow([_safe_csv_value(value) for value in (
+            decision.meeting.reference_number,
+            timezone.localdate(decision.meeting.event.starts_at).isoformat(),
+            meeting_title,
+            decision.decision_number,
+            decision_text,
+            decision.get_status_display(),
+            decision.action_total,
+            decision.action_completed,
+            decision.implementation_label,
+        )])
+    return response
 
 
 @login_required(login_url="accounts:staff_login")
