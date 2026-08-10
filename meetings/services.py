@@ -227,6 +227,55 @@ def send_rsvp_reminder(attendee, request=None):
         )
 
 
+def send_upcoming_meeting_reminder(attendee, request=None):
+    if attendee.response_status not in {
+        attendee.ResponseStatus.ACCEPTED,
+        attendee.ResponseStatus.TENTATIVE,
+    }:
+        raise ValueError(_("Meeting reminders are sent only to confirmed or tentative participants."))
+    recipient = attendee.email.strip()
+    if not recipient:
+        raise ValueError(_("Enter an email address before sending the reminder."))
+    language = attendee.preferred_language
+    meeting = attendee.meeting
+    if meeting.event.starts_at <= timezone.now():
+        raise ValueError(_("A reminder cannot be sent after the meeting has started."))
+    if meeting.event.status == "CANCELLED":
+        raise ValueError(_("A reminder cannot be sent for a cancelled meeting."))
+    with translation.override(language):
+        details = _meeting_details(meeting, language)
+        subject = _("Upcoming meeting reminder — %(meeting)s") % {
+            "meeting": details["event_name"],
+        }
+        body = _(
+            "Dear %(name)s,\n\n"
+            "This is a reminder that %(meeting)s is approaching.\n\n"
+            "Reference: %(reference)s\n"
+            "Date and time: %(date)s\n"
+            "Venue: %(venue)s\n"
+            "%(online_access)s\n\n"
+            "Please keep this information available and arrive or join on time."
+        ) % {
+            "name": attendee.full_name,
+            "meeting": details["event_name"],
+            "reference": meeting.reference_number,
+            "date": details["meeting_date"],
+            "venue": details["venue"],
+            "online_access": _online_access_details(meeting, language),
+        }
+        delivered = _send_and_log(
+            meeting=meeting,
+            attendee=attendee,
+            communication_type=MeetingCommunicationLog.CommunicationType.MEETING_REMINDER,
+            recipient_name=attendee.full_name,
+            recipient_email=recipient,
+            subject=subject,
+            body=body,
+            request=request,
+        )
+        return delivered
+
+
 def send_action_reminder(action, request=None):
     if action.status in {
         action.Status.COMPLETED,
@@ -275,7 +324,7 @@ def send_action_reminder(action, request=None):
             "due_date": due_date,
             "status": action.get_status_display(),
         }
-        return _send_and_log(
+        delivered = _send_and_log(
             meeting=meeting,
             action_item=action,
             communication_type=MeetingCommunicationLog.CommunicationType.ACTION_REMINDER,
@@ -285,3 +334,67 @@ def send_action_reminder(action, request=None):
             body=body,
             request=request,
         )
+        return delivered
+
+
+def send_action_escalation(action, request=None):
+    today = timezone.localdate()
+    if action.status in {action.Status.COMPLETED, action.Status.CANCELLED}:
+        raise ValueError(_("An escalation cannot be sent for a closed action."))
+    if not action.due_date or action.due_date >= today:
+        raise ValueError(_("Only overdue actions can be escalated."))
+    recipient = action.responsible_email.strip()
+    if not recipient and action.responsible_user_id:
+        recipient = action.responsible_user.email.strip()
+    if not recipient:
+        raise ValueError(_("Enter an email address for the responsible person."))
+    language = (
+        action.responsible_user.preferred_language
+        if action.responsible_user_id
+        else "sw"
+    )
+    meeting = action.meeting
+    days_overdue = (today - action.due_date).days
+    with translation.override(language):
+        details = _meeting_details(meeting, language)
+        description = (
+            action.description_en
+            if language == "en" and action.description_en
+            else action.description_sw
+        )
+        due_date = date_format(action.due_date, format="DATE_FORMAT", use_l10n=True)
+        subject = _("Overdue action escalation — %(meeting)s") % {
+            "meeting": details["event_name"],
+        }
+        body = _(
+            "Dear %(name)s,\n\n"
+            "This action from %(meeting)s is now %(days)s day(s) overdue and requires immediate attention.\n\n"
+            "Reference: %(reference)s\n"
+            "Action: %(action)s\n"
+            "Due date: %(due_date)s\n"
+            "Current status: %(status)s\n\n"
+            "Please complete the action or provide a progress update without further delay."
+        ) % {
+            "name": action.responsible_name,
+            "meeting": details["event_name"],
+            "days": days_overdue,
+            "reference": meeting.reference_number,
+            "action": description,
+            "due_date": due_date,
+            "status": action.get_status_display(),
+        }
+        delivered = _send_and_log(
+            meeting=meeting,
+            action_item=action,
+            communication_type=MeetingCommunicationLog.CommunicationType.ACTION_ESCALATION,
+            recipient_name=action.responsible_name,
+            recipient_email=recipient,
+            subject=subject,
+            body=body,
+            request=request,
+        )
+        if delivered and action.status != action.Status.OVERDUE:
+            action.status = action.Status.OVERDUE
+            action.updated_by = _actor(request)
+            action.save(update_fields=["status", "updated_by", "updated_at"])
+        return delivered

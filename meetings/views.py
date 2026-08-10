@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, Max, Q
 from django.db.models.functions import TruncMonth
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -49,6 +49,7 @@ from .models import (
     Meeting,
     MeetingActionItem,
     MeetingAttendee,
+    MeetingCommunicationLog,
     MeetingDecision,
     MeetingDocument,
     MeetingFeedback,
@@ -58,9 +59,11 @@ from .models import (
     MeetingSeries,
 )
 from .services import (
+    send_action_escalation,
     send_action_reminder,
     send_meeting_invitation,
     send_rsvp_reminder,
+    send_upcoming_meeting_reminder,
 )
 
 
@@ -893,6 +896,126 @@ def action_report_csv(request):
 
 @login_required(login_url="accounts:staff_login")
 @require_GET
+def follow_up_center(request):
+    _require_view_access(request.user)
+    today = timezone.localdate()
+    now = timezone.now()
+    next_week = today + timedelta(days=7)
+    closed_statuses = {
+        MeetingActionItem.Status.COMPLETED,
+        MeetingActionItem.Status.CANCELLED,
+    }
+    open_actions = MeetingActionItem.objects.select_related(
+        "meeting", "meeting__event", "responsible_user",
+    ).filter(
+        is_active=True,
+        meeting__is_active=True,
+        due_date__isnull=False,
+    ).exclude(status__in=closed_statuses).annotate(
+        reminder_count=Count(
+            "communications",
+            filter=Q(
+                communications__communication_type=MeetingCommunicationLog.CommunicationType.ACTION_REMINDER,
+            ),
+            distinct=True,
+        ),
+        escalation_count=Count(
+            "communications",
+            filter=Q(
+                communications__communication_type=MeetingCommunicationLog.CommunicationType.ACTION_ESCALATION,
+            ),
+            distinct=True,
+        ),
+        last_contact_at=Max(
+            "communications__sent_at",
+            filter=Q(
+                communications__communication_type__in={
+                    MeetingCommunicationLog.CommunicationType.ACTION_REMINDER,
+                    MeetingCommunicationLog.CommunicationType.ACTION_ESCALATION,
+                },
+            ),
+        ),
+    )
+    overdue_queryset = open_actions.filter(due_date__lt=today).order_by("due_date")
+    overdue_total = overdue_queryset.count()
+    overdue_actions = list(overdue_queryset[:100])
+    for action in overdue_actions:
+        action.days_overdue = (today - action.due_date).days
+    due_soon_queryset = open_actions.filter(
+        due_date__gte=today,
+        due_date__lte=next_week,
+    ).order_by("due_date")
+    due_soon_total = due_soon_queryset.count()
+    due_soon_actions = list(due_soon_queryset[:100])
+    for action in due_soon_actions:
+        action.days_until_due = (action.due_date - today).days
+    upcoming_queryset = Meeting.objects.select_related(
+        "event", "event__venue",
+    ).filter(
+        is_active=True,
+        event__starts_at__gt=now,
+        event__starts_at__lte=now + timedelta(days=7),
+    ).exclude(event__status=Event.Status.CANCELLED).annotate(
+        confirmed_total=Count(
+            "attendees",
+            filter=Q(
+                attendees__is_active=True,
+                attendees__response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
+            ),
+            distinct=True,
+        ),
+        tentative_total=Count(
+            "attendees",
+            filter=Q(
+                attendees__is_active=True,
+                attendees__response_status=MeetingAttendee.ResponseStatus.TENTATIVE,
+            ),
+            distinct=True,
+        ),
+        pending_total=Count(
+            "attendees",
+            filter=Q(
+                attendees__is_active=True,
+                attendees__response_status=MeetingAttendee.ResponseStatus.INVITED,
+            ),
+            distinct=True,
+        ),
+        reminder_sent_total=Count(
+            "communications",
+            filter=Q(
+                communications__communication_type=MeetingCommunicationLog.CommunicationType.MEETING_REMINDER,
+                communications__delivery_status=MeetingCommunicationLog.DeliveryStatus.SENT,
+            ),
+            distinct=True,
+        ),
+    ).order_by("event__starts_at")
+    upcoming_total = upcoming_queryset.count()
+    upcoming_meetings = list(upcoming_queryset[:50])
+    failed_queryset = MeetingCommunicationLog.objects.select_related(
+        "meeting", "meeting__event",
+    ).filter(
+        is_active=True,
+        delivery_status=MeetingCommunicationLog.DeliveryStatus.FAILED,
+    ).order_by("-sent_at")
+    failed_total = failed_queryset.count()
+    failed_deliveries = failed_queryset[:25]
+    return render(request, "meetings/follow_up_center.html", {
+        "overdue_actions": overdue_actions,
+        "due_soon_actions": due_soon_actions,
+        "upcoming_meetings": upcoming_meetings,
+        "failed_deliveries": failed_deliveries,
+        "summary": {
+            "overdue": overdue_total,
+            "due_soon": due_soon_total,
+            "upcoming": upcoming_total,
+            "failed": failed_total,
+        },
+        "can_manage": _can_manage(request.user),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
 def meeting_print(request, meeting_id):
     _require_view_access(request.user)
     meeting = get_object_or_404(_meeting_queryset(), pk=meeting_id, is_active=True)
@@ -1403,6 +1526,35 @@ def rsvp_reminder_bulk_send(request, meeting_id):
 
 @login_required(login_url="accounts:staff_login")
 @require_POST
+def meeting_reminder_bulk_send(request, meeting_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    attendees = meeting.attendees.filter(
+        is_active=True,
+        response_status__in={
+            MeetingAttendee.ResponseStatus.ACCEPTED,
+            MeetingAttendee.ResponseStatus.TENTATIVE,
+        },
+    ).exclude(email="")
+    sent = 0
+    failed = 0
+    for attendee in attendees:
+        try:
+            sent += int(send_upcoming_meeting_reminder(attendee, request=request))
+        except Exception:
+            failed += 1
+    messages.success(
+        request,
+        _("Upcoming meeting reminders sent: %(sent)s; failed: %(failed)s.") % {
+            "sent": sent,
+            "failed": failed,
+        },
+    )
+    return redirect(f"{meeting.get_absolute_url()}#communications")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
 def action_reminder_send(request, meeting_id, action_id):
     _require_manager(request.user)
     meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
@@ -1460,6 +1612,71 @@ def action_reminder_bulk_send(request, meeting_id):
         },
     )
     return redirect(f"{meeting.get_absolute_url()}#communications")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def action_escalation_send(request, meeting_id, action_id):
+    _require_manager(request.user)
+    meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
+    action = get_object_or_404(
+        MeetingActionItem.objects.select_related("responsible_user", "meeting__event"),
+        pk=action_id,
+        meeting=meeting,
+        is_active=True,
+    )
+    try:
+        delivered = send_action_escalation(action, request=request)
+        if delivered:
+            messages.success(request, _("The overdue action escalation was sent."))
+        else:
+            messages.error(request, _("The email service did not confirm delivery."))
+    except Exception as error:
+        messages.error(
+            request,
+            _("The escalation could not be sent: %(error)s") % {"error": str(error)},
+        )
+    return redirect("meetings:follow_up_center")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def action_escalation_bulk_send(request):
+    _require_manager(request.user)
+    actions = MeetingActionItem.objects.select_related(
+        "responsible_user", "meeting", "meeting__event",
+    ).filter(
+        is_active=True,
+        meeting__is_active=True,
+        due_date__lt=timezone.localdate(),
+    ).exclude(
+        status__in={
+            MeetingActionItem.Status.COMPLETED,
+            MeetingActionItem.Status.CANCELLED,
+        },
+    )
+    sent = 0
+    failed = 0
+    skipped = 0
+    for action in actions:
+        if not action.responsible_email and not (
+            action.responsible_user_id and action.responsible_user.email
+        ):
+            skipped += 1
+            continue
+        try:
+            sent += int(send_action_escalation(action, request=request))
+        except Exception:
+            failed += 1
+    messages.success(
+        request,
+        _("Overdue escalations sent: %(sent)s; failed: %(failed)s; without email: %(skipped)s.") % {
+            "sent": sent,
+            "failed": failed,
+            "skipped": skipped,
+        },
+    )
+    return redirect("meetings:follow_up_center")
 
 
 @login_required(login_url="accounts:staff_login")

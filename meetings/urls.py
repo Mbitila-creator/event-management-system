@@ -23,6 +23,16 @@ urlpatterns = [
         name="decision_register_csv",
     ),
     path(
+        "staff/meetings/follow-up/",
+        views.follow_up_center,
+        name="follow_up_center",
+    ),
+    path(
+        "staff/meetings/follow-up/actions/escalate-overdue/",
+        views.action_escalation_bulk_send,
+        name="action_escalation_bulk_send",
+    ),
+    path(
         "staff/meetings/calendar/",
         views.meeting_calendar,
         name="meeting_calendar",
@@ -181,6 +191,11 @@ urlpatterns = [
         name="rsvp_reminder_bulk_send",
     ),
     path(
+        "staff/meetings/<int:meeting_id>/participants/remind-upcoming/",
+        views.meeting_reminder_bulk_send,
+        name="meeting_reminder_bulk_send",
+    ),
+    path(
         "staff/meetings/<int:meeting_id>/minutes/update/",
         views.minutes_update,
         name="minutes_update",
@@ -229,6 +244,11 @@ urlpatterns = [
         "staff/meetings/<int:meeting_id>/actions/remind-due/",
         views.action_reminder_bulk_send,
         name="action_reminder_bulk_send",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/actions/<int:action_id>/escalate/",
+        views.action_escalation_send,
+        name="action_escalation_send",
     ),
     path(
         "meetings/invitations/<uuid:response_token>/",

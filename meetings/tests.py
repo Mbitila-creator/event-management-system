@@ -1548,6 +1548,104 @@ class MeetingWorkflowTests(TestCase):
         swahili_csv = english_export.content.decode("utf-8-sig")
         self.assertIn("'=Uamuzi wa utekelezaji", swahili_csv)
 
+    def test_manager_sends_upcoming_reminders_to_confirmed_participants(self):
+        self.event.starts_at = timezone.now() + timedelta(days=3)
+        self.event.ends_at = self.event.starts_at + timedelta(hours=2)
+        self.event.save()
+        accepted = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Confirmed Participant",
+            email="confirmed@example.com",
+            preferred_language="en",
+            response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
+        )
+        MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Declined Participant",
+            email="declined@example.com",
+            preferred_language="en",
+            response_status=MeetingAttendee.ResponseStatus.DECLINED,
+        )
+        with self.settings(
+            EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        ):
+            response = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/participants/remind-upcoming/",
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("is approaching", mail.outbox[0].body)
+        self.assertEqual(mail.outbox[0].to, [accepted.email])
+        self.assertTrue(
+            MeetingCommunicationLog.objects.filter(
+                attendee=accepted,
+                communication_type=MeetingCommunicationLog.CommunicationType.MEETING_REMINDER,
+                delivery_status=MeetingCommunicationLog.DeliveryStatus.SENT,
+            ).exists()
+        )
+
+    def test_follow_up_center_escalates_and_audits_overdue_action(self):
+        action = MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="Wasilisha taarifa iliyochelewa",
+            description_en="Submit the overdue report",
+            responsible_name="Responsible Officer",
+            responsible_email="responsible@example.com",
+            due_date=timezone.localdate() - timedelta(days=4),
+        )
+        center = self.client.get("/en/staff/meetings/follow-up/")
+        self.assertEqual(center.status_code, 200)
+        self.assertContains(center, "Meeting follow-up centre")
+        self.assertContains(center, "Submit the overdue report")
+        self.assertContains(center, "4 days overdue")
+
+        with self.settings(
+            EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        ):
+            response = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/actions/{action.pk}/escalate/",
+            )
+        self.assertRedirects(
+            response,
+            "/en/staff/meetings/follow-up/",
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(self.meeting.reference_number, mail.outbox[0].body)
+        action.refresh_from_db()
+        self.assertEqual(action.status, MeetingActionItem.Status.OVERDUE)
+        self.assertTrue(
+            MeetingCommunicationLog.objects.filter(
+                action_item=action,
+                communication_type=MeetingCommunicationLog.CommunicationType.ACTION_ESCALATION,
+            ).exists()
+        )
+
+    def test_non_manager_can_view_follow_up_but_cannot_send_escalation(self):
+        action = MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="Hatua iliyochelewa",
+            responsible_name="Afisa",
+            responsible_email="officer@example.com",
+            due_date=timezone.localdate() - timedelta(days=1),
+        )
+        officer = User.objects.create_user(
+            username="meeting.followup.viewer",
+            email="meeting.followup.viewer@example.com",
+            role=User.Role.REPORT_OFFICER,
+            preferred_language="en",
+        )
+        self.client.force_login(officer)
+        center = self.client.get("/en/staff/meetings/follow-up/")
+        self.assertEqual(center.status_code, 200)
+        self.assertNotContains(center, "Send escalation")
+        forbidden = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/actions/{action.pk}/escalate/",
+        )
+        self.assertEqual(forbidden.status_code, 403)
+
     def test_registration_officer_cannot_access_meeting_workspace(self):
         officer = User.objects.create_user(
             username="registration.only",
@@ -1562,5 +1660,7 @@ class MeetingWorkflowTests(TestCase):
         self.assertEqual(report.status_code, 403)
         dashboard = self.client.get("/en/staff/meetings/dashboard/")
         decisions = self.client.get("/en/staff/meetings/reports/decisions/")
+        follow_up = self.client.get("/en/staff/meetings/follow-up/")
         self.assertEqual(dashboard.status_code, 403)
         self.assertEqual(decisions.status_code, 403)
+        self.assertEqual(follow_up.status_code, 403)

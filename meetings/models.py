@@ -1218,7 +1218,9 @@ class MeetingCommunicationLog(BaseModel):
     class CommunicationType(models.TextChoices):
         INVITATION = "INVITATION", _("Meeting invitation")
         RSVP_REMINDER = "RSVP_REMINDER", _("Attendance confirmation reminder")
+        MEETING_REMINDER = "MEETING_REMINDER", _("Upcoming meeting reminder")
         ACTION_REMINDER = "ACTION_REMINDER", _("Action deadline reminder")
+        ACTION_ESCALATION = "ACTION_ESCALATION", _("Overdue action escalation")
 
     class DeliveryStatus(models.TextChoices):
         SENT = "SENT", _("Sent")
