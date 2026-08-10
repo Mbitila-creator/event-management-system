@@ -49,6 +49,7 @@ from .forms import (
 from .models import (
     Meeting,
     MeetingActionItem,
+    MeetingActionProgressUpdate,
     MeetingAttendee,
     MeetingCommunicationLog,
     MeetingDecision,
@@ -668,6 +669,8 @@ def personal_meeting_workspace(request):
 
     actions = MeetingActionItem.objects.select_related(
         "meeting", "meeting__event", "decision",
+    ).prefetch_related(
+        "progress_updates__created_by",
     ).filter(
         is_active=True,
         meeting__is_active=True,
@@ -707,7 +710,13 @@ def personal_meeting_workspace(request):
                 else action.status
             ),
             "progress_notes": action.progress_notes,
+            "completion_percentage": action.completion_percentage,
         })
+        action.progress_history = [
+            update
+            for update in action.progress_updates.all()
+            if update.is_active
+        ][:10]
     return render(request, "meetings/personal_workspace.html", {
         "upcoming_participations": upcoming_participations,
         "recent_participations": recent_participations,
@@ -728,6 +737,7 @@ def personal_meeting_workspace(request):
 
 @login_required(login_url="accounts:staff_login")
 @require_POST
+@transaction.atomic
 def personal_action_update(request, action_id):
     if not request.user.is_active:
         raise PermissionDenied
@@ -744,16 +754,69 @@ def personal_action_update(request, action_id):
     }:
         messages.error(request, _("A closed action cannot be changed from the personal workspace."))
         return redirect("meetings:personal_meeting_workspace")
-    form = PersonalActionProgressForm(request.POST)
+    form = PersonalActionProgressForm(request.POST, request.FILES)
     if form.is_valid():
         action.status = form.cleaned_data["status"]
         action.progress_notes = form.cleaned_data["progress_notes"].strip()
+        action.completion_percentage = form.cleaned_data["completion_percentage"]
+        action.completed_at = (
+            timezone.now()
+            if action.status == MeetingActionItem.Status.COMPLETED
+            else None
+        )
         action.updated_by = request.user
         action.save()
+        evidence = form.cleaned_data.get("evidence_file")
+        MeetingActionProgressUpdate.objects.create(
+            action=action,
+            status=action.status,
+            completion_percentage=action.completion_percentage,
+            notes=action.progress_notes,
+            evidence_file=evidence,
+            original_filename=evidence.name[:255] if evidence else "",
+            created_by=request.user,
+            updated_by=request.user,
+        )
         messages.success(request, _("Your action progress was updated successfully."))
     else:
         messages.error(request, _form_error_message(form))
     return redirect("meetings:personal_meeting_workspace")
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def action_progress_evidence_download(request, update_id):
+    updates = MeetingActionProgressUpdate.objects.select_related(
+        "action", "action__meeting",
+    ).filter(
+        pk=update_id,
+        is_active=True,
+        action__is_active=True,
+        action__meeting__is_active=True,
+    )
+    if not (
+        request.user.is_active
+        and (
+            request.user.is_superuser
+            or request.user.role in MEETING_VIEW_ROLES
+        )
+    ):
+        updates = updates.filter(action__responsible_user=request.user)
+    update = get_object_or_404(updates)
+    if not update.evidence_file:
+        raise Http404
+    try:
+        update.evidence_file.open("rb")
+    except (FileNotFoundError, OSError):
+        raise Http404 from None
+    response = FileResponse(
+        update.evidence_file,
+        as_attachment=True,
+        filename=update.original_filename or Path(update.evidence_file.name).name,
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store"
+    return response
 
 
 def _personal_document_access(request, document_id):
@@ -1461,7 +1524,22 @@ def meeting_detail(request, meeting_id):
     attendees = meeting.attendees.filter(is_active=True).select_related(
         "checked_in_by",
     ).order_by("full_name")
-    actions = meeting.action_items.filter(is_active=True).order_by("action_number")
+    actions_queryset = meeting.action_items.filter(is_active=True).order_by(
+        "action_number",
+    )
+    open_action_count = actions_queryset.exclude(
+        status__in={
+            MeetingActionItem.Status.COMPLETED,
+            MeetingActionItem.Status.CANCELLED,
+        },
+    ).count()
+    actions = list(actions_queryset)
+    for action in actions:
+        action.progress_history = list(
+            action.progress_updates.filter(is_active=True).select_related(
+                "created_by",
+            )[:10]
+        )
     present_count = attendees.filter(
         attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
     ).count()
@@ -1506,12 +1584,7 @@ def meeting_detail(request, meeting_id):
             if meeting.quorum_required
             else None
         ),
-        "open_action_count": actions.exclude(
-            status__in={
-                MeetingActionItem.Status.COMPLETED,
-                MeetingActionItem.Status.CANCELLED,
-            },
-        ).count(),
+        "open_action_count": open_action_count,
         "response_choices": MeetingAttendee.ResponseStatus.choices,
         "attendance_choices": MeetingAttendee.AttendanceStatus.choices,
         "action_status_choices": MeetingActionItem.Status.choices,
@@ -2279,6 +2352,7 @@ def action_add(request, meeting_id):
 
 @login_required(login_url="accounts:staff_login")
 @require_POST
+@transaction.atomic
 def action_update(request, meeting_id, action_id):
     _require_manager(request.user)
     meeting = get_object_or_404(Meeting, pk=meeting_id, is_active=True)
@@ -2292,6 +2366,7 @@ def action_update(request, meeting_id, action_id):
     if form.is_valid():
         action.status = form.cleaned_data["status"]
         action.progress_notes = form.cleaned_data["progress_notes"]
+        action.completion_percentage = form.cleaned_data["completion_percentage"]
         action.completed_at = (
             timezone.now()
             if action.status == MeetingActionItem.Status.COMPLETED
@@ -2299,6 +2374,14 @@ def action_update(request, meeting_id, action_id):
         )
         action.updated_by = request.user
         action.save()
+        MeetingActionProgressUpdate.objects.create(
+            action=action,
+            status=action.status,
+            completion_percentage=action.completion_percentage,
+            notes=action.progress_notes,
+            created_by=request.user,
+            updated_by=request.user,
+        )
         messages.success(request, _("The action progress was updated."))
     else:
         messages.error(request, _form_error_message(form))

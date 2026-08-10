@@ -7,6 +7,7 @@ from events.models import Event
 from .models import (
     Meeting,
     MeetingActionItem,
+    MeetingActionProgressUpdate,
     MeetingAgendaItem,
     MeetingAttendee,
     MeetingCommunicationLog,
@@ -402,7 +403,7 @@ class MeetingDecisionAdmin(AuditAdminMixin, admin.ModelAdmin):
 class MeetingActionItemAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_display = (
         "meeting", "action_number", "short_action", "responsible_name",
-        "due_date", "status", "is_active",
+        "due_date", "status", "completion_percentage", "is_active",
     )
     list_filter = ("status", "due_date", "meeting", "is_active")
     search_fields = (
@@ -415,6 +416,34 @@ class MeetingActionItemAdmin(AuditAdminMixin, admin.ModelAdmin):
     @admin.display(description=_("action"))
     def short_action(self, obj):
         return obj.description_sw[:90]
+
+
+@admin.register(MeetingActionProgressUpdate)
+class MeetingActionProgressUpdateAdmin(admin.ModelAdmin):
+    list_display = (
+        "action", "status", "completion_percentage", "reported_at",
+        "created_by", "is_active",
+    )
+    list_filter = ("status", "reported_at", "action__meeting", "is_active")
+    search_fields = (
+        "action__meeting__reference_number", "action__description_sw",
+        "action__description_en", "notes", "created_by__username",
+    )
+    readonly_fields = (
+        "action", "status", "completion_percentage", "notes", "evidence_file",
+        "original_filename", "reported_at", "created_by", "updated_by",
+        "created_at", "updated_at", "is_active",
+    )
+    ordering = ("-reported_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(MeetingCommunicationLog)

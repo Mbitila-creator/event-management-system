@@ -7430,3 +7430,63 @@ msgstr "Taarifa za kikao"
 #: templates/meetings/series_occurrence_form.html:8
 msgid "Schedule meeting"
 msgstr "Panga kikao"
+
+#: meetings/forms.py:636 meetings/forms.py:673
+#: templates/meetings/meeting_detail.html:90
+msgid "Completion percentage"
+msgstr "Asilimia ya ukamilishaji"
+
+#: meetings/forms.py:650 meetings/forms.py:701 meetings/models.py:1262
+#: meetings/models.py:1344
+msgid "Set the action status to completed when progress reaches 100 percent."
+msgstr "Weka hali ya hatua kuwa imekamilika maendeleo yanapofikia asilimia 100."
+
+#: meetings/forms.py:679
+msgid "Supporting evidence"
+msgstr "Ushahidi wa kuunga mkono"
+
+#: meetings/forms.py:681
+msgid "Optional. Upload a PDF, Office document, text file or image up to 20 MB."
+msgstr "Si lazima. Pakia PDF, hati ya Office, faili la maandishi au picha yenye ukubwa usiozidi MB 20."
+
+#: meetings/models.py:1222 meetings/models.py:1304
+msgid "completion percentage"
+msgstr "asilimia ya ukamilishaji"
+
+#: meetings/models.py:1307
+msgid "progress update"
+msgstr "taarifa ya maendeleo"
+
+#: meetings/models.py:1309
+msgid "supporting evidence"
+msgstr "ushahidi wa kuunga mkono"
+
+#: meetings/models.py:1321
+msgid "reported at"
+msgstr "iliripotiwa tarehe"
+
+#: meetings/models.py:1326
+msgid "meeting action progress update"
+msgstr "taarifa ya maendeleo ya hatua ya kikao"
+
+#: meetings/models.py:1327
+msgid "meeting action progress updates"
+msgstr "taarifa za maendeleo ya hatua za kikao"
+
+#: meetings/models.py:1340
+msgid "Completed actions must show 100 percent progress."
+msgstr "Hatua zilizokamilika lazima zionyeshe maendeleo ya asilimia 100."
+
+#: templates/meetings/meeting_detail.html:90
+#: templates/meetings/personal_workspace.html:40
+msgid "Progress history"
+msgstr "Historia ya maendeleo"
+
+#: templates/meetings/meeting_detail.html:90
+#: templates/meetings/personal_workspace.html:40
+msgid "Download evidence"
+msgstr "Pakua ushahidi"
+
+#: templates/meetings/personal_workspace.html:40
+msgid "Completion"
+msgstr "Ukamilishaji"

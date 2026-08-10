@@ -28,6 +28,11 @@ urlpatterns = [
         name="personal_document_acknowledge",
     ),
     path(
+        "staff/meetings/action-progress/<int:update_id>/evidence/",
+        views.action_progress_evidence_download,
+        name="action_progress_evidence_download",
+    ),
+    path(
         "staff/meetings/dashboard/",
         views.executive_dashboard,
         name="executive_dashboard",

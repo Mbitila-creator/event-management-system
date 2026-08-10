@@ -3,6 +3,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator
 from django.db import models
 from django.db.models import Q, Sum
 from django.urls import reverse
@@ -1217,6 +1218,11 @@ class MeetingActionItem(BaseModel):
         default=Status.PENDING,
     )
     progress_notes = models.TextField(_("progress notes"), blank=True)
+    completion_percentage = models.PositiveSmallIntegerField(
+        _("completion percentage"),
+        default=0,
+        validators=[MaxValueValidator(100)],
+    )
     completed_at = models.DateTimeField(
         _("completed at"),
         null=True,
@@ -1248,6 +1254,13 @@ class MeetingActionItem(BaseModel):
             errors["responsible_name"] = _(
                 "Enter a responsible person or select a system user."
             )
+        if (
+            self.status != self.Status.COMPLETED
+            and self.completion_percentage == 100
+        ):
+            errors["completion_percentage"] = _(
+                "Set the action status to completed when progress reaches 100 percent."
+            )
         if errors:
             raise ValidationError(errors)
 
@@ -1261,11 +1274,95 @@ class MeetingActionItem(BaseModel):
             self.responsible_email = self.responsible_user.email
         if self.status == self.Status.COMPLETED and not self.completed_at:
             self.completed_at = timezone.now()
+        if self.status == self.Status.COMPLETED:
+            self.completion_percentage = 100
         self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.meeting.reference_number} - {self.action_number}"
+
+
+def meeting_action_evidence_upload_path(instance, filename):
+    extension = Path(filename).suffix.lower()
+    return f"meetings/action-evidence/{instance.action_id}/{uuid.uuid4().hex}{extension}"
+
+
+class MeetingActionProgressUpdate(BaseModel):
+    action = models.ForeignKey(
+        MeetingActionItem,
+        verbose_name=_("meeting action item"),
+        related_name="progress_updates",
+        on_delete=models.CASCADE,
+    )
+    status = models.CharField(
+        _("status"),
+        max_length=20,
+        choices=MeetingActionItem.Status.choices,
+    )
+    completion_percentage = models.PositiveSmallIntegerField(
+        _("completion percentage"),
+        validators=[MaxValueValidator(100)],
+    )
+    notes = models.TextField(_("progress update"), blank=True)
+    evidence_file = models.FileField(
+        _("supporting evidence"),
+        upload_to=meeting_action_evidence_upload_path,
+        max_length=500,
+        blank=True,
+    )
+    original_filename = models.CharField(
+        _("original filename"),
+        max_length=255,
+        blank=True,
+        editable=False,
+    )
+    reported_at = models.DateTimeField(
+        _("reported at"),
+        default=timezone.now,
+    )
+
+    class Meta:
+        verbose_name = _("meeting action progress update")
+        verbose_name_plural = _("meeting action progress updates")
+        ordering = ["-reported_at", "-created_at"]
+        indexes = [
+            models.Index(
+                fields=["action", "reported_at"],
+                name="meeting_action_progress_idx",
+            ),
+        ]
+
+    def clean(self):
+        errors = {}
+        if self.status == MeetingActionItem.Status.COMPLETED and self.completion_percentage != 100:
+            errors["completion_percentage"] = _(
+                "Completed actions must show 100 percent progress."
+            )
+        if self.status != MeetingActionItem.Status.COMPLETED and self.completion_percentage == 100:
+            errors["completion_percentage"] = _(
+                "Set the action status to completed when progress reaches 100 percent."
+            )
+        uploaded_file = getattr(self.evidence_file, "_file", None)
+        if uploaded_file:
+            extension = Path(uploaded_file.name).suffix.lower()
+            if extension not in ALLOWED_MEETING_DOCUMENT_EXTENSIONS:
+                errors["evidence_file"] = _(
+                    "Upload a PDF, Office document, text file, or image."
+                )
+            elif uploaded_file.size > MAX_MEETING_DOCUMENT_SIZE:
+                errors["evidence_file"] = _("The document must not exceed 20 MB.")
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if self.evidence_file and not self.original_filename:
+            self.original_filename = Path(self.evidence_file.name).name[:255]
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.action} - {self.completion_percentage}%"
 
 
 class MeetingCommunicationLog(BaseModel):

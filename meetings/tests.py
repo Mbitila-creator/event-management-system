@@ -15,6 +15,7 @@ from events.models import Event, EventCategory, Venue
 from .models import (
     Meeting,
     MeetingActionItem,
+    MeetingActionProgressUpdate,
     MeetingAgendaItem,
     MeetingAttendee,
     MeetingCommunicationLog,
@@ -1743,6 +1744,7 @@ class MeetingWorkflowTests(TestCase):
             f"/en/staff/meetings/my-actions/{own_action.pk}/update/",
             {
                 "status": MeetingActionItem.Status.COMPLETED,
+                "completion_percentage": "100",
                 "progress_notes": "Work completed and submitted.",
             },
         )
@@ -1755,17 +1757,132 @@ class MeetingWorkflowTests(TestCase):
         self.assertEqual(own_action.status, MeetingActionItem.Status.COMPLETED)
         self.assertEqual(own_action.updated_by, owner)
         self.assertIsNotNone(own_action.completed_at)
+        self.assertEqual(own_action.completion_percentage, 100)
+        self.assertTrue(
+            MeetingActionProgressUpdate.objects.filter(
+                action=own_action,
+                status=MeetingActionItem.Status.COMPLETED,
+                completion_percentage=100,
+                created_by=owner,
+            ).exists()
+        )
 
         forbidden = self.client.post(
             f"/en/staff/meetings/my-actions/{other_action.pk}/update/",
             {
                 "status": MeetingActionItem.Status.COMPLETED,
+                "completion_percentage": "100",
                 "progress_notes": "Unauthorized update",
             },
         )
         self.assertEqual(forbidden.status_code, 404)
         other_action.refresh_from_db()
         self.assertEqual(other_action.status, MeetingActionItem.Status.PENDING)
+
+    def test_action_progress_evidence_is_audited_and_protected(self):
+        owner = User.objects.create_user(
+            username="evidence.owner",
+            email="evidence.owner@example.com",
+            role=User.Role.PARTICIPANT,
+            preferred_language="en",
+        )
+        outsider = User.objects.create_user(
+            username="evidence.outsider",
+            email="evidence.outsider@example.com",
+            role=User.Role.PARTICIPANT,
+            preferred_language="en",
+        )
+        action = MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="Wasilisha ushahidi",
+            description_en="Submit implementation evidence",
+            responsible_user=owner,
+            responsible_name="",
+            due_date=timezone.localdate() + timedelta(days=5),
+        )
+        media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media_root, ignore_errors=True)
+        with override_settings(MEDIA_ROOT=media_root):
+            self.client.force_login(owner)
+            response = self.client.post(
+                f"/en/staff/meetings/my-actions/{action.pk}/update/",
+                {
+                    "status": MeetingActionItem.Status.IN_PROGRESS,
+                    "completion_percentage": "45",
+                    "progress_notes": "Draft report completed and reviewed.",
+                    "evidence_file": SimpleUploadedFile(
+                        "draft-report.pdf",
+                        b"%PDF-1.4 action evidence",
+                        content_type="application/pdf",
+                    ),
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+            action.refresh_from_db()
+            self.assertEqual(action.status, MeetingActionItem.Status.IN_PROGRESS)
+            self.assertEqual(action.completion_percentage, 45)
+            update = MeetingActionProgressUpdate.objects.get(action=action)
+            self.assertEqual(update.original_filename, "draft-report.pdf")
+            self.assertNotEqual(update.evidence_file.name, "draft-report.pdf")
+
+            download_url = (
+                f"/en/staff/meetings/action-progress/{update.pk}/evidence/"
+            )
+            download = self.client.get(download_url)
+            self.assertEqual(download.status_code, 200)
+            self.assertEqual(download["Cache-Control"], "private, no-store")
+            self.assertEqual(
+                b"".join(download.streaming_content),
+                b"%PDF-1.4 action evidence",
+            )
+            workspace = self.client.get("/en/staff/meetings/my-workspace/")
+            self.assertContains(workspace, "45%")
+            self.assertContains(workspace, "Progress history")
+            self.assertContains(workspace, "Download evidence")
+
+            self.client.force_login(outsider)
+            self.assertEqual(self.client.get(download_url).status_code, 404)
+
+    def test_manager_action_update_creates_progress_history(self):
+        action = MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="Fuatilia utekelezaji",
+            responsible_name="Implementation Officer",
+            due_date=timezone.localdate() + timedelta(days=7),
+        )
+        response = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/actions/{action.pk}/update/",
+            {
+                "status": MeetingActionItem.Status.IN_PROGRESS,
+                "completion_percentage": "35",
+                "progress_notes": "Implementation has started.",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        action.refresh_from_db()
+        self.assertEqual(action.completion_percentage, 35)
+        self.assertTrue(
+            MeetingActionProgressUpdate.objects.filter(
+                action=action,
+                completion_percentage=35,
+                notes="Implementation has started.",
+                created_by=self.manager,
+            ).exists()
+        )
+
+        invalid = self.client.post(
+            f"/en/staff/meetings/{self.meeting.pk}/actions/{action.pk}/update/",
+            {
+                "status": MeetingActionItem.Status.IN_PROGRESS,
+                "completion_percentage": "100",
+                "progress_notes": "Not yet complete.",
+            },
+        )
+        self.assertEqual(invalid.status_code, 302)
+        action.refresh_from_db()
+        self.assertEqual(action.completion_percentage, 35)
 
     def test_participant_meeting_pack_protects_files_and_records_acknowledgement(self):
         participant = User.objects.create_user(

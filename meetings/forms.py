@@ -632,6 +632,24 @@ class ActionProgressForm(forms.Form):
         required=False,
         widget=forms.Textarea(attrs={"rows": 2}),
     )
+    completion_percentage = forms.IntegerField(
+        label=_("Completion percentage"),
+        min_value=0,
+        max_value=100,
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        status = cleaned_data.get("status")
+        percentage = cleaned_data.get("completion_percentage")
+        if status == MeetingActionItem.Status.COMPLETED:
+            cleaned_data["completion_percentage"] = 100
+        elif percentage == 100:
+            self.add_error(
+                "completion_percentage",
+                _("Set the action status to completed when progress reaches 100 percent."),
+            )
+        return cleaned_data
 
 
 class PersonalActionProgressForm(forms.Form):
@@ -651,6 +669,17 @@ class PersonalActionProgressForm(forms.Form):
             "placeholder": _("Describe progress, results or any implementation challenge."),
         }),
     )
+    completion_percentage = forms.IntegerField(
+        label=_("Completion percentage"),
+        min_value=0,
+        max_value=100,
+        widget=forms.NumberInput(attrs={"step": 5}),
+    )
+    evidence_file = forms.FileField(
+        label=_("Supporting evidence"),
+        required=False,
+        help_text=_("Optional. Upload a PDF, Office document, text file or image up to 20 MB."),
+    )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -662,7 +691,22 @@ class PersonalActionProgressForm(forms.Form):
                 "progress_notes",
                 _("Enter a progress update before saving an open action."),
             )
+        status = cleaned_data.get("status")
+        percentage = cleaned_data.get("completion_percentage")
+        if status == MeetingActionItem.Status.COMPLETED:
+            cleaned_data["completion_percentage"] = 100
+        elif percentage == 100:
+            self.add_error(
+                "completion_percentage",
+                _("Set the action status to completed when progress reaches 100 percent."),
+            )
         return cleaned_data
+
+    def clean_evidence_file(self):
+        uploaded_file = self.cleaned_data.get("evidence_file")
+        if uploaded_file:
+            return validate_meeting_upload(uploaded_file)
+        return uploaded_file
 
 
 class InvitationResponseForm(forms.Form):
