@@ -7891,6 +7891,12 @@ msgstr "kumbukumbu za washiriki"
 msgid "Print QR cards"
 msgstr "Chapisha kadi za QR"
 
+msgid "Download all card images (ZIP)"
+msgstr "Pakua picha zote za kadi (ZIP)"
+
+msgid "Download card image"
+msgstr "Pakua picha ya kadi"
+
 msgid "Phase / No."
 msgstr "Awamu / Na."
 

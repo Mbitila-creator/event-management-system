@@ -1,4 +1,5 @@
 from io import BytesIO
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import qrcode
 from django.conf import settings
@@ -11,11 +12,13 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 
 from .forms import SpecialEventParticipantImportForm, special_event_queryset
 from .models import Event, EventCategory, SpecialEventParticipant
+from .qr_cards import render_participant_qr_card
 from .services import import_special_event_participants
 
 
@@ -28,6 +31,27 @@ def _require_events_permission(user, action="view"):
 
 def _special_events():
     return [event for event in special_event_queryset() if event.category.is_special_event]
+
+
+def _participant_verification_url(request, participant):
+    verification_path = reverse(
+        "events:special_event_participant_verify",
+        kwargs={"token": participant.verification_token},
+    )
+    if settings.PUBLIC_BASE_URL:
+        return f"{settings.PUBLIC_BASE_URL}{verification_path}"
+    return request.build_absolute_uri(verification_path)
+
+
+def _participant_card_filename(participant):
+    identity = "-".join((
+        slugify(participant.event.code) or "event",
+        slugify(participant.source_sheet) or "sheet",
+        slugify(participant.source_number) or "row",
+        slugify(participant.full_name)[:60],
+        str(participant.verification_token)[:8],
+    ))
+    return f"{identity}.png"
 
 
 def home(request):
@@ -291,6 +315,40 @@ def special_event_participant_print(request):
     })
 
 
+@login_required(login_url="accounts:staff_login")
+def special_event_participant_cards_zip(request):
+    _require_events_permission(request.user)
+    selected_event = get_object_or_404(
+        special_event_queryset(),
+        pk=request.GET.get("event"),
+    )
+    participants = SpecialEventParticipant.objects.select_related("event").filter(
+        event=selected_event,
+        is_active=True,
+    ).order_by("source_sheet", "source_row_index")
+    source_sheet = request.GET.get("sheet", "").strip()
+    if source_sheet:
+        participants = participants.filter(source_sheet=source_sheet)
+
+    output = BytesIO()
+    folder = f"{selected_event.code}-QR-cards"
+    with ZipFile(output, "w", compression=ZIP_DEFLATED) as archive:
+        for participant in participants:
+            card = render_participant_qr_card(
+                participant,
+                _participant_verification_url(request, participant),
+            )
+            archive.writestr(
+                f"{folder}/{_participant_card_filename(participant)}",
+                card,
+            )
+    response = HttpResponse(output.getvalue(), content_type="application/zip")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{selected_event.code}-QR-cards.zip"'
+    )
+    return response
+
+
 def special_event_participant_verify(request, token):
     participant = get_object_or_404(
         SpecialEventParticipant.objects.select_related("event", "event__category"),
@@ -310,17 +368,7 @@ def special_event_participant_qr(request, token):
         is_active=True,
         event__is_active=True,
     )
-    verification_path = reverse(
-        "events:special_event_participant_verify",
-        kwargs={"token": participant.verification_token},
-    )
-    base_url = settings.PUBLIC_BASE_URL
-    verification_url = (
-        f"{base_url}{verification_path}"
-        if base_url
-        else request.build_absolute_uri(verification_path)
-    )
-    image = qrcode.make(verification_url)
+    image = qrcode.make(_participant_verification_url(request, participant))
     output = BytesIO()
     image.save(output, format="PNG")
     response = HttpResponse(output.getvalue(), content_type="image/png")
@@ -328,4 +376,22 @@ def special_event_participant_qr(request, token):
         f'inline; filename="{participant.event.code}-{participant.source_number}-qr.png"'
     )
     response["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+def special_event_participant_card_download(request, token):
+    participant = get_object_or_404(
+        SpecialEventParticipant.objects.select_related("event"),
+        verification_token=token,
+        is_active=True,
+        event__is_active=True,
+    )
+    card = render_participant_qr_card(
+        participant,
+        _participant_verification_url(request, participant),
+    )
+    response = HttpResponse(card, content_type="image/png")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{_participant_card_filename(participant)}"'
+    )
     return response

@@ -1,5 +1,6 @@
 from datetime import timedelta
 from io import BytesIO
+from zipfile import ZipFile
 
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -7,6 +8,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from openpyxl import Workbook
+from PIL import Image
 
 from accounts.models import User
 from events.models import Event, EventCategory, SpecialEventParticipant
@@ -211,6 +213,48 @@ class SpecialEventParticipantQRTests(TestCase):
         self.assertEqual(response["Content-Type"], "image/png")
         self.assertTrue(response.content.startswith(b"\x89PNG"))
 
+    def test_participant_card_download_returns_paste_ready_png(self):
+        participant = SpecialEventParticipant.objects.create(
+            event=self.event,
+            source_sheet="AWAMU_2",
+            source_number="12",
+            full_name="Mtafiti wa Kadi",
+            institution="Taasisi ya Majaribio",
+        )
+        response = self.client.get(reverse(
+            "events:special_event_participant_card_download",
+            kwargs={"token": participant.verification_token},
+        ))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/png")
+        self.assertIn("attachment;", response["Content-Disposition"])
+        image = Image.open(BytesIO(response.content))
+        self.assertEqual(image.format, "PNG")
+        self.assertEqual(image.size, (1600, 760))
+
+    def test_staff_can_download_all_participant_cards_as_zip(self):
+        for number in ("1", "2"):
+            SpecialEventParticipant.objects.create(
+                event=self.event,
+                source_sheet="AWAMU_3",
+                source_number=number,
+                source_row_index=int(number) + 1,
+                full_name=f"Mtafiti {number}",
+                institution="Taasisi",
+            )
+        url = reverse("events:special_event_participant_cards_zip")
+        self.assertEqual(self.client.get(f"{url}?event={self.event.pk}").status_code, 302)
+
+        self.client.force_login(self.user)
+        response = self.client.get(f"{url}?event={self.event.pk}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/zip")
+        self.assertIn("attachment;", response["Content-Disposition"])
+        with ZipFile(BytesIO(response.content)) as archive:
+            card_names = [name for name in archive.namelist() if name.endswith(".png")]
+            self.assertEqual(len(card_names), 2)
+            self.assertTrue(archive.read(card_names[0]).startswith(b"\x89PNG"))
+
     def test_staff_list_and_import_require_events_permissions(self):
         list_url = reverse("events:special_event_participant_list")
         import_url = reverse("events:special_event_participant_import")
@@ -228,9 +272,16 @@ class SpecialEventParticipantQRTests(TestCase):
         self.assertNotEqual(self.client.get(import_url).status_code, 200)
 
         self.client.force_login(self.user)
+        SpecialEventParticipant.objects.create(
+            event=self.event,
+            source_sheet="AWAMU_2",
+            source_number="1",
+            full_name="Mtafiti wa Kupakua",
+        )
         response = self.client.get(f"{list_url}?event={self.event.pk}")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Participant QR records")
+        self.assertContains(response, "Download all card images (ZIP)")
 
     def test_import_view_rejects_non_special_event(self):
         self.client.force_login(self.user)
