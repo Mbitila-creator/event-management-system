@@ -1922,6 +1922,111 @@ class MeetingWorkflowTests(TestCase):
         action.refresh_from_db()
         self.assertEqual(action.status, MeetingActionItem.Status.AWAITING_REVIEW)
 
+    def test_action_review_centre_and_notifications(self):
+        owner = User.objects.create_user(
+            username="review.centre.owner",
+            email="review.centre.owner@example.com",
+            role=User.Role.PARTICIPANT,
+            preferred_language="en",
+        )
+        second_manager = User.objects.create_user(
+            username="review.centre.admin",
+            email="review.centre.admin@example.com",
+            role=User.Role.SYSTEM_ADMIN,
+            preferred_language="en",
+        )
+        action = MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="Wasilisha taarifa ya mwisho",
+            description_en="Submit the final implementation report",
+            responsible_user=owner,
+            responsible_name="",
+            due_date=timezone.localdate() + timedelta(days=2),
+        )
+        media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media_root, ignore_errors=True)
+        with override_settings(
+            MEDIA_ROOT=media_root,
+            EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        ):
+            self.client.force_login(owner)
+            submitted = self.client.post(
+                f"/en/staff/meetings/my-actions/{action.pk}/update/",
+                {
+                    "status": MeetingActionItem.Status.AWAITING_REVIEW,
+                    "completion_percentage": "100",
+                    "progress_notes": "Final signed report is attached.",
+                    "evidence_file": SimpleUploadedFile(
+                        "final-report.pdf",
+                        b"%PDF-1.4 final report",
+                        content_type="application/pdf",
+                    ),
+                },
+            )
+            self.assertEqual(submitted.status_code, 302)
+            self.assertEqual(len(mail.outbox), 2)
+            self.assertEqual(
+                {message.to[0] for message in mail.outbox},
+                {self.manager.email, second_manager.email},
+            )
+            self.assertEqual(
+                MeetingCommunicationLog.objects.filter(
+                    action_item=action,
+                    communication_type=(
+                        MeetingCommunicationLog.CommunicationType.ACTION_REVIEW_SUBMITTED
+                    ),
+                    delivery_status=MeetingCommunicationLog.DeliveryStatus.SENT,
+                ).count(),
+                2,
+            )
+
+            forbidden = self.client.get(
+                "/en/staff/meetings/action-reviews/",
+            )
+            self.assertEqual(forbidden.status_code, 403)
+
+            self.client.force_login(self.manager)
+            centre = self.client.get("/en/staff/meetings/action-reviews/")
+            self.assertEqual(centre.status_code, 200)
+            self.assertContains(centre, "Action Review Centre")
+            self.assertContains(centre, "Submit the final implementation report")
+            self.assertContains(centre, "Download evidence")
+
+            mail.outbox.clear()
+            reviewed = self.client.post(
+                f"/en/staff/meetings/{self.meeting.pk}/actions/"
+                f"{action.pk}/completion-review/",
+                {
+                    "outcome": MeetingActionCompletionReview.Outcome.VERIFIED,
+                    "comment": "The signed report is accepted.",
+                },
+            )
+            self.assertEqual(reviewed.status_code, 302)
+            self.assertEqual(len(mail.outbox), 1)
+            self.assertEqual(mail.outbox[0].to, [owner.email])
+            self.assertIn("Completion verified", mail.outbox[0].body)
+            self.assertTrue(
+                MeetingCommunicationLog.objects.filter(
+                    action_item=action,
+                    communication_type=(
+                        MeetingCommunicationLog.CommunicationType.ACTION_REVIEW_RESULT
+                    ),
+                    delivery_status=MeetingCommunicationLog.DeliveryStatus.SENT,
+                ).exists()
+            )
+            action.refresh_from_db()
+            self.assertEqual(action.status, MeetingActionItem.Status.COMPLETED)
+            updated_centre = self.client.get(
+                "/en/staff/meetings/action-reviews/",
+            )
+            self.assertNotContains(
+                updated_centre,
+                "Submit the final implementation report",
+                html=False,
+            )
+            self.assertContains(updated_centre, "The signed report is accepted.")
+
     def test_action_progress_evidence_is_audited_and_protected(self):
         owner = User.objects.create_user(
             username="evidence.owner",

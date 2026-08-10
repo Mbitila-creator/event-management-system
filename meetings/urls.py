@@ -58,6 +58,11 @@ urlpatterns = [
         name="readiness_center",
     ),
     path(
+        "staff/meetings/action-reviews/",
+        views.action_review_center,
+        name="action_review_center",
+    ),
+    path(
         "staff/meetings/follow-up/actions/escalate-overdue/",
         views.action_escalation_bulk_send,
         name="action_escalation_bulk_send",

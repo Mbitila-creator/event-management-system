@@ -5,6 +5,8 @@ from django.utils import timezone, translation
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
 
+from accounts.models import User
+
 from .models import MeetingCommunicationLog
 
 
@@ -406,3 +408,114 @@ def send_action_escalation(action, request=None):
             action.updated_by = _actor(request)
             action.save(update_fields=["status", "updated_by", "updated_at"])
         return delivered
+
+
+def send_action_review_submission_notifications(action, request=None):
+    managers = User.objects.filter(
+        is_active=True,
+        role__in={User.Role.SYSTEM_ADMIN, User.Role.EVENT_ADMIN},
+    ).exclude(email="")
+    if action.responsible_user_id:
+        managers = managers.exclude(pk=action.responsible_user_id)
+    managers = managers.order_by("pk")
+    review_url = _absolute_url(
+        reverse("meetings:action_review_center"),
+        request=request,
+    )
+    sent = 0
+    failed = 0
+    for manager in managers:
+        language = manager.preferred_language
+        with translation.override(language):
+            description = (
+                action.description_en
+                if language == "en" and action.description_en
+                else action.description_sw
+            )
+            subject = _("Action completion awaiting review — %(reference)s") % {
+                "reference": action.meeting.reference_number,
+            }
+            body = _(
+                "Dear %(name)s,\n\n"
+                "A responsible officer has submitted a meeting action for completion verification.\n\n"
+                "Meeting: %(meeting)s\n"
+                "Action: %(action)s\n"
+                "Responsible person: %(responsible)s\n\n"
+                "Open the Action Review Centre:\n%(review_url)s"
+            ) % {
+                "name": manager.get_full_name().strip() or manager.username,
+                "meeting": action.meeting.reference_number,
+                "action": description,
+                "responsible": action.responsible_name,
+                "review_url": review_url,
+            }
+            try:
+                sent += int(_send_and_log(
+                    meeting=action.meeting,
+                    action_item=action,
+                    communication_type=(
+                        MeetingCommunicationLog.CommunicationType.ACTION_REVIEW_SUBMITTED
+                    ),
+                    recipient_name=manager.get_full_name().strip() or manager.username,
+                    recipient_email=manager.email,
+                    subject=subject,
+                    body=body,
+                    request=request,
+                ))
+            except Exception:
+                failed += 1
+    return sent, failed
+
+
+def send_action_review_result_notification(action, review, request=None):
+    recipient = action.responsible_email.strip()
+    if not recipient and action.responsible_user_id:
+        recipient = action.responsible_user.email.strip()
+    if not recipient:
+        return False
+    language = (
+        action.responsible_user.preferred_language
+        if action.responsible_user_id
+        else "sw"
+    )
+    workspace_url = _absolute_url(
+        reverse("meetings:personal_meeting_workspace"),
+        request=request,
+    )
+    with translation.override(language):
+        description = (
+            action.description_en
+            if language == "en" and action.description_en
+            else action.description_sw
+        )
+        subject = _("Action completion review result — %(reference)s") % {
+            "reference": action.meeting.reference_number,
+        }
+        body = _(
+            "Dear %(name)s,\n\n"
+            "Your meeting action completion submission has been reviewed.\n\n"
+            "Meeting: %(meeting)s\n"
+            "Action: %(action)s\n"
+            "Review result: %(outcome)s\n"
+            "Review comment: %(comment)s\n\n"
+            "Open your meetings workspace:\n%(workspace_url)s"
+        ) % {
+            "name": action.responsible_name,
+            "meeting": action.meeting.reference_number,
+            "action": description,
+            "outcome": review.get_outcome_display(),
+            "comment": review.comment or _("No additional comment."),
+            "workspace_url": workspace_url,
+        }
+        return _send_and_log(
+            meeting=action.meeting,
+            action_item=action,
+            communication_type=(
+                MeetingCommunicationLog.CommunicationType.ACTION_REVIEW_RESULT
+            ),
+            recipient_name=action.responsible_name,
+            recipient_email=recipient,
+            subject=subject,
+            body=body,
+            request=request,
+        )

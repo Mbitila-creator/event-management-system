@@ -66,6 +66,8 @@ from .models import (
 from .services import (
     send_action_escalation,
     send_action_reminder,
+    send_action_review_result_notification,
+    send_action_review_submission_notifications,
     send_meeting_invitation,
     send_rsvp_reminder,
     send_upcoming_meeting_reminder,
@@ -493,6 +495,7 @@ def executive_dashboard(request):
         "date_to": date_to,
         "selected_type": meeting_type,
         "meeting_type_choices": Meeting.MeetingType.choices,
+        "can_manage": _can_manage(request.user),
     })
 
 
@@ -794,6 +797,16 @@ def personal_action_update(request, action_id):
             created_by=request.user,
             updated_by=request.user,
         )
+        if action.status == MeetingActionItem.Status.AWAITING_REVIEW:
+            _sent, failed = send_action_review_submission_notifications(
+                action,
+                request=request,
+            )
+            if failed:
+                messages.warning(
+                    request,
+                    _("Progress was saved, but some manager notifications failed."),
+                )
         messages.success(request, _("Your action progress was updated successfully."))
     else:
         messages.error(request, _form_error_message(form))
@@ -826,7 +839,7 @@ def action_completion_review(request, meeting_id, action_id):
         action.progress_notes = comment or action.progress_notes
         action.updated_by = request.user
         action.save()
-        MeetingActionCompletionReview.objects.create(
+        review = MeetingActionCompletionReview.objects.create(
             action=action,
             outcome=outcome,
             comment=comment,
@@ -841,6 +854,17 @@ def action_completion_review(request, meeting_id, action_id):
             created_by=request.user,
             updated_by=request.user,
         )
+        try:
+            send_action_review_result_notification(
+                action,
+                review,
+                request=request,
+            )
+        except Exception:
+            messages.warning(
+                request,
+                _("The review was saved, but the responsible person notification failed."),
+            )
         messages.success(request, success_message)
     else:
         messages.error(request, _form_error_message(form))
@@ -1177,6 +1201,88 @@ def action_report(request):
         },
     }
     return render(request, "meetings/action_report.html", context)
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def action_review_center(request):
+    _require_manager(request.user)
+    pending_actions = MeetingActionItem.objects.select_related(
+        "meeting", "meeting__event", "responsible_user",
+    ).prefetch_related(
+        Prefetch(
+            "progress_updates",
+            queryset=MeetingActionProgressUpdate.objects.filter(
+                is_active=True,
+                status=MeetingActionItem.Status.AWAITING_REVIEW,
+            ).select_related("created_by"),
+            to_attr="review_submissions",
+        ),
+    ).filter(
+        is_active=True,
+        meeting__is_active=True,
+        status=MeetingActionItem.Status.AWAITING_REVIEW,
+    )
+    search_query = request.GET.get("q", "").strip()
+    selected_meeting = request.GET.get("meeting", "").strip()
+    if search_query:
+        pending_actions = pending_actions.filter(
+            Q(meeting__reference_number__icontains=search_query)
+            | Q(description_sw__icontains=search_query)
+            | Q(description_en__icontains=search_query)
+            | Q(responsible_name__icontains=search_query)
+        )
+    if selected_meeting.isdigit():
+        pending_actions = pending_actions.filter(meeting_id=selected_meeting)
+    else:
+        selected_meeting = ""
+    now = timezone.now()
+    action_rows = list(pending_actions.order_by("updated_at", "due_date")[:200])
+    for action in action_rows:
+        action.latest_submission = (
+            action.review_submissions[0] if action.review_submissions else None
+        )
+        submitted_at = (
+            action.latest_submission.reported_at
+            if action.latest_submission
+            else action.updated_at
+        )
+        action.review_wait_days = max((now - submitted_at).days, 0)
+    all_pending = MeetingActionItem.objects.filter(
+        is_active=True,
+        meeting__is_active=True,
+        status=MeetingActionItem.Status.AWAITING_REVIEW,
+    )
+    return render(request, "meetings/action_review_center.html", {
+        "actions": action_rows,
+        "search_query": search_query,
+        "selected_meeting": selected_meeting,
+        "meetings": Meeting.objects.filter(
+            is_active=True,
+            action_items__status=MeetingActionItem.Status.AWAITING_REVIEW,
+            action_items__is_active=True,
+        ).select_related("event").distinct().order_by("reference_number"),
+        "recent_reviews": MeetingActionCompletionReview.objects.filter(
+            is_active=True,
+            action__meeting__is_active=True,
+        ).select_related(
+            "action", "action__meeting", "created_by",
+        )[:30],
+        "summary": {
+            "pending": all_pending.count(),
+            "returned": MeetingActionCompletionReview.objects.filter(
+                is_active=True,
+                outcome=MeetingActionCompletionReview.Outcome.RETURNED,
+            ).count(),
+            "verified": MeetingActionCompletionReview.objects.filter(
+                is_active=True,
+                outcome=MeetingActionCompletionReview.Outcome.VERIFIED,
+            ).count(),
+            "waiting_over_three_days": sum(
+                action.review_wait_days > 3 for action in action_rows
+            ),
+        },
+    })
 
 
 @login_required(login_url="accounts:staff_login")

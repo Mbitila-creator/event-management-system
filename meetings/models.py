@@ -1432,6 +1432,14 @@ class MeetingCommunicationLog(BaseModel):
         MEETING_REMINDER = "MEETING_REMINDER", _("Upcoming meeting reminder")
         ACTION_REMINDER = "ACTION_REMINDER", _("Action deadline reminder")
         ACTION_ESCALATION = "ACTION_ESCALATION", _("Overdue action escalation")
+        ACTION_REVIEW_SUBMITTED = (
+            "ACTION_REVIEW_SUBMITTED",
+            _("Action completion review submitted"),
+        )
+        ACTION_REVIEW_RESULT = (
+            "ACTION_REVIEW_RESULT",
+            _("Action completion review result"),
+        )
 
     class DeliveryStatus(models.TextChoices):
         SENT = "SENT", _("Sent")

@@ -7595,3 +7595,165 @@ msgstr "Msimamizi wa kikao lazima athibitishe ushahidi kabla ya hatua hii kufung
 #: templates/meetings/personal_workspace.html:41
 msgid "Correct and resubmit"
 msgstr "Sahihisha na uwasilishe tena"
+
+#: meetings/models.py:1437
+msgid "Action completion review submitted"
+msgstr "Ombi la mapitio ya ukamilishaji wa hatua limewasilishwa"
+
+#: meetings/models.py:1441
+msgid "Action completion review result"
+msgstr "Matokeo ya mapitio ya ukamilishaji wa hatua"
+
+#: meetings/services.py:435
+#, python-format
+msgid "Action completion awaiting review — %(reference)s"
+msgstr "Ukamilishaji wa hatua unasubiri mapitio — %(reference)s"
+
+#: meetings/services.py:438
+#, python-format
+msgid ""
+"Dear %(name)s,\n"
+"\n"
+"A responsible officer has submitted a meeting action for completion verification.\n"
+"\n"
+"Meeting: %(meeting)s\n"
+"Action: %(action)s\n"
+"Responsible person: %(responsible)s\n"
+"\n"
+"Open the Action Review Centre:\n"
+"%(review_url)s"
+msgstr ""
+"Ndugu %(name)s,\n"
+"\n"
+"Afisa anayewajibika amewasilisha hatua ya kikao kwa uthibitisho wa ukamilishaji.\n"
+"\n"
+"Kikao: %(meeting)s\n"
+"Hatua: %(action)s\n"
+"Mtu anayewajibika: %(responsible)s\n"
+"\n"
+"Fungua Kituo cha Mapitio ya Hatua:\n"
+"%(review_url)s"
+
+#: meetings/services.py:491
+#, python-format
+msgid "Action completion review result — %(reference)s"
+msgstr "Matokeo ya mapitio ya ukamilishaji wa hatua — %(reference)s"
+
+#: meetings/services.py:495
+#, python-format
+msgid ""
+"Dear %(name)s,\n"
+"\n"
+"Your meeting action completion submission has been reviewed.\n"
+"\n"
+"Meeting: %(meeting)s\n"
+"Action: %(action)s\n"
+"Review result: %(outcome)s\n"
+"Review comment: %(comment)s\n"
+"\n"
+"Open your meetings workspace:\n"
+"%(workspace_url)s"
+msgstr ""
+"Ndugu %(name)s,\n"
+"\n"
+"Uwasilishaji wako wa ukamilishaji wa hatua ya kikao umekaguliwa.\n"
+"\n"
+"Kikao: %(meeting)s\n"
+"Hatua: %(action)s\n"
+"Matokeo ya mapitio: %(outcome)s\n"
+"Maoni ya mapitio: %(comment)s\n"
+"\n"
+"Fungua eneo lako la kazi la vikao:\n"
+"%(workspace_url)s"
+
+#: meetings/services.py:507
+msgid "No additional comment."
+msgstr "Hakuna maoni ya ziada."
+
+#: meetings/views.py:808
+msgid "Progress was saved, but some manager notifications failed."
+msgstr "Maendeleo yamehifadhiwa, lakini baadhi ya taarifa kwa wasimamizi hazikutumwa."
+
+#: meetings/views.py:866
+msgid "The review was saved, but the responsible person notification failed."
+msgstr "Mapitio yamehifadhiwa, lakini taarifa kwa mtu anayewajibika haikutumwa."
+
+#: templates/meetings/action_review_center.html:4
+#: templates/meetings/meeting_list.html:14
+msgid "Action Review Centre"
+msgstr "Kituo cha Mapitio ya Hatua"
+
+#: templates/meetings/action_review_center.html:8
+msgid "Completion accountability"
+msgstr "Uwajibikaji wa ukamilishaji"
+
+#: templates/meetings/action_review_center.html:8
+msgid "Review completion evidence from responsible officers and formally verify or return each action."
+msgstr "Kagua ushahidi wa ukamilishaji kutoka kwa maafisa wanaowajibika na uthibitishe rasmi au urejeshe kila hatua."
+
+#: templates/meetings/action_review_center.html:13
+msgid "Awaiting review"
+msgstr "Inasubiri mapitio"
+
+#: templates/meetings/action_review_center.html:14
+msgid "Waiting over 3 days"
+msgstr "Inasubiri zaidi ya siku 3"
+
+#: templates/meetings/action_review_center.html:20
+msgid "Search submissions"
+msgstr "Tafuta mawasilisho"
+
+#: templates/meetings/action_review_center.html:20
+msgid "Reference, action or responsible person"
+msgstr "Kumbukumbu, hatua au mtu anayewajibika"
+
+#: templates/meetings/action_review_center.html:26
+msgid "Manager decision queue"
+msgstr "Foleni ya maamuzi ya wasimamizi"
+
+#: templates/meetings/action_review_center.html:26
+msgid "Completion submissions awaiting review"
+msgstr "Mawasilisho ya ukamilishaji yanayosubiri mapitio"
+
+#: templates/meetings/action_review_center.html:30
+#, python-format
+msgid "Waiting %(days)s day"
+msgid_plural "Waiting %(days)s days"
+msgstr[0] "Inasubiri kwa siku %(days)s"
+msgstr[1] "Inasubiri kwa siku %(days)s"
+
+#: templates/meetings/action_review_center.html:30
+msgid "Completion statement"
+msgstr "Taarifa ya ukamilishaji"
+
+#: templates/meetings/action_review_center.html:30
+msgid "Open meeting action"
+msgstr "Fungua hatua ya kikao"
+
+#: templates/meetings/action_review_center.html:33
+msgid "No actions are awaiting review"
+msgstr "Hakuna hatua zinazosubiri mapitio"
+
+#: templates/meetings/action_review_center.html:33
+msgid "New completion submissions will appear here automatically."
+msgstr "Mawasilisho mapya ya ukamilishaji yataonekana hapa kiotomatiki."
+
+#: templates/meetings/action_review_center.html:38
+msgid "Recent completion review decisions"
+msgstr "Maamuzi ya hivi karibuni ya mapitio ya ukamilishaji"
+
+#: templates/meetings/action_review_center.html:39
+msgid "Reviewed"
+msgstr "Imekaguliwa"
+
+#: templates/meetings/action_review_center.html:39
+msgid "Outcome"
+msgstr "Matokeo"
+
+#: templates/meetings/action_review_center.html:39
+msgid "Reviewer"
+msgstr "Mkaguzi"
+
+#: templates/meetings/action_review_center.html:39
+msgid "No completion reviews have been recorded."
+msgstr "Hakuna mapitio ya ukamilishaji yaliyohifadhiwa."
