@@ -1,0 +1,12 @@
+{% extends "events/base_public.html" %}
+{% load static i18n %}
+{% block title %}{% translate "Verified participant record" %}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/special-event-participants.css' %}">{% endblock %}
+{% block content %}
+<section class="verification-page"><article class="verification-card">
+    <div class="verification-status"><span aria-hidden="true">✓</span><div><strong>{% translate "Verified participant record" %}</strong><small>{% translate "This QR code matches an active Special Event record." %}</small></div></div>
+    <header><span>{{ participant.event.code }}</span><h1>{{ participant.full_name }}</h1><p>{% if request.LANGUAGE_CODE == 'en' %}{{ participant.event.title_en }}{% else %}{{ participant.event.title_sw }}{% endif %}</p></header>
+    <dl><div><dt>{% translate "Phase / worksheet" %}</dt><dd>{{ participant.source_sheet }}</dd></div><div><dt>{% translate "Row number" %}</dt><dd>{{ participant.source_number }}</dd></div><div><dt>{% translate "Institution" %}</dt><dd>{{ participant.institution|default:"—" }}</dd></div><div><dt>{% translate "Research" %}</dt><dd>{{ participant.research_title|default:"—" }}</dd></div><div><dt>{% translate "Field" %}</dt><dd>{{ participant.research_field|default:"—" }}</dd></div></dl>
+    <footer>{% translate "Event Management System" %} · {% translate "Verified on" %} {% now "d M Y, H:i" %}</footer>
+</article></section>
+{% endblock %}

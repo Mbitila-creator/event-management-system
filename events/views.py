@@ -1,8 +1,33 @@
-from django.db.models import Q
-from django.shortcuts import get_object_or_404, render
-from django.utils import timezone
+from io import BytesIO
 
-from .models import Event, EventCategory
+import qrcode
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.views.decorators.http import require_http_methods
+
+from .forms import SpecialEventParticipantImportForm, special_event_queryset
+from .models import Event, EventCategory, SpecialEventParticipant
+from .services import import_special_event_participants
+
+
+def _require_events_permission(user, action="view"):
+    if not user.is_active or not user.has_perm(
+        f"events.{action}_specialeventparticipant"
+    ):
+        raise PermissionDenied
+
+
+def _special_events():
+    return [event for event in special_event_queryset() if event.category.is_special_event]
 
 
 def home(request):
@@ -145,3 +170,162 @@ def event_detail(request, event_slug):
         "events/event_detail.html",
         context,
     )
+
+
+@login_required(login_url="accounts:staff_login")
+def special_event_participant_list(request):
+    _require_events_permission(request.user)
+    events = _special_events()
+    selected_event = None
+    selected_event_id = request.GET.get("event", "").strip()
+    if selected_event_id:
+        selected_event = next(
+            (event for event in events if str(event.pk) == selected_event_id),
+            None,
+        )
+        if selected_event is None:
+            raise PermissionDenied
+    elif events:
+        selected_event = events[0]
+
+    participants = SpecialEventParticipant.objects.none()
+    search_query = request.GET.get("q", "").strip()
+    source_sheet = request.GET.get("sheet", "").strip()
+    sheet_choices = []
+    if selected_event:
+        participants = SpecialEventParticipant.objects.filter(
+            event=selected_event,
+            is_active=True,
+        )
+        sheet_choices = list(
+            participants.order_by("source_sheet")
+            .values_list("source_sheet", flat=True)
+            .distinct()
+        )
+        if search_query:
+            participants = participants.filter(
+                Q(full_name__icontains=search_query)
+                | Q(institution__icontains=search_query)
+                | Q(research_title__icontains=search_query)
+                | Q(research_field__icontains=search_query)
+                | Q(source_number__icontains=search_query)
+            )
+        if source_sheet:
+            participants = participants.filter(source_sheet=source_sheet)
+
+    paginator = Paginator(
+        participants.order_by("source_sheet", "source_row_index"),
+        50,
+    )
+    page = paginator.get_page(request.GET.get("page"))
+    return render(request, "events/special_event_participant_list.html", {
+        "events": events,
+        "selected_event": selected_event,
+        "participants_page": page,
+        "participant_count": paginator.count,
+        "search_query": search_query,
+        "selected_sheet": source_sheet,
+        "sheet_choices": sheet_choices,
+        "can_import": request.user.has_perm("events.add_specialeventparticipant"),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_http_methods(["GET", "POST"])
+def special_event_participant_import(request):
+    _require_events_permission(request.user, "add")
+    initial = {}
+    event_id = request.GET.get("event", "").strip()
+    if event_id:
+        initial["event"] = event_id
+    form = SpecialEventParticipantImportForm(
+        request.POST or None,
+        request.FILES or None,
+        initial=initial,
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            result = import_special_event_participants(
+                event=form.cleaned_data["event"],
+                uploaded_file=form.cleaned_data["workbook"],
+                user=request.user,
+            )
+        except ValidationError as exc:
+            form.add_error("workbook", exc)
+        else:
+            messages.success(
+                request,
+                _("Import completed: %(created)s added and %(updated)s updated.")
+                % {"created": result.created, "updated": result.updated},
+            )
+            return redirect(
+                f"{reverse('events:special_event_participant_list')}?event={form.cleaned_data['event'].pk}"
+            )
+    return render(request, "events/special_event_participant_import.html", {
+        "form": form,
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+def special_event_participant_print(request):
+    _require_events_permission(request.user)
+    events = _special_events()
+    selected_event = get_object_or_404(
+        Event.objects.select_related("category"),
+        pk=request.GET.get("event"),
+        is_active=True,
+    )
+    if selected_event not in events:
+        raise PermissionDenied
+    participants = SpecialEventParticipant.objects.filter(
+        event=selected_event,
+        is_active=True,
+    ).order_by("source_sheet", "source_row_index")
+    source_sheet = request.GET.get("sheet", "").strip()
+    if source_sheet:
+        participants = participants.filter(source_sheet=source_sheet)
+    return render(request, "events/special_event_participant_print.html", {
+        "selected_event": selected_event,
+        "participants": participants,
+        "selected_sheet": source_sheet,
+    })
+
+
+def special_event_participant_verify(request, token):
+    participant = get_object_or_404(
+        SpecialEventParticipant.objects.select_related("event", "event__category"),
+        verification_token=token,
+        is_active=True,
+        event__is_active=True,
+    )
+    return render(request, "events/special_event_participant_verify.html", {
+        "participant": participant,
+    })
+
+
+def special_event_participant_qr(request, token):
+    participant = get_object_or_404(
+        SpecialEventParticipant,
+        verification_token=token,
+        is_active=True,
+        event__is_active=True,
+    )
+    verification_path = reverse(
+        "events:special_event_participant_verify",
+        kwargs={"token": participant.verification_token},
+    )
+    base_url = settings.PUBLIC_BASE_URL
+    verification_url = (
+        f"{base_url}{verification_path}"
+        if base_url
+        else request.build_absolute_uri(verification_path)
+    )
+    image = qrcode.make(verification_url)
+    output = BytesIO()
+    image.save(output, format="PNG")
+    response = HttpResponse(output.getvalue(), content_type="image/png")
+    response["Content-Disposition"] = (
+        f'inline; filename="{participant.event.code}-{participant.source_number}-qr.png"'
+    )
+    response["Cache-Control"] = "public, max-age=3600"
+    return response

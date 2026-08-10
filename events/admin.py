@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Event, EventCategory, Venue
+from .models import Event, EventCategory, SpecialEventParticipant, Venue
 
 
 @admin.register(EventCategory)
@@ -339,5 +339,28 @@ class EventAdmin(admin.ModelAdmin):
         if not obj.pk or not obj.created_by:
             obj.created_by = request.user
 
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(SpecialEventParticipant)
+class SpecialEventParticipantAdmin(admin.ModelAdmin):
+    list_display = (
+        "full_name", "event", "source_sheet", "source_number",
+        "institution", "is_active", "updated_at",
+    )
+    list_filter = ("event", "source_sheet", "is_active")
+    search_fields = (
+        "full_name", "institution", "research_title", "research_field",
+        "source_number", "verification_token",
+    )
+    readonly_fields = (
+        "verification_token", "created_by", "updated_by", "created_at", "updated_at",
+    )
+    ordering = ("event", "source_sheet", "source_row_index")
+
+    def save_model(self, request, obj, form, change):
+        if not obj.pk or not obj.created_by:
+            obj.created_by = request.user
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)

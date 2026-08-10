@@ -1,0 +1,15 @@
+{% extends "events/base_public.html" %}
+{% load static i18n %}
+{% block title %}{% translate "Import Special Event participants" %}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/special-event-participants.css' %}">{% endblock %}
+{% block content %}
+<section class="special-event-page"><div class="special-event-container special-narrow">
+    <header class="special-event-heading"><div><span>{% translate "Special Event" %}</span><h1>{% translate "Import participant Excel file" %}</h1><p>{% translate "Each valid row receives a separate secure QR verification link." %}</p></div></header>
+    <div class="special-import-guide"><h2>{% translate "Required worksheet columns" %}</h2><p><strong>Na · JINA LA MTAFITI · TAASISI · UTAFITI · NYANJA</strong></p><p>{% translate "Worksheets with these headings, such as AWAMU_2 and AWAMU_3, will be imported. Importing the file again updates matching rows without changing their QR codes." %}</p></div>
+    <form method="post" enctype="multipart/form-data" class="special-import-form">{% csrf_token %}
+        {% if form.non_field_errors %}<div class="special-form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        {% for field in form %}<label>{{ field.label }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% if field.errors %}<span class="special-field-error">{{ field.errors|striptags }}</span>{% endif %}</label>{% endfor %}
+        <div class="special-form-actions"><button type="submit" class="special-primary-button">{% translate "Import participants" %}</button><a class="special-secondary-button" href="{% url 'events:special_event_participant_list' %}">{% translate "Cancel" %}</a></div>
+    </form>
+</div></section>
+{% endblock %}

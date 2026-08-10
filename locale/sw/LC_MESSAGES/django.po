@@ -7757,3 +7757,194 @@ msgstr "Mkaguzi"
 #: templates/meetings/action_review_center.html:39
 msgid "No completion reviews have been recorded."
 msgstr "Hakuna mapitio ya ukamilishaji yaliyohifadhiwa."
+
+# Special Event participant QR workflow
+msgid "Special event"
+msgstr "Tukio maalum"
+
+msgid "Select a special event"
+msgstr "Chagua tukio maalum"
+
+msgid "Participant Excel file"
+msgstr "Faili ya Excel ya washiriki"
+
+msgid "Upload an .xlsx file with the participant list."
+msgstr "Pakia faili la .xlsx lenye orodha ya washiriki."
+
+msgid "Select an event in the Special Event category."
+msgstr "Chagua tukio katika aina ya Tukio Maalum."
+
+msgid "Upload a valid .xlsx Excel file."
+msgstr "Pakia faili halali la Excel la .xlsx."
+
+msgid "The Excel file must not exceed 5 MB."
+msgstr "Faili la Excel halipaswi kuzidi MB 5."
+
+msgid "special event"
+msgstr "tukio maalum"
+
+msgid "source sheet"
+msgstr "karatasi chanzo"
+
+msgid "source row number"
+msgstr "namba ya mstari wa chanzo"
+
+msgid "source row position"
+msgstr "nafasi ya mstari wa chanzo"
+
+msgid "participant name"
+msgstr "jina la mshiriki"
+
+msgid "institution"
+msgstr "taasisi"
+
+msgid "research title"
+msgstr "jina la utafiti"
+
+msgid "research field"
+msgstr "nyanja ya utafiti"
+
+msgid "verification token"
+msgstr "tokeni ya uthibitishaji"
+
+msgid "special event participant"
+msgstr "mshiriki wa tukio maalum"
+
+msgid "special event participants"
+msgstr "washiriki wa tukio maalum"
+
+msgid "The uploaded file could not be read as an Excel workbook."
+msgstr "Faili lililopakiwa halikuweza kusomwa kama kitabu cha Excel."
+
+#, python-format
+msgid "Sheet %(sheet)s row %(row)s must contain Na and JINA LA MTAFITI."
+msgstr "Karatasi %(sheet)s mstari %(row)s lazima iwe na Na na JINA LA MTAFITI."
+
+#, python-format
+msgid "Sheet %(sheet)s contains duplicate participant number %(number)s."
+msgstr "Karatasi %(sheet)s ina namba ya mshiriki iliyorudiwa %(number)s."
+
+msgid "No worksheet has the required columns: Na, JINA LA MTAFITI, TAASISI, UTAFITI and NYANJA."
+msgstr "Hakuna karatasi yenye safu zinazohitajika: Na, JINA LA MTAFITI, TAASISI, UTAFITI na NYANJA."
+
+msgid "No participant rows were found in the Excel file."
+msgstr "Hakuna mistari ya washiriki iliyopatikana katika faili la Excel."
+
+#, python-format
+msgid "Import completed: %(created)s added and %(updated)s updated."
+msgstr "Uingizaji umekamilika: %(created)s wameongezwa na %(updated)s wamesasishwa."
+
+msgid "Special Event participants"
+msgstr "Washiriki wa Tukio Maalum"
+
+msgid "Import participant lists and print secure QR cards"
+msgstr "Ingiza orodha za washiriki na uchapishe kadi salama za QR"
+
+msgid "Special Events"
+msgstr "Matukio Maalum"
+
+msgid "Import Special Event participants"
+msgstr "Ingiza washiriki wa Tukio Maalum"
+
+msgid "Special Event"
+msgstr "Tukio Maalum"
+
+msgid "Import participant Excel file"
+msgstr "Ingiza faili la Excel la washiriki"
+
+msgid "Each valid row receives a separate secure QR verification link."
+msgstr "Kila mstari halali hupata kiungo chake salama cha uthibitishaji wa QR."
+
+msgid "Required worksheet columns"
+msgstr "Safu zinazohitajika kwenye karatasi"
+
+msgid "Worksheets with these headings, such as AWAMU_2 and AWAMU_3, will be imported. Importing the file again updates matching rows without changing their QR codes."
+msgstr "Karatasi zenye vichwa hivi, kama AWAMU_2 na AWAMU_3, zitaingizwa. Kuingiza faili tena husasisha mistari inayolingana bila kubadilisha misimbo yake ya QR."
+
+msgid "Import participants"
+msgstr "Ingiza washiriki"
+
+msgid "Participant QR records"
+msgstr "Kumbukumbu za QR za washiriki"
+
+msgid "Import, search and print the verified participant rows for a special event."
+msgstr "Ingiza, tafuta na uchapishe mistari iliyothibitishwa ya washiriki wa tukio maalum."
+
+msgid "Import Excel file"
+msgstr "Ingiza faili la Excel"
+
+msgid "Search participants"
+msgstr "Tafuta washiriki"
+
+msgid "Name, institution, research or number"
+msgstr "Jina, taasisi, utafiti au namba"
+
+msgid "Phase / worksheet"
+msgstr "Awamu / karatasi"
+
+msgid "All phases"
+msgstr "Awamu zote"
+
+msgid "participant records"
+msgstr "kumbukumbu za washiriki"
+
+msgid "Print QR cards"
+msgstr "Chapisha kadi za QR"
+
+msgid "Phase / No."
+msgstr "Awamu / Na."
+
+msgid "Institution"
+msgstr "Taasisi"
+
+msgid "Research"
+msgstr "Utafiti"
+
+msgid "Field"
+msgstr "Nyanja"
+
+msgid "Verification"
+msgstr "Uthibitishaji"
+
+msgid "Participant QR code"
+msgstr "Msimbo wa QR wa mshiriki"
+
+msgid "Open verified row"
+msgstr "Fungua mstari uliothibitishwa"
+
+msgid "No participant records were found for this selection."
+msgstr "Hakuna kumbukumbu za washiriki zilizopatikana kwa chaguo hili."
+
+msgid "Participant pages"
+msgstr "Kurasa za washiriki"
+
+#, python-format
+msgid "Page %(current)s of %(total)s"
+msgstr "Ukurasa %(current)s kati ya %(total)s"
+
+msgid "No Special Event is available"
+msgstr "Hakuna Tukio Maalum linalopatikana"
+
+msgid "Create an event in the Special Event category before importing participants."
+msgstr "Unda tukio katika aina ya Tukio Maalum kabla ya kuingiza washiriki."
+
+msgid "Special Event QR cards"
+msgstr "Kadi za QR za Tukio Maalum"
+
+msgid "QR cards"
+msgstr "Kadi za QR"
+
+msgid "Scan to view the verified participant row"
+msgstr "Changanua kuona mstari uliothibitishwa wa mshiriki"
+
+msgid "Verified participant record"
+msgstr "Kumbukumbu ya mshiriki iliyothibitishwa"
+
+msgid "This QR code matches an active Special Event record."
+msgstr "Msimbo huu wa QR unalingana na kumbukumbu hai ya Tukio Maalum."
+
+msgid "Row number"
+msgstr "Namba ya mstari"
+
+msgid "Verified on"
+msgstr "Imethibitishwa tarehe"

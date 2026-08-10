@@ -1,3 +1,5 @@
+import uuid
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import slugify
@@ -7,6 +9,7 @@ from core.models import BaseModel, Council
 
 
 class EventCategory(BaseModel):
+    SPECIAL_EVENT_CODE = "SPECIAL_EVENT"
     name_sw = models.CharField(
         _("name in Kiswahili"),
         max_length=150,
@@ -68,6 +71,16 @@ class EventCategory(BaseModel):
 
     def __str__(self):
         return f"{self.name_sw} / {self.name_en}"
+
+    @property
+    def is_special_event(self):
+        """Recognize the existing Special Event category without changing it."""
+        normalized_code = self.code.strip().upper().replace("-", "_").replace(" ", "_")
+        return (
+            normalized_code == self.SPECIAL_EVENT_CODE
+            or self.slug == "special-event"
+            or self.name_en.strip().casefold() == "special event"
+        )
 
 
 class Venue(BaseModel):
@@ -450,3 +463,83 @@ class Event(BaseModel):
 
     def __str__(self):
         return f"{self.code} - {self.title_sw}"
+
+
+class SpecialEventParticipant(BaseModel):
+    """A row imported for a participant in an existing Special Event."""
+
+    event = models.ForeignKey(
+        Event,
+        verbose_name=_("special event"),
+        related_name="special_event_participants",
+        on_delete=models.CASCADE,
+    )
+    source_sheet = models.CharField(
+        _("source sheet"),
+        max_length=100,
+    )
+    source_number = models.CharField(
+        _("source row number"),
+        max_length=50,
+    )
+    source_row_index = models.PositiveIntegerField(
+        _("source row position"),
+        default=0,
+        editable=False,
+    )
+    full_name = models.CharField(
+        _("participant name"),
+        max_length=300,
+    )
+    institution = models.TextField(
+        _("institution"),
+        blank=True,
+    )
+    research_title = models.TextField(
+        _("research title"),
+        blank=True,
+    )
+    research_field = models.TextField(
+        _("research field"),
+        blank=True,
+    )
+    verification_token = models.UUIDField(
+        _("verification token"),
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+
+    class Meta:
+        verbose_name = _("special event participant")
+        verbose_name_plural = _("special event participants")
+        ordering = ["event", "source_sheet", "source_row_index", "full_name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["event", "source_sheet", "source_number"],
+                name="unique_special_event_source_row",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["event", "source_sheet", "is_active"],
+                name="special_event_participant_idx",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.event_id and not self.event.category.is_special_event:
+            raise ValidationError({
+                "event": _("Select an event in the Special Event category."),
+            })
+
+    def save(self, *args, **kwargs):
+        self.source_sheet = self.source_sheet.strip()
+        self.source_number = self.source_number.strip()
+        self.full_name = self.full_name.strip()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.full_name} — {self.event.code}"
