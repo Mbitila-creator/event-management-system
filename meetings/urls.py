@@ -18,6 +18,16 @@ urlpatterns = [
         name="personal_action_update",
     ),
     path(
+        "staff/meetings/my-documents/<int:document_id>/download/",
+        views.personal_document_download,
+        name="personal_document_download",
+    ),
+    path(
+        "staff/meetings/my-documents/<int:document_id>/acknowledge/",
+        views.personal_document_acknowledge,
+        name="personal_document_acknowledge",
+    ),
+    path(
         "staff/meetings/dashboard/",
         views.executive_dashboard,
         name="executive_dashboard",

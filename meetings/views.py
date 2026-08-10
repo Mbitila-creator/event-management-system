@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Avg, Count, Max, Q
+from django.db.models import Avg, Count, Exists, Max, OuterRef, Prefetch, Q
 from django.db.models.functions import TruncMonth
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -53,6 +53,7 @@ from .models import (
     MeetingCommunicationLog,
     MeetingDecision,
     MeetingDocument,
+    MeetingDocumentAcknowledgement,
     MeetingFeedback,
     MeetingMinutesReview,
     MeetingResource,
@@ -631,8 +632,26 @@ def personal_meeting_workspace(request):
         raise PermissionDenied
     now = timezone.now()
     today = timezone.localdate()
+    acknowledgement_exists = MeetingDocumentAcknowledgement.objects.filter(
+        document_id=OuterRef("pk"),
+        attendee__user=request.user,
+        attendee__is_active=True,
+        is_active=True,
+    )
+    participant_documents = MeetingDocument.objects.filter(
+        is_active=True,
+        is_confidential=False,
+    ).select_related("agenda_item").annotate(
+        is_acknowledged=Exists(acknowledgement_exists),
+    ).order_by("document_type", "title_sw", "-version")
     participations = MeetingAttendee.objects.select_related(
         "meeting", "meeting__event", "meeting__event__venue",
+    ).prefetch_related(
+        Prefetch(
+            "meeting__documents",
+            queryset=participant_documents,
+            to_attr="participant_pack_documents",
+        ),
     ).filter(
         is_active=True,
         user=request.user,
@@ -734,6 +753,65 @@ def personal_action_update(request, action_id):
         messages.success(request, _("Your action progress was updated successfully."))
     else:
         messages.error(request, _form_error_message(form))
+    return redirect("meetings:personal_meeting_workspace")
+
+
+def _personal_document_access(request, document_id):
+    if not request.user.is_active:
+        raise PermissionDenied
+    document = get_object_or_404(
+        MeetingDocument.objects.select_related("meeting", "meeting__event"),
+        pk=document_id,
+        is_active=True,
+        is_confidential=False,
+        meeting__is_active=True,
+        meeting__attendees__user=request.user,
+        meeting__attendees__is_active=True,
+    )
+    attendee = get_object_or_404(
+        MeetingAttendee,
+        meeting=document.meeting,
+        user=request.user,
+        is_active=True,
+    )
+    return document, attendee
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def personal_document_download(request, document_id):
+    document, _attendee = _personal_document_access(request, document_id)
+    try:
+        document.file.open("rb")
+    except (FileNotFoundError, OSError):
+        raise Http404 from None
+    response = FileResponse(
+        document.file,
+        as_attachment=True,
+        filename=document.original_filename,
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def personal_document_acknowledge(request, document_id):
+    document, attendee = _personal_document_access(request, document_id)
+    acknowledgement, created = MeetingDocumentAcknowledgement.objects.get_or_create(
+        document=document,
+        attendee=attendee,
+        is_active=True,
+        defaults={
+            "created_by": request.user,
+            "updated_by": request.user,
+        },
+    )
+    if created:
+        messages.success(request, _("Receipt of the meeting document was acknowledged."))
+    else:
+        messages.info(request, _("You have already acknowledged this meeting document."))
     return redirect("meetings:personal_meeting_workspace")
 
 
@@ -1273,6 +1351,12 @@ def meeting_detail(request, meeting_id):
         ),
         "documents": meeting.documents.filter(is_active=True).select_related(
             "agenda_item", "created_by",
+        ).annotate(
+            acknowledgement_count=Count(
+                "acknowledgements",
+                filter=Q(acknowledgements__is_active=True),
+                distinct=True,
+            ),
         ),
         "resource_booking_form": MeetingResourceBookingForm(
             meeting=meeting,

@@ -12,6 +12,7 @@ from .models import (
     MeetingCommunicationLog,
     MeetingDecision,
     MeetingDocument,
+    MeetingDocumentAcknowledgement,
     MeetingFeedback,
     MeetingMinutesReview,
     MeetingResource,
@@ -308,6 +309,30 @@ class MeetingDocumentAdmin(AuditAdminMixin, admin.ModelAdmin):
     autocomplete_fields = ("meeting", "agenda_item")
     readonly_fields = AuditAdminMixin.readonly_fields + ("original_filename",)
     ordering = ("meeting", "document_type", "title_sw", "-version")
+
+
+@admin.register(MeetingDocumentAcknowledgement)
+class MeetingDocumentAcknowledgementAdmin(admin.ModelAdmin):
+    list_display = ("document", "attendee", "acknowledged_at", "is_active")
+    list_filter = ("acknowledged_at", "document__meeting", "is_active")
+    search_fields = (
+        "document__meeting__reference_number", "document__title_sw",
+        "document__title_en", "attendee__full_name", "attendee__email",
+    )
+    readonly_fields = (
+        "document", "attendee", "acknowledged_at", "created_by", "updated_by",
+        "created_at", "updated_at", "is_active",
+    )
+    ordering = ("-acknowledged_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(MeetingMinutesReview)

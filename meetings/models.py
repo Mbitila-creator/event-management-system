@@ -957,6 +957,60 @@ class MeetingAttendee(BaseModel):
         return f"{self.full_name} - {self.meeting.reference_number}"
 
 
+class MeetingDocumentAcknowledgement(BaseModel):
+    document = models.ForeignKey(
+        MeetingDocument,
+        verbose_name=_("meeting document"),
+        related_name="acknowledgements",
+        on_delete=models.CASCADE,
+    )
+    attendee = models.ForeignKey(
+        MeetingAttendee,
+        verbose_name=_("meeting participant"),
+        related_name="document_acknowledgements",
+        on_delete=models.CASCADE,
+    )
+    acknowledged_at = models.DateTimeField(
+        _("acknowledged at"),
+        default=timezone.now,
+    )
+
+    class Meta:
+        verbose_name = _("meeting document acknowledgement")
+        verbose_name_plural = _("meeting document acknowledgements")
+        ordering = ["-acknowledged_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["document", "attendee"],
+                condition=Q(is_active=True),
+                name="unique_active_meeting_document_ack",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["document", "acknowledged_at"],
+                name="meeting_document_ack_idx",
+            ),
+        ]
+
+    def clean(self):
+        if (
+            self.document_id
+            and self.attendee_id
+            and self.document.meeting_id != self.attendee.meeting_id
+        ):
+            raise ValidationError({
+                "attendee": _("The participant and document must belong to the same meeting."),
+            })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.document} - {self.attendee.full_name}"
+
+
 class MeetingFeedback(BaseModel):
     class Rating(models.IntegerChoices):
         VERY_POOR = 1, _("Very poor")

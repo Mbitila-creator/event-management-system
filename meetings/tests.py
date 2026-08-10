@@ -20,6 +20,7 @@ from .models import (
     MeetingCommunicationLog,
     MeetingDecision,
     MeetingDocument,
+    MeetingDocumentAcknowledgement,
     MeetingFeedback,
     MeetingMinutesReview,
     MeetingResource,
@@ -1765,6 +1766,98 @@ class MeetingWorkflowTests(TestCase):
         self.assertEqual(forbidden.status_code, 404)
         other_action.refresh_from_db()
         self.assertEqual(other_action.status, MeetingActionItem.Status.PENDING)
+
+    def test_participant_meeting_pack_protects_files_and_records_acknowledgement(self):
+        participant = User.objects.create_user(
+            username="meeting.pack.participant",
+            email="meeting.pack.participant@example.com",
+            role=User.Role.PARTICIPANT,
+            preferred_language="en",
+        )
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            user=participant,
+            full_name="Meeting Pack Participant",
+            email=participant.email,
+            response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
+        )
+        outsider = User.objects.create_user(
+            username="meeting.pack.outsider",
+            email="meeting.pack.outsider@example.com",
+            role=User.Role.PARTICIPANT,
+            preferred_language="en",
+        )
+        media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media_root, ignore_errors=True)
+        with override_settings(MEDIA_ROOT=media_root):
+            shared_document = MeetingDocument.objects.create(
+                meeting=self.meeting,
+                document_type=MeetingDocument.DocumentType.AGENDA_PAPER,
+                title_sw="Waraka wa washiriki",
+                title_en="Participant agenda paper",
+                file=SimpleUploadedFile(
+                    "participant-agenda.pdf",
+                    b"%PDF-1.4 participant meeting pack",
+                    content_type="application/pdf",
+                ),
+                original_filename="participant-agenda.pdf",
+                is_confidential=False,
+            )
+            confidential_document = MeetingDocument.objects.create(
+                meeting=self.meeting,
+                document_type=MeetingDocument.DocumentType.SUPPORTING_DOCUMENT,
+                title_sw="Waraka wa siri",
+                title_en="Confidential management paper",
+                file=SimpleUploadedFile(
+                    "confidential.pdf",
+                    b"%PDF-1.4 confidential",
+                    content_type="application/pdf",
+                ),
+                original_filename="confidential.pdf",
+                is_confidential=True,
+            )
+
+            self.client.force_login(participant)
+            workspace = self.client.get("/en/staff/meetings/my-workspace/")
+            self.assertContains(workspace, "Participant agenda paper")
+            self.assertNotContains(workspace, "Confidential management paper")
+            download = self.client.get(
+                f"/en/staff/meetings/my-documents/{shared_document.pk}/download/",
+            )
+            self.assertEqual(download.status_code, 200)
+            self.assertEqual(download["Cache-Control"], "private, no-store")
+            self.assertEqual(
+                b"".join(download.streaming_content),
+                b"%PDF-1.4 participant meeting pack",
+            )
+            blocked = self.client.get(
+                f"/en/staff/meetings/my-documents/{confidential_document.pk}/download/",
+            )
+            self.assertEqual(blocked.status_code, 404)
+
+            acknowledgement_url = (
+                f"/en/staff/meetings/my-documents/{shared_document.pk}/acknowledge/"
+            )
+            first = self.client.post(acknowledgement_url)
+            second = self.client.post(acknowledgement_url)
+            self.assertEqual(first.status_code, 302)
+            self.assertEqual(second.status_code, 302)
+            self.assertEqual(
+                MeetingDocumentAcknowledgement.objects.filter(
+                    document=shared_document,
+                    attendee=attendee,
+                    is_active=True,
+                ).count(),
+                1,
+            )
+            workspace = self.client.get("/en/staff/meetings/my-workspace/")
+            self.assertContains(workspace, "Receipt acknowledged")
+
+            self.client.force_login(outsider)
+            unauthorized = self.client.get(
+                f"/en/staff/meetings/my-documents/{shared_document.pk}/download/",
+            )
+            self.assertEqual(unauthorized.status_code, 404)
 
     def test_registration_officer_cannot_access_meeting_workspace(self):
         officer = User.objects.create_user(
