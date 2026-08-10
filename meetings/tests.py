@@ -1646,6 +1646,126 @@ class MeetingWorkflowTests(TestCase):
         )
         self.assertEqual(forbidden.status_code, 403)
 
+    def test_internal_participant_sees_only_personal_meetings_and_actions(self):
+        participant = User.objects.create_user(
+            username="internal.participant",
+            email="internal.participant@example.com",
+            role=User.Role.PARTICIPANT,
+            preferred_language="en",
+        )
+        MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            user=participant,
+            full_name="Internal Participant",
+            email=participant.email,
+            response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
+        )
+        personal_action = MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="Andaa taarifa binafsi",
+            description_en="Prepare my assigned report",
+            responsible_user=participant,
+            responsible_name="",
+            due_date=timezone.localdate() + timedelta(days=3),
+        )
+        other_user = User.objects.create_user(
+            username="other.participant",
+            email="other.participant@example.com",
+        )
+        MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=2,
+            description_sw="Hatua ya mtu mwingine",
+            description_en="Another person's private action",
+            responsible_user=other_user,
+            responsible_name="",
+            due_date=timezone.localdate() + timedelta(days=2),
+        )
+        self.meeting.attendance_mode = Meeting.AttendanceMode.ONLINE
+        self.meeting.online_platform = Meeting.OnlinePlatform.ZOOM
+        self.meeting.online_join_url = "https://zoom.example.com/j/personal-workspace"
+        self.meeting.online_passcode = "MySecureCode"
+        self.meeting.save()
+
+        self.client.force_login(participant)
+        role_home = self.client.get("/en/staff/")
+        self.assertRedirects(
+            role_home,
+            "/en/staff/meetings/my-workspace/",
+            fetch_redirect_response=False,
+        )
+        workspace = self.client.get("/en/staff/meetings/my-workspace/")
+        self.assertEqual(workspace.status_code, 200)
+        self.assertContains(workspace, "My meetings and actions")
+        self.assertContains(workspace, self.meeting.reference_number)
+        self.assertContains(workspace, "Prepare my assigned report")
+        self.assertContains(workspace, self.meeting.online_join_url)
+        self.assertContains(workspace, "MySecureCode")
+        self.assertNotContains(workspace, "Another person's private action")
+        self.assertEqual(
+            self.client.get("/en/staff/meetings/").status_code,
+            403,
+        )
+        self.assertEqual(personal_action.responsible_user, participant)
+
+    def test_responsible_user_updates_own_action_but_not_another_users_action(self):
+        owner = User.objects.create_user(
+            username="action.owner",
+            email="action.owner@example.com",
+            role=User.Role.PARTICIPANT,
+            preferred_language="en",
+        )
+        other_owner = User.objects.create_user(
+            username="different.owner",
+            email="different.owner@example.com",
+        )
+        own_action = MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=1,
+            description_sw="Kamilisha jukumu",
+            description_en="Complete assigned work",
+            responsible_user=owner,
+            responsible_name="",
+            due_date=timezone.localdate() + timedelta(days=1),
+        )
+        other_action = MeetingActionItem.objects.create(
+            meeting=self.meeting,
+            action_number=2,
+            description_sw="Jukumu la mwingine",
+            responsible_user=other_owner,
+            responsible_name="",
+            due_date=timezone.localdate() + timedelta(days=1),
+        )
+        self.client.force_login(owner)
+        updated = self.client.post(
+            f"/en/staff/meetings/my-actions/{own_action.pk}/update/",
+            {
+                "status": MeetingActionItem.Status.COMPLETED,
+                "progress_notes": "Work completed and submitted.",
+            },
+        )
+        self.assertRedirects(
+            updated,
+            "/en/staff/meetings/my-workspace/",
+            fetch_redirect_response=False,
+        )
+        own_action.refresh_from_db()
+        self.assertEqual(own_action.status, MeetingActionItem.Status.COMPLETED)
+        self.assertEqual(own_action.updated_by, owner)
+        self.assertIsNotNone(own_action.completed_at)
+
+        forbidden = self.client.post(
+            f"/en/staff/meetings/my-actions/{other_action.pk}/update/",
+            {
+                "status": MeetingActionItem.Status.COMPLETED,
+                "progress_notes": "Unauthorized update",
+            },
+        )
+        self.assertEqual(forbidden.status_code, 404)
+        other_action.refresh_from_db()
+        self.assertEqual(other_action.status, MeetingActionItem.Status.PENDING)
+
     def test_registration_officer_cannot_access_meeting_workspace(self):
         officer = User.objects.create_user(
             username="registration.only",

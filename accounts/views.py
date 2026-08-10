@@ -112,6 +112,23 @@ def role_home(request):
         return redirect("checkin:lookup")
     if request.user.role == User.Role.REPORT_OFFICER:
         return redirect("checkin:reports")
+    if request.user.role == User.Role.PARTICIPANT:
+        from meetings.models import MeetingActionItem, MeetingAttendee
+
+        has_meeting_work = (
+            MeetingAttendee.objects.filter(
+                user=request.user,
+                is_active=True,
+                meeting__is_active=True,
+            ).exists()
+            or MeetingActionItem.objects.filter(
+                responsible_user=request.user,
+                is_active=True,
+                meeting__is_active=True,
+            ).exists()
+        )
+        if has_meeting_work:
+            return redirect("meetings:personal_meeting_workspace")
     return redirect("forms_builder:registration_status")
 
 

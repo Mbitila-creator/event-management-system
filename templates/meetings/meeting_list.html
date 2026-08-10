@@ -8,6 +8,7 @@
 <header class="meeting-hero">
     <div><span>{% translate "Meetings module" %}</span><h1>{% translate "Meetings workspace" %}</h1><p>{% translate "Plan meetings, manage invitations and attendance, record decisions, and follow action items." %}</p></div>
     <div class="meeting-hero-actions">
+        <a class="meeting-secondary-button" href="{% url 'meetings:personal_meeting_workspace' %}">{% translate "My meetings" %}</a>
         <a class="meeting-secondary-button" href="{% url 'meetings:executive_dashboard' %}">{% translate "Executive dashboard" %}</a>
         <a class="meeting-secondary-button" href="{% url 'meetings:decision_register' %}">{% translate "Decisions register" %}</a>
         <a class="meeting-secondary-button" href="{% url 'meetings:follow_up_center' %}">{% translate "Follow-up centre" %}</a>

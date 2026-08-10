@@ -634,6 +634,37 @@ class ActionProgressForm(forms.Form):
     )
 
 
+class PersonalActionProgressForm(forms.Form):
+    status = forms.ChoiceField(
+        label=_("Progress status"),
+        choices=(
+            (MeetingActionItem.Status.PENDING, _("Pending")),
+            (MeetingActionItem.Status.IN_PROGRESS, _("In progress")),
+            (MeetingActionItem.Status.COMPLETED, _("Completed")),
+        ),
+    )
+    progress_notes = forms.CharField(
+        label=_("Progress update"),
+        required=False,
+        widget=forms.Textarea(attrs={
+            "rows": 3,
+            "placeholder": _("Describe progress, results or any implementation challenge."),
+        }),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if (
+            cleaned_data.get("status") != MeetingActionItem.Status.COMPLETED
+            and not cleaned_data.get("progress_notes", "").strip()
+        ):
+            self.add_error(
+                "progress_notes",
+                _("Enter a progress update before saving an open action."),
+            )
+        return cleaned_data
+
+
 class InvitationResponseForm(forms.Form):
     response_status = forms.ChoiceField(
         label=_("Your response"),

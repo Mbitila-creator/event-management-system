@@ -8,6 +8,16 @@ app_name = "meetings"
 urlpatterns = [
     path("staff/meetings/", views.meeting_list, name="meeting_list"),
     path(
+        "staff/meetings/my-workspace/",
+        views.personal_meeting_workspace,
+        name="personal_meeting_workspace",
+    ),
+    path(
+        "staff/meetings/my-actions/<int:action_id>/update/",
+        views.personal_action_update,
+        name="personal_action_update",
+    ),
+    path(
         "staff/meetings/dashboard/",
         views.executive_dashboard,
         name="executive_dashboard",

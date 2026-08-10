@@ -44,6 +44,7 @@ from .forms import (
     MeetingClosureForm,
     MinutesApprovalForm,
     MinutesReturnForm,
+    PersonalActionProgressForm,
 )
 from .models import (
     Meeting,
@@ -621,6 +622,119 @@ def meeting_list(request):
         ).count(),
     }
     return render(request, "meetings/meeting_list.html", context)
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def personal_meeting_workspace(request):
+    if not request.user.is_active:
+        raise PermissionDenied
+    now = timezone.now()
+    today = timezone.localdate()
+    participations = MeetingAttendee.objects.select_related(
+        "meeting", "meeting__event", "meeting__event__venue",
+    ).filter(
+        is_active=True,
+        user=request.user,
+        meeting__is_active=True,
+    ).exclude(
+        meeting__event__status=Event.Status.CANCELLED,
+    )
+    upcoming_participations = participations.filter(
+        meeting__event__ends_at__gte=now,
+    ).order_by("meeting__event__starts_at")
+    recent_participations = participations.filter(
+        meeting__event__ends_at__lt=now,
+    ).order_by("-meeting__event__starts_at")[:20]
+
+    actions = MeetingActionItem.objects.select_related(
+        "meeting", "meeting__event", "decision",
+    ).filter(
+        is_active=True,
+        meeting__is_active=True,
+        responsible_user=request.user,
+    )
+    selected_status = request.GET.get("status", "OPEN").strip().upper()
+    closed_statuses = {
+        MeetingActionItem.Status.COMPLETED,
+        MeetingActionItem.Status.CANCELLED,
+    }
+    all_actions = actions
+    if selected_status == "OPEN":
+        actions = actions.exclude(status__in=closed_statuses)
+    elif selected_status == "OVERDUE":
+        actions = actions.filter(
+            Q(status=MeetingActionItem.Status.OVERDUE) | Q(due_date__lt=today),
+        ).exclude(status__in=closed_statuses)
+    elif selected_status == MeetingActionItem.Status.COMPLETED:
+        actions = actions.filter(status=MeetingActionItem.Status.COMPLETED)
+    elif selected_status != "ALL":
+        selected_status = "OPEN"
+        actions = actions.exclude(status__in=closed_statuses)
+    action_rows = list(actions.order_by("due_date", "meeting__event__starts_at"))
+    for action in action_rows:
+        action.is_personal_overdue = bool(
+            action.status not in closed_statuses
+            and action.due_date
+            and action.due_date < today
+        )
+        action.days_overdue = (
+            (today - action.due_date).days if action.is_personal_overdue else 0
+        )
+        action.progress_form = PersonalActionProgressForm(initial={
+            "status": (
+                MeetingActionItem.Status.IN_PROGRESS
+                if action.status == MeetingActionItem.Status.OVERDUE
+                else action.status
+            ),
+            "progress_notes": action.progress_notes,
+        })
+    return render(request, "meetings/personal_workspace.html", {
+        "upcoming_participations": upcoming_participations,
+        "recent_participations": recent_participations,
+        "actions": action_rows,
+        "selected_status": selected_status,
+        "summary": {
+            "upcoming": upcoming_participations.count(),
+            "open_actions": all_actions.exclude(status__in=closed_statuses).count(),
+            "overdue_actions": all_actions.filter(
+                Q(status=MeetingActionItem.Status.OVERDUE) | Q(due_date__lt=today),
+            ).exclude(status__in=closed_statuses).count(),
+            "completed_actions": all_actions.filter(
+                status=MeetingActionItem.Status.COMPLETED,
+            ).count(),
+        },
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_POST
+def personal_action_update(request, action_id):
+    if not request.user.is_active:
+        raise PermissionDenied
+    action = get_object_or_404(
+        MeetingActionItem,
+        pk=action_id,
+        responsible_user=request.user,
+        is_active=True,
+        meeting__is_active=True,
+    )
+    if action.status in {
+        MeetingActionItem.Status.COMPLETED,
+        MeetingActionItem.Status.CANCELLED,
+    }:
+        messages.error(request, _("A closed action cannot be changed from the personal workspace."))
+        return redirect("meetings:personal_meeting_workspace")
+    form = PersonalActionProgressForm(request.POST)
+    if form.is_valid():
+        action.status = form.cleaned_data["status"]
+        action.progress_notes = form.cleaned_data["progress_notes"].strip()
+        action.updated_by = request.user
+        action.save()
+        messages.success(request, _("Your action progress was updated successfully."))
+    else:
+        messages.error(request, _form_error_message(form))
+    return redirect("meetings:personal_meeting_workspace")
 
 
 @login_required(login_url="accounts:staff_login")

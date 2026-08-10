@@ -31,6 +31,7 @@
         {% if selected_view != "all" %}<div class="workspace-filter-status"><span>{% translate "Filtered view" %}</span><a href="?view=all">{% translate "Show all dashboard sections" %}</a></div>{% endif %}
 
         <nav class="workspace-actions" aria-label="{% translate 'Staff tools' %}">
+            <a href="{% url 'meetings:personal_meeting_workspace' %}"><strong>{% translate "My meetings and actions" %}</strong><span>{% translate "Review my invitations, joining details and assigned actions" %}</span></a>
             <a href="{% url 'checkin:lookup' %}"><strong>{% translate "Participant check-in" %}</strong><span>{% translate "Scan a badge or enter a reference number" %}</span></a>
             {% if is_event_admin %}
                 <a href="{% url 'meetings:meeting_list' %}"><strong>{% translate "Meetings workflow" %}</strong><span>{% translate "Plan meetings, invitations, minutes and action items" %}</span></a>
