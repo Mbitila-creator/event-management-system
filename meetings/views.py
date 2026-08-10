@@ -1,9 +1,12 @@
+import base64
 import calendar
 import csv
 from collections import defaultdict
 from datetime import date, timedelta
+from io import BytesIO
 from pathlib import Path
 
+import qrcode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -11,9 +14,10 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from accounts.models import User
 from events.models import Event
@@ -120,6 +124,38 @@ def _require_manager(user):
 def _require_minutes_approver(user):
     if not _can_approve_minutes(user):
         raise PermissionDenied
+
+
+def _meeting_checkin_state(meeting, moment=None):
+    moment = moment or timezone.now()
+    if not meeting.checkin_enabled:
+        return False, _("QR check-in is not enabled for this meeting.")
+    if meeting.event.status == Event.Status.CANCELLED:
+        return False, _("Check-in is not available for a cancelled meeting.")
+    if meeting.checkin_opens_at and moment < meeting.checkin_opens_at:
+        return False, _("The meeting check-in window has not opened yet.")
+    if meeting.checkin_closes_at and moment > meeting.checkin_closes_at:
+        return False, _("The meeting check-in window is closed.")
+    return True, ""
+
+
+def _qr_data_uri(value):
+    qr = qrcode.QRCode(version=4, box_size=8, border=3)
+    qr.add_data(value)
+    qr.make(fit=True)
+    image = qr.make_image(fill_color="#17365d", back_color="white")
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
+
+
+def _attendee_checkin_url(request, attendee):
+    path = reverse(
+        "meetings:attendee_checkin",
+        kwargs={"response_token": attendee.response_token},
+    )
+    return request.build_absolute_uri(f"{path}?auto=1")
 
 
 def _meeting_queryset():
@@ -602,11 +638,14 @@ def meeting_edit(request, meeting_id):
 def meeting_detail(request, meeting_id):
     _require_view_access(request.user)
     meeting = get_object_or_404(_meeting_queryset(), pk=meeting_id, is_active=True)
-    attendees = meeting.attendees.filter(is_active=True).order_by("full_name")
+    attendees = meeting.attendees.filter(is_active=True).select_related(
+        "checked_in_by",
+    ).order_by("full_name")
     actions = meeting.action_items.filter(is_active=True).order_by("action_number")
     present_count = attendees.filter(
         attendance_status=MeetingAttendee.AttendanceStatus.PRESENT,
     ).count()
+    checkin_allowed, checkin_message = _meeting_checkin_state(meeting)
     context = {
         "meeting": meeting,
         "agenda_items": meeting.agenda_items.filter(is_active=True),
@@ -628,6 +667,8 @@ def meeting_detail(request, meeting_id):
             response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
         ).count(),
         "present_count": present_count,
+        "checkin_allowed": checkin_allowed,
+        "checkin_message": checkin_message,
         "quorum_met": (
             present_count >= meeting.quorum_required
             if meeting.quorum_required
@@ -890,6 +931,16 @@ def attendee_update(request, meeting_id, attendee_id):
             timezone.now()
             if new_attendance == MeetingAttendee.AttendanceStatus.PRESENT
             else None
+        )
+        attendee.checked_in_by = (
+            request.user
+            if new_attendance == MeetingAttendee.AttendanceStatus.PRESENT
+            else None
+        )
+        attendee.checkin_method = (
+            MeetingAttendee.CheckinMethod.MANUAL
+            if new_attendance == MeetingAttendee.AttendanceStatus.PRESENT
+            else ""
         )
         attendee.updated_by = request.user
         attendee.save()
@@ -1331,9 +1382,138 @@ def invitation_response(request, response_token):
             "response_status", "responded_at", "updated_at",
         ])
         submitted = True
+    show_checkin_pass = bool(
+        attendee.meeting.checkin_enabled
+        and attendee.response_status in {
+            MeetingAttendee.ResponseStatus.ACCEPTED,
+            MeetingAttendee.ResponseStatus.TENTATIVE,
+        }
+    )
+    checkin_url = (
+        _attendee_checkin_url(request, attendee) if show_checkin_pass else ""
+    )
     return render(request, "meetings/invitation_response.html", {
         "attendee": attendee,
         "meeting": attendee.meeting,
         "form": form,
         "submitted": submitted,
+        "checkin_qr": _qr_data_uri(checkin_url) if checkin_url else "",
     })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def attendee_pass(request, meeting_id, attendee_id):
+    if not _can_record_attendance(request.user):
+        raise PermissionDenied
+    attendee = get_object_or_404(
+        MeetingAttendee.objects.select_related("meeting__event"),
+        pk=attendee_id,
+        meeting_id=meeting_id,
+        is_active=True,
+        meeting__is_active=True,
+    )
+    checkin_url = _attendee_checkin_url(request, attendee)
+    return render(request, "meetings/attendee_pass.html", {
+        "attendee": attendee,
+        "meeting": attendee.meeting,
+        "checkin_qr": _qr_data_uri(checkin_url),
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_http_methods(["GET", "POST"])
+def attendee_checkin(request, response_token):
+    if not _can_record_attendance(request.user):
+        raise PermissionDenied
+    attendee = get_object_or_404(
+        MeetingAttendee.objects.select_related(
+            "meeting__event", "meeting__event__venue", "checked_in_by",
+        ),
+        response_token=response_token,
+        is_active=True,
+        meeting__is_active=True,
+    )
+    checkin_allowed, checkin_message = _meeting_checkin_state(attendee.meeting)
+    if attendee.response_status == MeetingAttendee.ResponseStatus.DECLINED:
+        checkin_allowed = False
+        checkin_message = _(
+            "This participant declined the invitation and cannot be checked in."
+        )
+    just_checked_in = False
+    automatic = request.method == "GET" and request.GET.get("auto") == "1"
+    if (
+        (request.method == "POST" or automatic)
+        and checkin_allowed
+        and not attendee.checked_in_at
+    ):
+        with transaction.atomic():
+            locked = MeetingAttendee.objects.select_for_update().get(
+                pk=attendee.pk,
+            )
+            if not locked.checked_in_at:
+                locked.attendance_status = MeetingAttendee.AttendanceStatus.PRESENT
+                locked.checked_in_at = timezone.now()
+                locked.checked_in_by = request.user
+                locked.checkin_method = MeetingAttendee.CheckinMethod.QR
+                locked.updated_by = request.user
+                locked.save(update_fields=[
+                    "attendance_status", "checked_in_at", "checked_in_by",
+                    "checkin_method", "updated_by", "updated_at",
+                ])
+                just_checked_in = True
+            attendee = locked
+    elif attendee.checked_in_at:
+        checkin_message = _("This participant is already checked in.")
+    return render(request, "meetings/attendee_checkin.html", {
+        "attendee": attendee,
+        "meeting": attendee.meeting,
+        "checkin_allowed": checkin_allowed,
+        "checkin_message": checkin_message,
+        "just_checked_in": just_checked_in,
+        "automatic": automatic,
+    })
+
+
+@login_required(login_url="accounts:staff_login")
+@require_GET
+def attendance_register_csv(request, meeting_id):
+    _require_view_access(request.user)
+    meeting = get_object_or_404(_meeting_queryset(), pk=meeting_id, is_active=True)
+    attendees = meeting.attendees.filter(is_active=True).select_related(
+        "checked_in_by",
+    ).order_by("full_name")
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response.write("\ufeff")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{meeting.reference_number.replace("/", "-")}'
+        '-attendance-register.csv"'
+    )
+    writer = csv.writer(response)
+    writer.writerow([
+        _("Meeting reference"), _("Participant"), _("Organization"),
+        _("Email address"), _("Phone number"),
+        _("Invitation response"), _("Attendance"), _("Checked in at"),
+        _("Checked in by"), _("Check-in method"),
+    ])
+    for attendee in attendees:
+        checked_in_by = (
+            attendee.checked_in_by.get_full_name().strip()
+            or attendee.checked_in_by.username
+            if attendee.checked_in_by
+            else ""
+        )
+        writer.writerow([_safe_csv_value(value) for value in (
+            meeting.reference_number,
+            attendee.full_name,
+            attendee.organization,
+            attendee.email,
+            attendee.phone_number,
+            attendee.get_response_status_display(),
+            attendee.get_attendance_status_display(),
+            timezone.localtime(attendee.checked_in_at).isoformat()
+            if attendee.checked_in_at else "",
+            checked_in_by,
+            attendee.get_checkin_method_display() if attendee.checkin_method else "",
+        )])
+    return response

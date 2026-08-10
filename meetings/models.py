@@ -104,6 +104,20 @@ class Meeting(BaseModel):
     online_instructions_en = models.TextField(
         _("online joining instructions in English"), blank=True,
     )
+    checkin_enabled = models.BooleanField(
+        _("meeting QR check-in enabled"),
+        default=False,
+    )
+    checkin_opens_at = models.DateTimeField(
+        _("check-in opens at"),
+        null=True,
+        blank=True,
+    )
+    checkin_closes_at = models.DateTimeField(
+        _("check-in closes at"),
+        null=True,
+        blank=True,
+    )
     chairperson_name = models.CharField(
         _("chairperson"),
         max_length=200,
@@ -194,6 +208,14 @@ class Meeting(BaseModel):
         if self.quorum_required == 0:
             errors["quorum_required"] = _(
                 "The required quorum must be greater than zero."
+            )
+        if (
+            self.checkin_opens_at
+            and self.checkin_closes_at
+            and self.checkin_closes_at <= self.checkin_opens_at
+        ):
+            errors["checkin_closes_at"] = _(
+                "The check-in closing time must be after the opening time."
             )
         if self.attendance_mode in {
             self.AttendanceMode.ONLINE,
@@ -748,6 +770,10 @@ class MeetingAttendee(BaseModel):
         SWAHILI = "sw", _("Kiswahili")
         ENGLISH = "en", _("English")
 
+    class CheckinMethod(models.TextChoices):
+        QR = "QR", _("QR scan")
+        MANUAL = "MANUAL", _("Manual attendance update")
+
     meeting = models.ForeignKey(
         Meeting,
         verbose_name=_("meeting"),
@@ -822,6 +848,20 @@ class MeetingAttendee(BaseModel):
     checked_in_at = models.DateTimeField(
         _("checked in at"),
         null=True,
+        blank=True,
+    )
+    checked_in_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("checked in by"),
+        related_name="meeting_participant_checkins",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    checkin_method = models.CharField(
+        _("meeting check-in method"),
+        max_length=20,
+        choices=CheckinMethod.choices,
         blank=True,
     )
 

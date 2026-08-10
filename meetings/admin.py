@@ -88,9 +88,10 @@ class MeetingAttendeeInline(admin.TabularInline):
     extra = 0
     fields = (
         "attendee_type", "user", "full_name", "organization",
-        "preferred_language", "response_status", "attendance_status", "is_active",
+        "preferred_language", "response_status", "attendance_status",
+        "checked_in_at", "checked_in_by", "checkin_method", "is_active",
     )
-    autocomplete_fields = ("user",)
+    autocomplete_fields = ("user", "checked_in_by")
     ordering = ("full_name",)
 
 
@@ -161,6 +162,9 @@ class MeetingAdmin(AuditAdminMixin, admin.ModelAdmin):
             "online_meeting_id", "online_passcode", "online_instructions_sw",
             "online_instructions_en",
         )}),
+        (_("Secure meeting check-in"), {"fields": (
+            "checkin_enabled", "checkin_opens_at", "checkin_closes_at",
+        )}),
         (_("Meeting minutes"), {"fields": (
             "minutes_status", "minutes_sw", "minutes_en", "minutes_document",
             "minutes_approved_by", "minutes_approved_at",
@@ -225,7 +229,8 @@ class MeetingAgendaItemAdmin(AuditAdminMixin, admin.ModelAdmin):
 class MeetingAttendeeAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_display = (
         "full_name", "meeting", "attendee_type", "organization",
-        "preferred_language", "response_status", "attendance_status", "is_active",
+        "preferred_language", "response_status", "attendance_status",
+        "checked_in_at", "checkin_method", "is_active",
     )
     list_filter = (
         "attendee_type", "preferred_language", "response_status",
@@ -235,7 +240,7 @@ class MeetingAttendeeAdmin(AuditAdminMixin, admin.ModelAdmin):
         "full_name", "organization", "designation", "email", "phone_number",
         "meeting__reference_number",
     )
-    autocomplete_fields = ("meeting", "user")
+    autocomplete_fields = ("meeting", "user", "checked_in_by")
 
 
 @admin.register(MeetingDocument)

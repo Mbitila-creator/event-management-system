@@ -83,6 +83,15 @@ class MeetingModelTests(TestCase):
                 invitation_deadline=self.event.starts_at + timedelta(minutes=1),
             )
 
+    def test_checkin_closing_time_must_follow_opening_time(self):
+        opens_at = timezone.now() + timedelta(hours=2)
+        with self.assertRaises(ValidationError):
+            self.create_meeting(
+                checkin_enabled=True,
+                checkin_opens_at=opens_at,
+                checkin_closes_at=opens_at - timedelta(minutes=1),
+            )
+
     def test_online_meeting_requires_platform_and_joining_link(self):
         with self.assertRaises(ValidationError):
             self.create_meeting(
@@ -1144,8 +1153,145 @@ class MeetingWorkflowTests(TestCase):
             attendee.response_status,
             MeetingAttendee.ResponseStatus.ACCEPTED,
         )
+        self.assertEqual(attendee.checked_in_by, officer)
+        self.assertEqual(
+            attendee.checkin_method,
+            MeetingAttendee.CheckinMethod.MANUAL,
+        )
         create_attempt = self.client.get("/en/staff/meetings/new/")
         self.assertEqual(create_attempt.status_code, 403)
+
+    def test_secure_qr_pass_checks_in_participant_once(self):
+        self.meeting.checkin_enabled = True
+        self.meeting.save()
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Asha Mjumbe",
+            organization="MoEST",
+            response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
+        )
+        officer = User.objects.create_user(
+            username="qr.attendance",
+            email="qr.attendance@example.com",
+            role=User.Role.ATTENDANCE_OFFICER,
+            preferred_language="en",
+        )
+        self.client.force_login(officer)
+        pass_response = self.client.get(
+            reverse("meetings:attendee_pass", args=[self.meeting.pk, attendee.pk]),
+        )
+        self.assertEqual(pass_response.status_code, 200)
+        self.assertContains(pass_response, "data:image/png;base64,")
+
+        scan_url = reverse(
+            "meetings:attendee_checkin",
+            args=[attendee.response_token],
+        )
+        first_scan = self.client.get(f"{scan_url}?auto=1")
+        self.assertContains(first_scan, "Participant checked in successfully")
+        attendee.refresh_from_db()
+        self.assertEqual(
+            attendee.attendance_status,
+            MeetingAttendee.AttendanceStatus.PRESENT,
+        )
+        self.assertEqual(attendee.checked_in_by, officer)
+        self.assertEqual(attendee.checkin_method, MeetingAttendee.CheckinMethod.QR)
+        first_time = attendee.checked_in_at
+
+        second_scan = self.client.get(f"{scan_url}?auto=1")
+        self.assertContains(second_scan, "Participant already checked in")
+        attendee.refresh_from_db()
+        self.assertEqual(attendee.checked_in_at, first_time)
+
+    def test_declined_participant_and_closed_window_cannot_check_in(self):
+        self.meeting.checkin_enabled = True
+        self.meeting.save()
+        declined = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Declined Member",
+            response_status=MeetingAttendee.ResponseStatus.DECLINED,
+        )
+        declined_url = reverse(
+            "meetings:attendee_checkin",
+            args=[declined.response_token],
+        )
+        response = self.client.get(f"{declined_url}?auto=1")
+        self.assertContains(response, "Check-in not allowed")
+        declined.refresh_from_db()
+        self.assertIsNone(declined.checked_in_at)
+
+        self.meeting.checkin_closes_at = timezone.now() - timedelta(minutes=1)
+        self.meeting.save()
+        accepted = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Late Member",
+            response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
+        )
+        closed_url = reverse(
+            "meetings:attendee_checkin",
+            args=[accepted.response_token],
+        )
+        response = self.client.get(f"{closed_url}?auto=1")
+        self.assertContains(response, "The meeting check-in window is closed.")
+        accepted.refresh_from_db()
+        self.assertIsNone(accepted.checked_in_at)
+
+    def test_ordinary_participant_cannot_use_staff_qr_scanner(self):
+        self.meeting.checkin_enabled = True
+        self.meeting.save()
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="Protected Participant",
+            response_status=MeetingAttendee.ResponseStatus.ACCEPTED,
+        )
+        participant_user = User.objects.create_user(
+            username="meeting.participant",
+            email="meeting.participant@example.com",
+            role=User.Role.PARTICIPANT,
+        )
+        self.client.force_login(participant_user)
+        scan = self.client.get(
+            reverse("meetings:attendee_checkin", args=[attendee.response_token]),
+            follow=True,
+        )
+        attendee_pass = self.client.get(
+            reverse("meetings:attendee_pass", args=[self.meeting.pk, attendee.pk]),
+            follow=True,
+        )
+        self.assertEqual(scan.status_code, 403)
+        self.assertEqual(attendee_pass.status_code, 403)
+        attendee.refresh_from_db()
+        self.assertIsNone(attendee.checked_in_at)
+
+    def test_invitation_response_displays_qr_pass_and_csv_has_audit_data(self):
+        self.meeting.checkin_enabled = True
+        self.meeting.save()
+        attendee = MeetingAttendee.objects.create(
+            meeting=self.meeting,
+            full_name="CSV Participant",
+            email="csv@example.com",
+        )
+        response = self.client.post(
+            reverse("meetings:invitation_response", args=[attendee.response_token]),
+            {"response_status": MeetingAttendee.ResponseStatus.ACCEPTED},
+        )
+        self.assertContains(response, "Meeting check-in pass")
+        self.assertContains(response, "data:image/png;base64,")
+
+        attendee.attendance_status = MeetingAttendee.AttendanceStatus.PRESENT
+        attendee.checked_in_at = timezone.now()
+        attendee.checked_in_by = self.manager
+        attendee.checkin_method = MeetingAttendee.CheckinMethod.QR
+        attendee.save()
+        self.client.force_login(self.manager)
+        export = self.client.get(
+            reverse("meetings:attendance_register_csv", args=[self.meeting.pk]),
+        )
+        self.assertEqual(export.status_code, 200)
+        csv_body = export.content.decode("utf-8-sig")
+        self.assertIn("CSV Participant", csv_body)
+        self.assertIn("QR scan", csv_body)
+        self.assertIn("meeting.manager", csv_body)
 
     def test_registration_officer_cannot_access_meeting_workspace(self):
         officer = User.objects.create_user(

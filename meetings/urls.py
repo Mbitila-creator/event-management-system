@@ -76,6 +76,11 @@ urlpatterns = [
         name="meeting_print",
     ),
     path(
+        "staff/meetings/<int:meeting_id>/attendance/export/",
+        views.attendance_register_csv,
+        name="attendance_register_csv",
+    ),
+    path(
         "staff/meetings/<int:meeting_id>/agenda/add/",
         views.agenda_add,
         name="agenda_add",
@@ -119,6 +124,11 @@ urlpatterns = [
         "staff/meetings/<int:meeting_id>/participants/<int:attendee_id>/update/",
         views.attendee_update,
         name="attendee_update",
+    ),
+    path(
+        "staff/meetings/<int:meeting_id>/participants/<int:attendee_id>/pass/",
+        views.attendee_pass,
+        name="attendee_pass",
     ),
     path(
         "staff/meetings/<int:meeting_id>/participants/<int:attendee_id>/invite/",
@@ -194,5 +204,10 @@ urlpatterns = [
         "meetings/invitations/<uuid:response_token>/",
         views.invitation_response,
         name="invitation_response",
+    ),
+    path(
+        "staff/meetings/check-in/<uuid:response_token>/",
+        views.attendee_checkin,
+        name="attendee_checkin",
     ),
 ]

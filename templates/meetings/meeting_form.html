@@ -34,6 +34,11 @@
         <label class="span-2">{{ form.online_instructions_sw.label_tag }}{{ form.online_instructions_sw }}{{ form.online_instructions_sw.errors }}</label>
         <label class="span-2">{{ form.online_instructions_en.label_tag }}{{ form.online_instructions_en }}{{ form.online_instructions_en.errors }}</label>
     </div></fieldset>
+    <fieldset><legend>{% translate "Secure meeting check-in" %}</legend><p class="meeting-fieldset-note">{% translate "Create a unique QR pass for every participant and optionally limit the period when staff can scan it." %}</p><div class="meeting-form-grid">
+        <label class="meeting-checkbox span-2">{{ form.checkin_enabled }}<span>{{ form.checkin_enabled.label }}</span>{{ form.checkin_enabled.errors }}</label>
+        <label>{{ form.checkin_opens_at.label_tag }}{{ form.checkin_opens_at }}{{ form.checkin_opens_at.errors }}</label>
+        <label>{{ form.checkin_closes_at.label_tag }}{{ form.checkin_closes_at }}{{ form.checkin_closes_at.errors }}</label>
+    </div></fieldset>
     <fieldset><legend>{% translate "Leadership and governance" %}</legend><div class="meeting-form-grid">
         <label>{{ form.meeting_type.label_tag }}{{ form.meeting_type }}{{ form.meeting_type.errors }}</label>
         <label>{{ form.quorum_required.label_tag }}{{ form.quorum_required }}{{ form.quorum_required.errors }}</label>

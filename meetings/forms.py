@@ -132,6 +132,29 @@ class MeetingWorkflowForm(forms.Form):
         required=False,
         widget=forms.Textarea(attrs={"rows": 2}),
     )
+    checkin_enabled = forms.BooleanField(
+        label=_("Enable secure QR check-in"),
+        required=False,
+        initial=True,
+    )
+    checkin_opens_at = forms.DateTimeField(
+        label=_("Check-in opens"),
+        required=False,
+        input_formats=[DATETIME_FORMAT],
+        widget=forms.DateTimeInput(
+            format=DATETIME_FORMAT,
+            attrs={"type": "datetime-local"},
+        ),
+    )
+    checkin_closes_at = forms.DateTimeField(
+        label=_("Check-in closes"),
+        required=False,
+        input_formats=[DATETIME_FORMAT],
+        widget=forms.DateTimeInput(
+            format=DATETIME_FORMAT,
+            attrs={"type": "datetime-local"},
+        ),
+    )
     chairperson_name = forms.CharField(label=_("Chairperson"), max_length=200)
     secretary_name = forms.CharField(
         label=_("Meeting secretary"),
@@ -197,6 +220,21 @@ class MeetingWorkflowForm(forms.Form):
                 "online_passcode": instance.online_passcode,
                 "online_instructions_sw": instance.online_instructions_sw,
                 "online_instructions_en": instance.online_instructions_en,
+                "checkin_enabled": instance.checkin_enabled,
+                "checkin_opens_at": (
+                    timezone.localtime(instance.checkin_opens_at).strftime(
+                        DATETIME_FORMAT
+                    )
+                    if instance.checkin_opens_at
+                    else ""
+                ),
+                "checkin_closes_at": (
+                    timezone.localtime(instance.checkin_closes_at).strftime(
+                        DATETIME_FORMAT
+                    )
+                    if instance.checkin_closes_at
+                    else ""
+                ),
                 "chairperson_name": instance.chairperson_name,
                 "secretary_name": instance.secretary_name,
                 "quorum_required": instance.quorum_required,
@@ -236,6 +274,8 @@ class MeetingWorkflowForm(forms.Form):
         starts_at = cleaned.get("starts_at")
         ends_at = cleaned.get("ends_at")
         deadline = cleaned.get("invitation_deadline")
+        checkin_opens_at = cleaned.get("checkin_opens_at")
+        checkin_closes_at = cleaned.get("checkin_closes_at")
         venue = cleaned.get("venue")
         attendance_mode = cleaned.get("attendance_mode")
         if starts_at and ends_at and ends_at <= starts_at:
@@ -244,6 +284,15 @@ class MeetingWorkflowForm(forms.Form):
             self.add_error(
                 "invitation_deadline",
                 _("The invitation deadline cannot be after the meeting starts."),
+            )
+        if (
+            checkin_opens_at
+            and checkin_closes_at
+            and checkin_closes_at <= checkin_opens_at
+        ):
+            self.add_error(
+                "checkin_closes_at",
+                _("The check-in closing time must be after the opening time."),
             )
         if cleaned.get("attendance_mode") in {
             Meeting.AttendanceMode.ONLINE,
@@ -319,7 +368,8 @@ class MeetingWorkflowForm(forms.Form):
             "objectives_sw", "objectives_en", "attendance_mode",
             "online_platform", "online_join_url", "online_meeting_id",
             "online_passcode", "online_instructions_sw",
-            "online_instructions_en",
+            "online_instructions_en", "checkin_enabled",
+            "checkin_opens_at", "checkin_closes_at",
         ):
             setattr(meeting, field, self.cleaned_data[field])
         if not meeting.pk:
