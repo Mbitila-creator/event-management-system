@@ -185,7 +185,13 @@ class SpecialEventParticipantQRTests(TestCase):
         self.assertContains(response, "Mtafiti Sahihi")
         self.assertContains(response, "Taasisi Sahihi")
         self.assertContains(response, "Utafiti Sahihi")
+        self.assertContains(response, "Jina la Mtafiti:")
+        self.assertContains(response, "Nyanja:")
+        self.assertContains(response, "© MoEST 2026.")
         self.assertNotContains(response, "Mtafiti Mwingine")
+        self.assertNotContains(response, "Registration Status")
+        self.assertNotContains(response, "Phase / worksheet")
+        self.assertNotContains(response, "Row number")
 
     def test_qr_endpoint_returns_png_without_numeric_record_id_in_url(self):
         participant = SpecialEventParticipant.objects.create(
