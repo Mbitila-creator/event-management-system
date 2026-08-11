@@ -51,4 +51,14 @@ urlpatterns = [
         views.special_event_participant_card_download,
         name="special_event_participant_card_download",
     ),
+    path(
+        "special-events/participants/<uuid:token>/qr-download.png",
+        views.special_event_participant_qr_download,
+        name="special_event_participant_qr_download",
+    ),
+    path(
+        "special-events/participants/<uuid:token>/text.png",
+        views.special_event_participant_text_download,
+        name="special_event_participant_text_download",
+    ),
 ]

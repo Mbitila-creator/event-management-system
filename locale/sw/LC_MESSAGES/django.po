@@ -7897,6 +7897,27 @@ msgstr "Pakua picha zote za kadi (ZIP)"
 msgid "Download card image"
 msgstr "Pakua picha ya kadi"
 
+msgid "Download separated images (ZIP)"
+msgstr "Pakua picha zilizotenganishwa (ZIP)"
+
+msgid "Download QR only"
+msgstr "Pakua QR pekee"
+
+msgid "Download text only"
+msgstr "Pakua maandishi pekee"
+
+msgid "Download combined card"
+msgstr "Pakua kadi iliyounganishwa"
+
+msgid "QR only"
+msgstr "QR pekee"
+
+msgid "Text only"
+msgstr "Maandishi pekee"
+
+msgid "Combined"
+msgstr "Iliyounganishwa"
+
 msgid "Phase / No."
 msgstr "Awamu / Na."
 

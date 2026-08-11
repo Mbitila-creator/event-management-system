@@ -1,7 +1,6 @@
 from io import BytesIO
 from zipfile import ZIP_DEFLATED, ZipFile
 
-import qrcode
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -18,7 +17,11 @@ from django.views.decorators.http import require_http_methods
 
 from .forms import SpecialEventParticipantImportForm, special_event_queryset
 from .models import Event, EventCategory, SpecialEventParticipant
-from .qr_cards import render_participant_qr_card
+from .qr_cards import (
+    render_participant_qr_card,
+    render_participant_qr_only,
+    render_participant_text_image,
+)
 from .services import import_special_event_participants
 
 
@@ -43,7 +46,7 @@ def _participant_verification_url(request, participant):
     return request.build_absolute_uri(verification_path)
 
 
-def _participant_card_filename(participant):
+def _participant_image_filename(participant, image_type):
     identity = "-".join((
         slugify(participant.event.code) or "event",
         slugify(participant.source_sheet) or "sheet",
@@ -51,7 +54,7 @@ def _participant_card_filename(participant):
         slugify(participant.full_name)[:60],
         str(participant.verification_token)[:8],
     ))
-    return f"{identity}.png"
+    return f"{identity}-{image_type}.png"
 
 
 def home(request):
@@ -331,20 +334,32 @@ def special_event_participant_cards_zip(request):
         participants = participants.filter(source_sheet=source_sheet)
 
     output = BytesIO()
-    folder = f"{selected_event.code}-QR-cards"
+    safe_event_code = slugify(selected_event.code) or "special-event"
+    folder = f"{safe_event_code}-participant-images"
     with ZipFile(output, "w", compression=ZIP_DEFLATED) as archive:
         for participant in participants:
+            verification_url = _participant_verification_url(request, participant)
             card = render_participant_qr_card(
                 participant,
-                _participant_verification_url(request, participant),
+                verification_url,
+            )
+            qr_only = render_participant_qr_only(verification_url)
+            text_only = render_participant_text_image(participant)
+            archive.writestr(
+                f"{folder}/combined-cards/{_participant_image_filename(participant, 'combined')}",
+                card,
             )
             archive.writestr(
-                f"{folder}/{_participant_card_filename(participant)}",
-                card,
+                f"{folder}/qr-only/{_participant_image_filename(participant, 'qr-only')}",
+                qr_only,
+            )
+            archive.writestr(
+                f"{folder}/text-only/{_participant_image_filename(participant, 'text-only')}",
+                text_only,
             )
     response = HttpResponse(output.getvalue(), content_type="application/zip")
     response["Content-Disposition"] = (
-        f'attachment; filename="{selected_event.code}-QR-cards.zip"'
+        f'attachment; filename="{safe_event_code}-participant-images.zip"'
     )
     return response
 
@@ -368,12 +383,12 @@ def special_event_participant_qr(request, token):
         is_active=True,
         event__is_active=True,
     )
-    image = qrcode.make(_participant_verification_url(request, participant))
-    output = BytesIO()
-    image.save(output, format="PNG")
-    response = HttpResponse(output.getvalue(), content_type="image/png")
+    image = render_participant_qr_only(
+        _participant_verification_url(request, participant)
+    )
+    response = HttpResponse(image, content_type="image/png")
     response["Content-Disposition"] = (
-        f'inline; filename="{participant.event.code}-{participant.source_number}-qr.png"'
+        f'inline; filename="{_participant_image_filename(participant, "qr-only")}"'
     )
     response["Cache-Control"] = "public, max-age=3600"
     return response
@@ -392,6 +407,38 @@ def special_event_participant_card_download(request, token):
     )
     response = HttpResponse(card, content_type="image/png")
     response["Content-Disposition"] = (
-        f'attachment; filename="{_participant_card_filename(participant)}"'
+        f'attachment; filename="{_participant_image_filename(participant, "combined")}"'
+    )
+    return response
+
+
+def special_event_participant_qr_download(request, token):
+    participant = get_object_or_404(
+        SpecialEventParticipant.objects.select_related("event"),
+        verification_token=token,
+        is_active=True,
+        event__is_active=True,
+    )
+    image = render_participant_qr_only(
+        _participant_verification_url(request, participant)
+    )
+    response = HttpResponse(image, content_type="image/png")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{_participant_image_filename(participant, "qr-only")}"'
+    )
+    return response
+
+
+def special_event_participant_text_download(request, token):
+    participant = get_object_or_404(
+        SpecialEventParticipant.objects.select_related("event"),
+        verification_token=token,
+        is_active=True,
+        event__is_active=True,
+    )
+    image = render_participant_text_image(participant)
+    response = HttpResponse(image, content_type="image/png")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{_participant_image_filename(participant, "text-only")}"'
     )
     return response

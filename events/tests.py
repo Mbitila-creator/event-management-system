@@ -232,6 +232,31 @@ class SpecialEventParticipantQRTests(TestCase):
         self.assertEqual(image.format, "PNG")
         self.assertEqual(image.size, (1600, 760))
 
+    def test_qr_and_text_sections_download_as_separate_png_files(self):
+        participant = SpecialEventParticipant.objects.create(
+            event=self.event,
+            source_sheet="AWAMU_2",
+            source_number="13",
+            full_name="Mtafiti wa Picha Tofauti",
+            institution="Taasisi ya Majaribio",
+        )
+        downloads = (
+            ("events:special_event_participant_qr_download", (1000, 1000)),
+            ("events:special_event_participant_text_download", (1200, 560)),
+        )
+        for route_name, expected_size in downloads:
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(
+                    route_name,
+                    kwargs={"token": participant.verification_token},
+                ))
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response["Content-Type"], "image/png")
+                self.assertIn("attachment;", response["Content-Disposition"])
+                image = Image.open(BytesIO(response.content))
+                self.assertEqual(image.format, "PNG")
+                self.assertEqual(image.size, expected_size)
+
     def test_staff_can_download_all_participant_cards_as_zip(self):
         for number in ("1", "2"):
             SpecialEventParticipant.objects.create(
@@ -252,7 +277,10 @@ class SpecialEventParticipantQRTests(TestCase):
         self.assertIn("attachment;", response["Content-Disposition"])
         with ZipFile(BytesIO(response.content)) as archive:
             card_names = [name for name in archive.namelist() if name.endswith(".png")]
-            self.assertEqual(len(card_names), 2)
+            self.assertEqual(len(card_names), 6)
+            self.assertEqual(len([name for name in card_names if "/qr-only/" in name]), 2)
+            self.assertEqual(len([name for name in card_names if "/text-only/" in name]), 2)
+            self.assertEqual(len([name for name in card_names if "/combined-cards/" in name]), 2)
             self.assertTrue(archive.read(card_names[0]).startswith(b"\x89PNG"))
 
     def test_staff_list_and_import_require_events_permissions(self):
@@ -281,7 +309,9 @@ class SpecialEventParticipantQRTests(TestCase):
         response = self.client.get(f"{list_url}?event={self.event.pk}")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Participant QR records")
-        self.assertContains(response, "Download all card images (ZIP)")
+        self.assertContains(response, "Download separated images (ZIP)")
+        self.assertContains(response, "Download QR only")
+        self.assertContains(response, "Download text only")
 
     def test_import_view_rejects_non_special_event(self):
         self.client.force_login(self.user)

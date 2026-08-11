@@ -6,6 +6,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 CARD_WIDTH = 1600
 CARD_HEIGHT = 760
+TEXT_WIDTH = 1200
+TEXT_HEIGHT = 560
+QR_ONLY_SIZE = 1000
 NAVY = "#17365d"
 MUTED = "#64748b"
 BORDER = "#b9c7d6"
@@ -58,17 +61,7 @@ def _draw_lines(draw, lines, position, font, fill, spacing):
     return y
 
 
-def render_participant_qr_card(participant, verification_url):
-    """Return a paste-ready PNG card containing the participant's QR identity."""
-    card = Image.new("RGB", (CARD_WIDTH, CARD_HEIGHT), "white")
-    draw = ImageDraw.Draw(card)
-    draw.rounded_rectangle(
-        (3, 3, CARD_WIDTH - 4, CARD_HEIGHT - 4),
-        radius=28,
-        outline=BORDER,
-        width=4,
-    )
-
+def _qr_image(verification_url, size):
     qr = qrcode.QRCode(
         version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_M,
@@ -77,12 +70,17 @@ def render_participant_qr_card(participant, verification_url):
     )
     qr.add_data(verification_url)
     qr.make(fit=True)
-    qr_image = qr.make_image(fill_color="black", back_color="white").convert("RGB")
-    qr_image = qr_image.resize((420, 420), Image.Resampling.NEAREST)
-    card.paste(qr_image, (90, 170))
+    image = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+    return image.resize((size, size), Image.Resampling.NEAREST)
 
-    text_x = 585
-    text_width = CARD_WIDTH - text_x - 80
+
+def _save_png(image):
+    output = BytesIO()
+    image.save(output, format="PNG", optimize=True)
+    return output.getvalue()
+
+
+def _draw_participant_text(draw, participant, *, text_x, text_y, text_width):
     event_font = _font(31, bold=True)
     name_font = _font(49, bold=True)
     institution_font = _font(28)
@@ -98,7 +96,7 @@ def render_participant_qr_card(participant, verification_url):
     _draw_lines(
         draw,
         identity_lines,
-        (text_x, 183),
+        (text_x, text_y),
         event_font,
         NAVY,
         40,
@@ -113,7 +111,7 @@ def render_participant_qr_card(participant, verification_url):
     y = _draw_lines(
         draw,
         name_lines,
-        (text_x, 245),
+        (text_x, text_y + 62),
         name_font,
         "#000000",
         62,
@@ -134,12 +132,52 @@ def render_participant_qr_card(participant, verification_url):
         39,
     )
     draw.text(
-        (text_x, min(y + 20, 625)),
+        (text_x, y + 20),
         "Scan to view the verified participant row",
         font=instruction_font,
         fill=MUTED,
     )
 
-    output = BytesIO()
-    card.save(output, format="PNG", optimize=True)
-    return output.getvalue()
+
+def render_participant_qr_only(verification_url):
+    """Return a high-resolution PNG containing only the scannable QR code."""
+    return _save_png(_qr_image(verification_url, QR_ONLY_SIZE))
+
+
+def render_participant_text_image(participant):
+    """Return a PNG containing only the text section of the participant card."""
+    image = Image.new("RGB", (TEXT_WIDTH, TEXT_HEIGHT), "white")
+    draw = ImageDraw.Draw(image)
+    _draw_participant_text(
+        draw,
+        participant,
+        text_x=55,
+        text_y=70,
+        text_width=TEXT_WIDTH - 110,
+    )
+    return _save_png(image)
+
+
+def render_participant_qr_card(participant, verification_url):
+    """Return a paste-ready PNG card containing the participant's QR identity."""
+    card = Image.new("RGB", (CARD_WIDTH, CARD_HEIGHT), "white")
+    draw = ImageDraw.Draw(card)
+    draw.rounded_rectangle(
+        (3, 3, CARD_WIDTH - 4, CARD_HEIGHT - 4),
+        radius=28,
+        outline=BORDER,
+        width=4,
+    )
+
+    card.paste(_qr_image(verification_url, 420), (90, 170))
+
+    text_x = 585
+    text_width = CARD_WIDTH - text_x - 80
+    _draw_participant_text(
+        draw,
+        participant,
+        text_x=text_x,
+        text_y=183,
+        text_width=text_width,
+    )
+    return _save_png(card)
