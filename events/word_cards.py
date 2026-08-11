@@ -128,10 +128,14 @@ def _add_participant_card(document, participant, verification_url):
         height=Mm(43),
     )
 
-    identity = (
-        f"{participant.event.code} · "
-        f"{participant.source_sheet} / {participant.source_number}"
+    publications = getattr(participant, "active_publications", None)
+    publication_count = (
+        len(publications)
+        if publications is not None
+        else participant.publications.filter(is_active=True).count()
     )
+    publication_label = "publication" if publication_count == 1 else "publications"
+    identity = f"{participant.event.code} · {publication_count} {publication_label}"
     _add_text_paragraph(
         text_cell,
         identity,
@@ -155,7 +159,7 @@ def _add_participant_card(document, participant, verification_url):
     )
     _add_text_paragraph(
         text_cell,
-        "Scan to view the verified participant row",
+        "Scan to view the verified researcher record",
         size=9,
         color=MUTED,
     )

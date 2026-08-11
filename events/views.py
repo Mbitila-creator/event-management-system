@@ -6,24 +6,27 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Count, Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
-from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 
 from .forms import SpecialEventParticipantImportForm, special_event_queryset
-from .models import Event, EventCategory, SpecialEventParticipant
+from .models import (
+    Event,
+    EventCategory,
+    SpecialEventParticipant,
+    SpecialEventPublication,
+)
 from .qr_cards import (
     render_participant_qr_card,
     render_participant_qr_only,
     render_participant_text_image,
 )
 from .services import import_special_event_participants
-from .word_cards import build_editable_participant_cards
 
 
 def _require_events_permission(user, action="view"):
@@ -35,6 +38,18 @@ def _require_events_permission(user, action="view"):
 
 def _special_events():
     return [event for event in special_event_queryset() if event.category.is_special_event]
+
+
+def _active_publications_prefetch():
+    return Prefetch(
+        "publications",
+        queryset=SpecialEventPublication.objects.filter(is_active=True).order_by(
+            "source_sheet",
+            "source_row_index",
+            "research_title",
+        ),
+        to_attr="active_publications",
+    )
 
 
 def _participant_verification_url(request, participant):
@@ -50,8 +65,6 @@ def _participant_verification_url(request, participant):
 def _participant_image_filename(participant, image_type):
     identity = "-".join((
         slugify(participant.event.code) or "event",
-        slugify(participant.source_sheet) or "sheet",
-        slugify(participant.source_number) or "row",
         slugify(participant.full_name)[:60],
         str(participant.verification_token)[:8],
     ))
@@ -224,25 +237,45 @@ def special_event_participant_list(request):
         participants = SpecialEventParticipant.objects.filter(
             event=selected_event,
             is_active=True,
-        )
+        ).annotate(
+            publication_count=Count(
+                "publications",
+                filter=Q(publications__is_active=True),
+                distinct=True,
+            )
+        ).prefetch_related(_active_publications_prefetch())
         sheet_choices = list(
-            participants.order_by("source_sheet")
+            SpecialEventPublication.objects.filter(
+                participant__event=selected_event,
+                participant__is_active=True,
+                is_active=True,
+            )
+            .order_by("source_sheet")
             .values_list("source_sheet", flat=True)
             .distinct()
         )
         if search_query:
-            participants = participants.filter(
+            researcher_match = (
                 Q(full_name__icontains=search_query)
                 | Q(institution__icontains=search_query)
-                | Q(research_title__icontains=search_query)
-                | Q(research_field__icontains=search_query)
-                | Q(source_number__icontains=search_query)
             )
+            publication_match = Q(publications__is_active=True) & (
+                Q(publications__research_title__icontains=search_query)
+                | Q(publications__award_category__icontains=search_query)
+                | Q(publications__award_year__icontains=search_query)
+                | Q(publications__source_number__icontains=search_query)
+            )
+            participants = participants.filter(
+                researcher_match | publication_match
+            ).distinct()
         if source_sheet:
-            participants = participants.filter(source_sheet=source_sheet)
+            participants = participants.filter(
+                publications__source_sheet=source_sheet,
+                publications__is_active=True,
+            ).distinct()
 
     paginator = Paginator(
-        participants.order_by("source_sheet", "source_row_index"),
+        participants.order_by("full_name", "institution"),
         50,
     )
     page = paginator.get_page(request.GET.get("page"))
@@ -281,11 +314,13 @@ def special_event_participant_import(request):
         except ValidationError as exc:
             form.add_error("workbook", exc)
         else:
-            messages.success(
-                request,
-                _("Import completed: %(created)s added and %(updated)s updated.")
-                % {"created": result.created, "updated": result.updated},
-            )
+            messages.success(request, (
+                "Import completed: "
+                f"{result.researchers_created} researchers added, "
+                f"{result.researchers_updated} researchers updated, "
+                f"{result.publications_created} publications added and "
+                f"{result.publications_updated} publications updated."
+            ))
             return redirect(
                 f"{reverse('events:special_event_participant_list')}?event={form.cleaned_data['event'].pk}"
             )
@@ -308,10 +343,13 @@ def special_event_participant_print(request):
     participants = SpecialEventParticipant.objects.filter(
         event=selected_event,
         is_active=True,
-    ).order_by("source_sheet", "source_row_index")
+    ).prefetch_related(_active_publications_prefetch()).order_by("full_name", "institution")
     source_sheet = request.GET.get("sheet", "").strip()
     if source_sheet:
-        participants = participants.filter(source_sheet=source_sheet)
+        participants = participants.filter(
+            publications__source_sheet=source_sheet,
+            publications__is_active=True,
+        ).distinct()
     return render(request, "events/special_event_participant_print.html", {
         "selected_event": selected_event,
         "participants": participants,
@@ -329,10 +367,13 @@ def special_event_participant_cards_zip(request):
     participants = SpecialEventParticipant.objects.select_related("event").filter(
         event=selected_event,
         is_active=True,
-    ).order_by("source_sheet", "source_row_index")
+    ).prefetch_related(_active_publications_prefetch()).order_by("full_name", "institution")
     source_sheet = request.GET.get("sheet", "").strip()
     if source_sheet:
-        participants = participants.filter(source_sheet=source_sheet)
+        participants = participants.filter(
+            publications__source_sheet=source_sheet,
+            publications__is_active=True,
+        ).distinct()
 
     output = BytesIO()
     safe_event_code = slugify(selected_event.code) or "special-event"
@@ -367,6 +408,8 @@ def special_event_participant_cards_zip(request):
 
 @login_required(login_url="accounts:staff_login")
 def special_event_participant_cards_word(request):
+    from .word_cards import build_editable_participant_cards
+
     _require_events_permission(request.user)
     selected_event = get_object_or_404(
         special_event_queryset(),
@@ -375,10 +418,13 @@ def special_event_participant_cards_word(request):
     participants = SpecialEventParticipant.objects.select_related("event").filter(
         event=selected_event,
         is_active=True,
-    ).order_by("source_sheet", "source_row_index")
+    ).prefetch_related(_active_publications_prefetch()).order_by("full_name", "institution")
     source_sheet = request.GET.get("sheet", "").strip()
     if source_sheet:
-        participants = participants.filter(source_sheet=source_sheet)
+        participants = participants.filter(
+            publications__source_sheet=source_sheet,
+            publications__is_active=True,
+        ).distinct()
 
     document = build_editable_participant_cards(
         participants,
@@ -399,7 +445,10 @@ def special_event_participant_cards_word(request):
 
 def special_event_participant_verify(request, token):
     participant = get_object_or_404(
-        SpecialEventParticipant.objects.select_related("event", "event__category"),
+        SpecialEventParticipant.objects.select_related(
+            "event",
+            "event__category",
+        ).prefetch_related(_active_publications_prefetch()),
         verification_token=token,
         is_active=True,
         event__is_active=True,

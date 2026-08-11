@@ -1,6 +1,13 @@
 from django.contrib import admin
+from django.db.models import Count, Q
 
-from .models import Event, EventCategory, SpecialEventParticipant, Venue
+from .models import (
+    Event,
+    EventCategory,
+    SpecialEventParticipant,
+    SpecialEventPublication,
+    Venue,
+)
 
 
 @admin.register(EventCategory)
@@ -343,21 +350,50 @@ class EventAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
+class SpecialEventPublicationInline(admin.TabularInline):
+    model = SpecialEventPublication
+    extra = 0
+    fields = (
+        "source_sheet",
+        "source_number",
+        "research_title",
+        "award_category",
+        "award_year",
+        "is_active",
+    )
+    ordering = ("source_sheet", "source_row_index")
+
+
 @admin.register(SpecialEventParticipant)
 class SpecialEventParticipantAdmin(admin.ModelAdmin):
     list_display = (
-        "full_name", "event", "source_sheet", "source_number",
-        "institution", "is_active", "updated_at",
+        "full_name", "event", "institution", "publication_total",
+        "is_active", "updated_at",
     )
-    list_filter = ("event", "source_sheet", "is_active")
+    list_filter = ("event", "is_active")
     search_fields = (
-        "full_name", "institution", "research_title", "research_field",
-        "source_number", "verification_token",
+        "full_name", "institution", "publications__research_title",
+        "publications__award_category", "publications__award_year",
+        "publications__source_number", "verification_token",
     )
     readonly_fields = (
-        "verification_token", "created_by", "updated_by", "created_at", "updated_at",
+        "identity_key", "verification_token", "created_by", "updated_by",
+        "created_at", "updated_at",
     )
-    ordering = ("event", "source_sheet", "source_row_index")
+    ordering = ("event", "full_name", "institution")
+    inlines = (SpecialEventPublicationInline,)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _publication_total=Count(
+                "publications",
+                filter=Q(publications__is_active=True),
+            )
+        )
+
+    @admin.display(description="Publications", ordering="_publication_total")
+    def publication_total(self, obj):
+        return obj._publication_total
 
     def save_model(self, request, obj, form, change):
         if not obj.pk or not obj.created_by:

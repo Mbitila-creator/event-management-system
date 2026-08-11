@@ -131,7 +131,7 @@
                     {% if request.user.is_superuser or request.user.role == 'SYSTEM_ADMIN' or request.user.role == 'EVENT_ADMIN' or request.user.role == 'DIRECTOR' or request.user.role == 'ASSISTANT_DIRECTOR' %}
                         <a href="{% url 'events:special_event_participant_list' %}" class="module-launcher-link special-events-module-link">
                             <span class="module-link-mark">S</span>
-                            <span>{% translate "Special Events" %}</span>
+                            <span>Special Events</span>
                         </a>
                     {% endif %}
                 </div>

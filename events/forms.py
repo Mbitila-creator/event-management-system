@@ -1,7 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.utils.translation import gettext_lazy as _
 
 from .models import Event
 
@@ -20,13 +19,13 @@ def special_event_queryset():
 
 class SpecialEventParticipantImportForm(forms.Form):
     event = forms.ModelChoiceField(
-        label=_("Special event"),
+        label="Special event",
         queryset=Event.objects.none(),
-        empty_label=_("Select a special event"),
+        empty_label="Select a special event",
     )
     workbook = forms.FileField(
-        label=_("Participant Excel file"),
-        help_text=_("Upload an .xlsx file with the participant list."),
+        label="Researcher Excel file",
+        help_text="Upload a complete .xlsx file containing researchers and publications.",
         widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
     )
 
@@ -38,14 +37,14 @@ class SpecialEventParticipantImportForm(forms.Form):
         event = self.cleaned_data["event"]
         if not event.category.is_special_event:
             raise ValidationError(
-                _("Select an event in the Special Event category.")
+                "Select an event in the Special Event category."
             )
         return event
 
     def clean_workbook(self):
         workbook = self.cleaned_data["workbook"]
         if not workbook.name.lower().endswith(".xlsx"):
-            raise ValidationError(_("Upload a valid .xlsx Excel file."))
+            raise ValidationError("Upload a valid .xlsx Excel file.")
         if workbook.size > 5 * 1024 * 1024:
-            raise ValidationError(_("The Excel file must not exceed 5 MB."))
+            raise ValidationError("The Excel file must not exceed 5 MB.")
         return workbook

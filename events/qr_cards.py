@@ -80,15 +80,24 @@ def _save_png(image):
     return output.getvalue()
 
 
+def _publication_count(participant):
+    publications = getattr(participant, "active_publications", None)
+    if publications is not None:
+        return len(publications)
+    return participant.publications.filter(is_active=True).count()
+
+
 def _draw_participant_text(draw, participant, *, text_x, text_y, text_width):
     event_font = _font(31, bold=True)
     name_font = _font(49, bold=True)
     institution_font = _font(28)
     instruction_font = _font(27)
 
+    publication_count = _publication_count(participant)
+    publication_label = "publication" if publication_count == 1 else "publications"
     identity_lines = _wrap_text(
         draw,
-        f"{participant.event.code} · {participant.source_sheet} / {participant.source_number}",
+        f"{participant.event.code} · {publication_count} {publication_label}",
         event_font,
         text_width,
         1,
@@ -133,7 +142,7 @@ def _draw_participant_text(draw, participant, *, text_x, text_y, text_width):
     )
     draw.text(
         (text_x, y + 20),
-        "Scan to view the verified participant row",
+        "Scan to view the verified researcher record",
         font=instruction_font,
         fill=MUTED,
     )
