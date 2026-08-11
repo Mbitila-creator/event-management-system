@@ -7,6 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from docx import Document
 from openpyxl import Workbook
 from PIL import Image
 
@@ -283,6 +284,40 @@ class SpecialEventParticipantQRTests(TestCase):
             self.assertEqual(len([name for name in card_names if "/combined-cards/" in name]), 2)
             self.assertTrue(archive.read(card_names[0]).startswith(b"\x89PNG"))
 
+    def test_staff_can_download_one_editable_word_file_with_separate_qr_images(self):
+        for number in ("1", "2", "3"):
+            SpecialEventParticipant.objects.create(
+                event=self.event,
+                source_sheet="AWAMU_2",
+                source_number=number,
+                source_row_index=int(number) + 1,
+                full_name=f"Mtafiti wa Word {number}",
+                institution=f"Taasisi {number}",
+            )
+        url = reverse("events:special_event_participant_cards_word")
+        self.assertEqual(self.client.get(f"{url}?event={self.event.pk}").status_code, 302)
+
+        self.client.force_login(self.user)
+        response = self.client.get(f"{url}?event={self.event.pk}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+        self.assertIn("attachment;", response["Content-Disposition"])
+        document = Document(BytesIO(response.content))
+        self.assertEqual(len(document.inline_shapes), 3)
+        self.assertEqual(len(document.tables), 3)
+        document_text = "\n".join(
+            paragraph.text
+            for table in document.tables
+            for row in table.rows
+            for cell in row.cells
+            for paragraph in cell.paragraphs
+        )
+        self.assertIn("Mtafiti wa Word 1", document_text)
+        self.assertIn("Mtafiti wa Word 3", document_text)
+
     def test_staff_list_and_import_require_events_permissions(self):
         list_url = reverse("events:special_event_participant_list")
         import_url = reverse("events:special_event_participant_import")
@@ -309,9 +344,9 @@ class SpecialEventParticipantQRTests(TestCase):
         response = self.client.get(f"{list_url}?event={self.event.pk}")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Participant QR records")
-        self.assertContains(response, "Download separated images (ZIP)")
-        self.assertContains(response, "Download QR only")
-        self.assertContains(response, "Download text only")
+        self.assertContains(response, "Download editable Word cards")
+        self.assertNotContains(response, "Download QR only")
+        self.assertNotContains(response, "Download text only")
 
     def test_import_view_rejects_non_special_event(self):
         self.client.force_login(self.user)

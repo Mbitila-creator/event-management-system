@@ -37,6 +37,11 @@ urlpatterns = [
         name="special_event_participant_cards_zip",
     ),
     path(
+        "staff/special-events/participants/cards.docx",
+        views.special_event_participant_cards_word,
+        name="special_event_participant_cards_word",
+    ),
+    path(
         "special-events/participants/<uuid:token>/",
         views.special_event_participant_verify,
         name="special_event_participant_verify",

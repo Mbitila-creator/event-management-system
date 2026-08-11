@@ -7918,6 +7918,9 @@ msgstr "Maandishi pekee"
 msgid "Combined"
 msgstr "Iliyounganishwa"
 
+msgid "Download editable Word cards"
+msgstr "Pakua kadi za Word zinazoharirika"
+
 msgid "Phase / No."
 msgstr "Awamu / Na."
 

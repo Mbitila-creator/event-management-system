@@ -23,6 +23,7 @@ from .qr_cards import (
     render_participant_text_image,
 )
 from .services import import_special_event_participants
+from .word_cards import build_editable_participant_cards
 
 
 def _require_events_permission(user, action="view"):
@@ -360,6 +361,38 @@ def special_event_participant_cards_zip(request):
     response = HttpResponse(output.getvalue(), content_type="application/zip")
     response["Content-Disposition"] = (
         f'attachment; filename="{safe_event_code}-participant-images.zip"'
+    )
+    return response
+
+
+@login_required(login_url="accounts:staff_login")
+def special_event_participant_cards_word(request):
+    _require_events_permission(request.user)
+    selected_event = get_object_or_404(
+        special_event_queryset(),
+        pk=request.GET.get("event"),
+    )
+    participants = SpecialEventParticipant.objects.select_related("event").filter(
+        event=selected_event,
+        is_active=True,
+    ).order_by("source_sheet", "source_row_index")
+    source_sheet = request.GET.get("sheet", "").strip()
+    if source_sheet:
+        participants = participants.filter(source_sheet=source_sheet)
+
+    document = build_editable_participant_cards(
+        participants,
+        lambda participant: _participant_verification_url(request, participant),
+    )
+    safe_event_code = slugify(selected_event.code) or "special-event"
+    response = HttpResponse(
+        document,
+        content_type=(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ),
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="{safe_event_code}-editable-QR-cards.docx"'
     )
     return response
 
