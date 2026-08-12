@@ -425,6 +425,55 @@ class SpecialEventParticipantQRTests(TestCase):
         self.assertNotContains(response, "Download QR only")
         self.assertNotContains(response, "Download text only")
 
+    def test_admin_can_correct_researcher_name_when_legacy_award_year_is_blank(self):
+        self.user.is_superuser = True
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_superuser", "is_staff"])
+        participant = self.create_researcher(
+            name="Dkt. Charles Lyimo",
+            institution="Sokoine University of Agriculture (SUA)",
+        )
+        publication = self.create_publication(
+            participant,
+            title="Legacy research title",
+            category="Animal and Agricultural Sciences",
+            year="",
+        )
+        original_token = participant.verification_token
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse(
+                "admin:events_specialeventparticipant_change",
+                args=[participant.pk],
+            ),
+            {
+                "is_active": "on",
+                "event": str(self.event.pk),
+                "full_name": "Dr. Charles Lyimo",
+                "institution": participant.institution,
+                "publications-TOTAL_FORMS": "1",
+                "publications-INITIAL_FORMS": "1",
+                "publications-MIN_NUM_FORMS": "0",
+                "publications-MAX_NUM_FORMS": "1000",
+                "publications-0-id": str(publication.pk),
+                "publications-0-participant": str(participant.pk),
+                "publications-0-source_sheet": publication.source_sheet,
+                "publications-0-source_number": publication.source_number,
+                "publications-0-research_title": publication.research_title,
+                "publications-0-award_category": publication.award_category,
+                "publications-0-award_year": "",
+                "publications-0-is_active": "on",
+                "_save": "Save",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        participant.refresh_from_db()
+        self.assertEqual(participant.full_name, "Dr. Charles Lyimo")
+        self.assertEqual(participant.verification_token, original_token)
+        self.assertEqual(participant.publications.get().award_year, "")
+
     def test_import_view_rejects_non_special_event(self):
         self.client.force_login(self.user)
         response = self.client.post(

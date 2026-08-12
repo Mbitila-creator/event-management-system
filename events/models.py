@@ -561,7 +561,12 @@ class SpecialEventPublication(BaseModel):
     )
     research_title = models.TextField("research title")
     award_category = models.TextField("award category")
-    award_year = models.CharField("award year", max_length=50)
+    award_year = models.CharField(
+        "award year",
+        max_length=50,
+        blank=True,
+        help_text="May be left blank for legacy records and completed later.",
+    )
 
     class Meta:
         verbose_name = "special event publication"
