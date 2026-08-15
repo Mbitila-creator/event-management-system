@@ -98,6 +98,14 @@ class ConferenceRegistrationTests(TestCase):
             )
         )
         self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "images/ministry-of-education-logo.png",
+        )
+        self.assertContains(
+            response,
+            'alt="Ministry of Education, Science and Technology logo"',
+        )
         self.assertContains(response, "National Development Vision 2050")
         self.assertContains(response, "Basic Education Session")
         self.assertContains(response, "Higher Education and TVET Session")

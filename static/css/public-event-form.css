@@ -260,6 +260,11 @@ img {
     object-fit: contain;
 }
 
+.form-official-logo--ministry {
+    max-width: min(132px, 34vw);
+    max-height: 132px;
+}
+
 .form-official-organizer {
     margin: 0 auto;
     padding: 12px 8px 16px;
