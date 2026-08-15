@@ -7,7 +7,7 @@ from django.db.models import Q
 
 from events.models import Event, EventCategory, Venue
 from forms_builder.models import EventForm, FormQuestion, FormSection, QuestionOption
-from forms_builder.services import public_form_path
+from forms_builder.services import public_form_path, sync_badge_identity_from_answers
 
 from conferences.models import ConferenceSession
 
@@ -138,19 +138,39 @@ class Command(BaseCommand):
             },
         )
         question_specs = [
-            ("Full Name", FormQuestion.QuestionType.SHORT_TEXT, True, 1),
-            ("Institution Name", FormQuestion.QuestionType.SHORT_TEXT, True, 2),
-            ("Position / Title", FormQuestion.QuestionType.SHORT_TEXT, False, 3),
-            ("Email Address", FormQuestion.QuestionType.EMAIL, True, 4),
-            ("Phone Number", FormQuestion.QuestionType.PHONE, True, 5),
+            (
+                "Full Name",
+                FormQuestion.QuestionType.SHORT_TEXT,
+                True,
+                1,
+                "Enter the participant's first, middle and last name in this one field.",
+            ),
+            (
+                "Institution Name",
+                FormQuestion.QuestionType.SHORT_TEXT,
+                True,
+                2,
+                "Enter the university, organization, company or ministry.",
+            ),
+            (
+                "Position / Title",
+                FormQuestion.QuestionType.SHORT_TEXT,
+                False,
+                3,
+                "Optional, for example Director, Lecturer or Student.",
+            ),
+            ("Email Address", FormQuestion.QuestionType.EMAIL, True, 4, ""),
+            ("Phone Number", FormQuestion.QuestionType.PHONE, True, 5, ""),
         ]
-        for label, question_type, required, order in question_specs:
+        for label, question_type, required, order, help_text in question_specs:
             FormQuestion.objects.update_or_create(
                 section=personal,
                 label_en=label,
                 defaults={
                     "label_sw": label,
                     "question_type": question_type,
+                    "help_text_en": help_text,
+                    "help_text_sw": help_text,
                     "is_required": required,
                     "display_order": order,
                     "is_active": True,
@@ -249,6 +269,12 @@ class Command(BaseCommand):
                     "is_active": True,
                 },
             )
+
+        for submission in event_form.submissions.filter(
+            is_active=True,
+            is_complete=True,
+        ):
+            sync_badge_identity_from_answers(submission)
 
         self.stdout.write(self.style.SUCCESS("Conference registration is ready."))
         self.stdout.write(f"Event: {event.code} — {event.title_en}")

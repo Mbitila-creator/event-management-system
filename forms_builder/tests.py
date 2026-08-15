@@ -1285,9 +1285,9 @@ class SubmissionReviewAdminTests(TestCase):
             is_staff=True,
         )
         category = EventCategory.objects.create(
-            name_sw="Mkutano",
-            name_en="Conference",
-            code="CONF",
+            name_sw="Maonesho",
+            name_en="Exhibition",
+            code="EXHIBITION",
         )
         starts_at = timezone.now() + timedelta(days=30)
         event = Event.objects.create(

@@ -202,6 +202,7 @@ def participant_check_in_url(submission, request=None, language="sw"):
 def sync_badge_identity_from_answers(submission):
     badge_name = ""
     badge_organization = ""
+    badge_position = ""
 
     answers = submission.answers.select_related("question").all()
     for answer in answers:
@@ -233,13 +234,27 @@ def sync_badge_identity_from_answers(submission):
         }:
             badge_organization = value
 
+        if label_en in {
+            "position / title",
+            "position",
+            "job title",
+        } or label_sw in {
+            "cheo / wadhifa",
+            "cheo",
+            "wadhifa",
+        }:
+            badge_position = value
+
     submission.badge_name = badge_name or submission.badge_name
     submission.badge_organization = (
         badge_organization or submission.badge_organization
     )
-    submission.badge_title = (
-        "Representative" if submission.language == "en" else "Mwakilishi"
-    )
+    if submission.event_form.event.category.is_conference:
+        submission.badge_title = badge_position
+    else:
+        submission.badge_title = (
+            "Representative" if submission.language == "en" else "Mwakilishi"
+        )
     submission.save(
         update_fields=[
             "badge_name",

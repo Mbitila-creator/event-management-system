@@ -119,6 +119,31 @@ class ConferenceRegistrationTests(TestCase):
             set(answer.selected_options.values_list("value", flat=True)),
             {"BASIC_EDUCATION_17_AUG", "STI_21_AUG"},
         )
+        submission.refresh_from_db()
+        self.assertEqual(submission.badge_name, "Dr. Amina Mushi")
+        self.assertEqual(submission.badge_organization, "University of Dodoma")
+        self.assertEqual(submission.badge_title, "Lecturer")
+
+    def test_conference_badge_never_displays_representative_role(self):
+        submission = self.submit_registration()
+        submission.badge_title = "Representative"
+        submission.review_status = FormSubmission.ReviewStatus.APPROVED
+        submission.save(update_fields=("badge_title", "review_status", "updated_at"))
+        call_command("setup_conference_registration", verbosity=0)
+        submission.refresh_from_db()
+        self.assertEqual(submission.badge_title, "Lecturer")
+        response = self.client.get(
+            reverse(
+                "forms_builder:participant_badge",
+                kwargs={"participant_token": submission.participant_token},
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dr. Amina Mushi")
+        self.assertContains(response, "University of Dodoma")
+        self.assertContains(response, "Institution")
+        self.assertContains(response, "Lecturer")
+        self.assertNotContains(response, "Representative")
 
     def test_manager_can_approve_registration_from_conference_dashboard(self):
         submission = self.submit_registration()

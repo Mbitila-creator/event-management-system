@@ -9,7 +9,7 @@
 {% block extra_css %}
     <link
         rel="stylesheet"
-        href="{% static 'css/participant-badge.css' %}?v=20260806d"
+        href="{% static 'css/participant-badge.css' %}?v=20260815e"
     >
 {% endblock %}
 
@@ -32,7 +32,7 @@
 
         </div>
 
-        <article class="participant-badge" aria-label="{% translate 'Participant badge' %}">
+        <article class="participant-badge{% if event.category.is_conference %} conference-participant-badge{% endif %}" aria-label="{% translate 'Participant badge' %}">
             <header class="badge-header">
                 {% if event.logo %}
                     <img src="{{ event.logo.url }}" alt="{{ event.code }}">
@@ -62,17 +62,28 @@
                 {% endif %}
                 <p class="badge-type">{% translate "PARTICIPANT" %}</p>
 
-                <h3>{{ submission.badge_display_name }}</h3>
+                <div class="badge-person-details">
+                    <h3>{{ submission.badge_display_name }}</h3>
 
-                {% if submission.badge_title %}
-                    <p class="badge-title">{{ submission.badge_title }}</p>
-                {% endif %}
+                    {% if event.category.is_conference %}
+                        {% if submission.badge_title and submission.badge_title != "Representative" and submission.badge_title != "Mwakilishi" %}
+                            <p class="badge-title">{{ submission.badge_title }}</p>
+                        {% endif %}
 
-                {% if submission.badge_organization %}
-                    <p class="badge-organization">
-                        {{ submission.badge_organization }}
-                    </p>
-                {% endif %}
+                        {% if submission.badge_organization %}
+                            <p class="badge-detail-label">{% translate "Institution" %}</p>
+                            <p class="badge-organization">{{ submission.badge_organization }}</p>
+                        {% endif %}
+                    {% else %}
+                        {% if submission.badge_title %}
+                            <p class="badge-title">{{ submission.badge_title }}</p>
+                        {% endif %}
+
+                        {% if submission.badge_organization %}
+                            <p class="badge-organization">{{ submission.badge_organization }}</p>
+                        {% endif %}
+                    {% endif %}
+                </div>
 
                 <div class="badge-identity">
                     <img
