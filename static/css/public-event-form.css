@@ -277,6 +277,20 @@ img {
     text-transform: uppercase;
 }
 
+.form-programme-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    margin-top: 16px;
+    padding: 8px 18px;
+    border: 1px solid #2f6fac;
+    border-radius: 9px;
+    color: #17365d;
+    font-weight: 800;
+    text-decoration: none;
+}
+
 .form-introduction-title {
     max-width: 780px;
     margin: 0 auto 12px;

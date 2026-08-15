@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -13,6 +13,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from accounts.models import User
+from events.models import Event
 from forms_builder.models import EventForm, FormSubmission, NotificationLog
 from forms_builder.notifications import send_submission_notification
 from forms_builder.services import (
@@ -22,7 +23,12 @@ from forms_builder.services import (
     safe_spreadsheet_value,
 )
 
-from .models import ConferenceSession, ConferenceSessionAttendance
+from .models import (
+    ConferenceProgrammeContributor,
+    ConferenceProgrammeItem,
+    ConferenceSession,
+    ConferenceSessionAttendance,
+)
 
 
 CONFERENCE_VIEW_ROLES = {
@@ -110,6 +116,41 @@ def _submission_session_values(submission):
         submission.answers.filter(
             selected_options__isnull=False,
         ).values_list("selected_options__value", flat=True)
+    )
+
+
+@require_GET
+def public_programme(request, event_slug):
+    event = get_object_or_404(
+        Event.objects.select_related("category", "venue"),
+        slug=event_slug,
+        is_active=True,
+        is_public=True,
+    )
+    if not event.category.is_conference:
+        raise PermissionDenied
+
+    contributors = ConferenceProgrammeContributor.objects.filter(
+        is_active=True,
+        speaker__is_active=True,
+    ).select_related("speaker")
+    programme_items = ConferenceProgrammeItem.objects.filter(
+        is_active=True,
+        is_published=True,
+    ).prefetch_related(
+        Prefetch("contributors", queryset=contributors),
+    )
+    sessions = (
+        ConferenceSession.objects.filter(event=event, is_active=True)
+        .prefetch_related(
+            Prefetch("programme_items", queryset=programme_items),
+        )
+        .order_by("starts_at", "display_order")
+    )
+    return render(
+        request,
+        "conferences/public_programme.html",
+        {"event": event, "sessions": sessions},
     )
 
 

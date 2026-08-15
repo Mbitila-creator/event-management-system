@@ -6,6 +6,11 @@ from . import views
 app_name = "conferences"
 
 urlpatterns = [
+    path(
+        "conferences/<slug:event_slug>/programme/",
+        views.public_programme,
+        name="public_programme",
+    ),
     path("staff/conferences/", views.conference_list, name="conference_list"),
     path(
         "staff/conferences/forms/<int:form_id>/",

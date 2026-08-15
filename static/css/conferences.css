@@ -68,3 +68,49 @@
 .conference-register-total > strong { display: block; margin: 8px 0 0; color: #17365d; font-size: 44px; }
 .conference-register-total > p { margin-top: 0; color: #65788b; }
 @media (max-width: 860px) { .conference-summary { grid-template-columns: repeat(2, 1fr); } .conference-session-grid, .conference-checkin-layout { grid-template-columns: 1fr; } }
+
+.conference-programme-page { max-width: 1020px; }
+.conference-programme-hero { display: grid; grid-template-columns: 105px 1fr auto; gap: 22px; align-items: center; margin-bottom: 22px; padding: 26px; border-radius: 18px; background: linear-gradient(135deg, #17365d, #2f6fac); color: #fff; }
+.conference-programme-hero > img { width: 100%; max-height: 105px; object-fit: contain; }
+.conference-programme-hero span { color: #ffd84d; font-size: 13px; font-weight: 900; letter-spacing: .08em; }
+.conference-programme-hero h1 { margin: 4px 0; font-size: clamp(28px, 4vw, 42px); }
+.conference-programme-hero h2 { margin: 0 0 7px; font-size: clamp(17px, 2.5vw, 23px); font-weight: 700; }
+.conference-programme-hero p { margin: 0; color: #e6eff8; }
+.conference-programme-nav { display: flex; gap: 9px; overflow-x: auto; margin-bottom: 22px; padding-bottom: 5px; }
+.conference-programme-nav a { flex: 0 0 auto; padding: 9px 13px; border: 1px solid #b9cad9; border-radius: 999px; background: #fff; color: #17365d; font-size: 13px; font-weight: 800; text-decoration: none; }
+.conference-programme-sessions { display: grid; gap: 24px; }
+.conference-programme-session { overflow: hidden; border: 1px solid #c9d8e5; border-radius: 16px; background: #fff; box-shadow: 0 8px 22px rgba(23,54,93,.06); scroll-margin-top: 20px; }
+.conference-programme-session > header { display: flex; justify-content: space-between; gap: 20px; align-items: end; padding: 20px 22px; background: #eaf2f8; }
+.conference-programme-session > header span { color: #087f73; font-size: 12px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.conference-programme-session > header h2 { margin: 4px 0 0; color: #17365d; }
+.conference-programme-session > header p { margin: 0; color: #526579; font-weight: 700; text-align: right; }
+.conference-programme-items { padding: 4px 22px; }
+.conference-programme-item { display: grid; grid-template-columns: 90px 1fr; gap: 18px; padding: 20px 0; border-bottom: 1px solid #dde6ee; }
+.conference-programme-item:last-child { border-bottom: 0; }
+.conference-programme-item time { color: #17365d; font-size: 20px; font-weight: 900; }
+.conference-programme-item time span { display: block; margin-top: 2px; color: #74879a; font-size: 13px; }
+.conference-programme-type { color: #087f73; font-size: 11px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+.conference-programme-copy h3 { margin: 4px 0 7px; color: #17365d; font-size: 20px; }
+.conference-programme-copy > p { margin: 0 0 8px; color: #526579; line-height: 1.55; }
+.conference-programme-venue::before { content: "Location: "; font-weight: 800; }
+.conference-contributors { display: grid; gap: 8px; margin-top: 13px; }
+.conference-contributor { display: flex; gap: 10px; align-items: center; }
+.conference-contributor > img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.conference-contributor p, .conference-contributor strong, .conference-contributor small, .conference-contributor span { display: block; margin: 0; }
+.conference-contributor span { color: #087f73; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.conference-contributor small { color: #667b8f; }
+.conference-programme-empty { margin: 18px 0; padding: 16px; border-radius: 10px; background: #f5f8fb; color: #607489; text-align: center; }
+@media (max-width: 700px) {
+    .conference-programme-hero { grid-template-columns: 72px 1fr; padding: 20px; }
+    .conference-programme-hero .conference-secondary { grid-column: 1 / -1; }
+    .conference-programme-session > header { display: block; }
+    .conference-programme-session > header p { margin-top: 8px; text-align: left; }
+    .conference-programme-item { grid-template-columns: 70px 1fr; gap: 12px; }
+}
+@media print {
+    .no-print, .site-header, .public-footer { display: none !important; }
+    .conference-page { max-width: none; padding: 0; }
+    .conference-programme-hero { background: #fff; color: #17365d; border: 1px solid #9db2c8; }
+    .conference-programme-hero p { color: #526579; }
+    .conference-programme-session { break-inside: avoid; box-shadow: none; }
+}

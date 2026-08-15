@@ -1,7 +1,7 @@
 {% extends "events/base_public.html" %}
 {% load static i18n %}
 
-{% block title %}{% translate "Conference registration" %}{% endblock %}
+{% block title %}{% translate "Conference management" %}{% endblock %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/conferences.css' %}?v=20260815a">
@@ -12,8 +12,8 @@
     <header class="conference-heading">
         <div>
             <span>{% translate "Conference module" %}</span>
-            <h1>{% translate "Conference registration" %}</h1>
-            <p>{% translate "Open the public form or download its QR code for invitations, posters and social media." %}</p>
+            <h1>{% translate "Conference management" %}</h1>
+            <p>{% translate "Manage registration, the public programme, speakers, QR badges and session attendance." %}</p>
         </div>
         <a class="conference-secondary" href="{% url 'events:home' %}">← {% translate "Back to events" %}</a>
     </header>
@@ -31,6 +31,7 @@
                         <div class="conference-actions">
                             <a class="conference-primary" href="{% url 'conferences:conference_detail' registration.form.pk %}">{% translate "Manage registrations and sessions" %}</a>
                             <a class="conference-primary" href="{{ registration.public_path }}" target="_blank" rel="noopener">{% translate "Open registration form" %}</a>
+                            <a class="conference-secondary" href="{% url 'conferences:public_programme' registration.form.event.slug %}" target="_blank" rel="noopener">{% translate "Open programme" %}</a>
                             <a class="conference-secondary" href="{% url 'conferences:registration_qr' registration.form.pk %}?download=1">{% translate "Download registration QR" %}</a>
                         </div>
                     {% else %}

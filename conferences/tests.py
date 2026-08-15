@@ -7,7 +7,13 @@ from accounts.models import User
 from forms_builder.models import EventForm, FormAnswer, FormQuestion, FormSubmission
 
 from .management.commands.setup_conference_registration import EVENT_CODE
-from .models import ConferenceSession, ConferenceSessionAttendance
+from .models import (
+    ConferenceProgrammeContributor,
+    ConferenceProgrammeItem,
+    ConferenceSession,
+    ConferenceSessionAttendance,
+    ConferenceSpeaker,
+)
 
 
 @override_settings(
@@ -86,6 +92,12 @@ class ConferenceRegistrationTests(TestCase):
             ConferenceSession.objects.filter(event=self.event_form.event).count(),
             4,
         )
+        self.assertEqual(
+            ConferenceProgrammeItem.objects.filter(
+                session__event=self.event_form.event,
+            ).count(),
+            20,
+        )
 
     def test_public_form_shows_invitation_and_session_examples(self):
         response = self.client.get(
@@ -110,6 +122,60 @@ class ConferenceRegistrationTests(TestCase):
         self.assertContains(response, "Basic Education Session")
         self.assertContains(response, "Higher Education and TVET Session")
         self.assertContains(response, "Fursa Women and Youth Innovation Clinic")
+        self.assertContains(response, "View conference programme")
+
+    def test_public_programme_shows_published_agenda_and_contributors(self):
+        programme_item = ConferenceProgrammeItem.objects.get(
+            session__event=self.event_form.event,
+            session__code="BASIC-EDUCATION",
+            code="STRATEGIC-DIALOGUE",
+        )
+        speaker = ConferenceSpeaker.objects.create(
+            event=self.event_form.event,
+            full_name="Dr. Amina Mushi",
+            position_title="Director of Education",
+            institution="Ministry of Education, Science and Technology",
+        )
+        ConferenceProgrammeContributor.objects.create(
+            programme_item=programme_item,
+            speaker=speaker,
+            role=ConferenceProgrammeContributor.Role.MODERATOR,
+        )
+
+        response = self.client.get(
+            reverse(
+                "conferences:public_programme",
+                kwargs={"event_slug": self.event_form.event.slug},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Conference programme")
+        self.assertContains(response, "Basic Education Session")
+        self.assertContains(response, "Strategic dialogue")
+        self.assertContains(response, "Dr. Amina Mushi")
+        self.assertContains(response, "Moderator")
+        self.assertContains(response, "Print programme")
+
+    def test_unpublished_programme_item_is_hidden_from_public(self):
+        programme_item = ConferenceProgrammeItem.objects.get(
+            session__event=self.event_form.event,
+            session__code="STI",
+            code="PRIORITY-ACTIONS",
+        )
+        programme_item.title = "Internal planning item"
+        programme_item.is_published = False
+        programme_item.save()
+
+        response = self.client.get(
+            reverse(
+                "conferences:public_programme",
+                kwargs={"event_slug": self.event_form.event.slug},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Internal planning item")
 
     def test_registration_accepts_more_than_one_session(self):
         submission = self.submit_registration()

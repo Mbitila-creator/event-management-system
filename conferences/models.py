@@ -137,3 +137,175 @@ class ConferenceSessionAttendance(BaseModel):
 
     def __str__(self):
         return f"{self.session.code} — {self.submission.reference_number}"
+
+
+class ConferenceSpeaker(BaseModel):
+    event = models.ForeignKey(
+        Event,
+        related_name="conference_speakers",
+        on_delete=models.CASCADE,
+        verbose_name=_("conference event"),
+    )
+    full_name = models.CharField(_("full name"), max_length=200)
+    position_title = models.CharField(_("position / title"), max_length=200, blank=True)
+    institution = models.CharField(_("institution"), max_length=250, blank=True)
+    biography = models.TextField(_("short biography"), blank=True)
+    photo = models.ImageField(
+        _("photo"),
+        upload_to="conferences/speakers/",
+        blank=True,
+        null=True,
+    )
+    display_order = models.PositiveIntegerField(_("display order"), default=0)
+
+    class Meta:
+        ordering = ("display_order", "full_name", "id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("event", "full_name", "institution"),
+                name="unique_conference_speaker_per_event",
+            ),
+        ]
+
+    def clean(self):
+        if self.event_id and not self.event.category.is_conference:
+            raise ValidationError({
+                "event": _("Select an event in the Conference category."),
+            })
+
+    def save(self, *args, **kwargs):
+        self.full_name = self.full_name.strip()
+        self.position_title = self.position_title.strip()
+        self.institution = self.institution.strip()
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.full_name
+
+
+class ConferenceProgrammeItem(BaseModel):
+    class ItemType(models.TextChoices):
+        OPENING = "OPENING", _("Opening")
+        KEYNOTE = "KEYNOTE", _("Keynote address")
+        PRESENTATION = "PRESENTATION", _("Presentation")
+        PANEL = "PANEL", _("Panel discussion")
+        WORKSHOP = "WORKSHOP", _("Workshop")
+        BREAK = "BREAK", _("Break")
+        NETWORKING = "NETWORKING", _("Networking")
+        CLOSING = "CLOSING", _("Closing")
+        OTHER = "OTHER", _("Other")
+
+    session = models.ForeignKey(
+        ConferenceSession,
+        related_name="programme_items",
+        on_delete=models.CASCADE,
+        verbose_name=_("conference session"),
+    )
+    code = models.CharField(_("programme item code"), max_length=80)
+    item_type = models.CharField(
+        _("programme item type"),
+        max_length=20,
+        choices=ItemType.choices,
+        default=ItemType.PRESENTATION,
+    )
+    title = models.CharField(_("programme title"), max_length=300)
+    description = models.TextField(_("description"), blank=True)
+    starts_at = models.DateTimeField(_("programme item starts"))
+    ends_at = models.DateTimeField(_("programme item ends"))
+    venue_name = models.CharField(_("venue"), max_length=250, blank=True)
+    is_published = models.BooleanField(_("published"), default=False)
+    display_order = models.PositiveIntegerField(_("display order"), default=0)
+    speakers = models.ManyToManyField(
+        ConferenceSpeaker,
+        related_name="programme_items",
+        through="ConferenceProgrammeContributor",
+        blank=True,
+        verbose_name=_("speakers and facilitators"),
+    )
+
+    class Meta:
+        ordering = ("starts_at", "display_order", "id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("session", "code"),
+                name="unique_programme_item_code_per_session",
+            ),
+        ]
+
+    def clean(self):
+        errors = {}
+        if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
+            errors["ends_at"] = _("The programme item must end after it starts.")
+        if self.session_id and self.starts_at and self.starts_at < self.session.starts_at:
+            errors["starts_at"] = _("The programme item cannot start before its session.")
+        if self.session_id and self.ends_at and self.ends_at > self.session.ends_at:
+            errors["ends_at"] = _("The programme item cannot end after its session.")
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.code = self.code.strip().upper()
+        self.title = self.title.strip()
+        if not self.venue_name and self.session_id:
+            self.venue_name = self.session.venue_name
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.session.code} — {self.title}"
+
+
+class ConferenceProgrammeContributor(BaseModel):
+    class Role(models.TextChoices):
+        SPEAKER = "SPEAKER", _("Speaker")
+        KEYNOTE_SPEAKER = "KEYNOTE_SPEAKER", _("Keynote speaker")
+        MODERATOR = "MODERATOR", _("Moderator")
+        PANELIST = "PANELIST", _("Panelist")
+        FACILITATOR = "FACILITATOR", _("Facilitator")
+
+    programme_item = models.ForeignKey(
+        ConferenceProgrammeItem,
+        related_name="contributors",
+        on_delete=models.CASCADE,
+        verbose_name=_("programme item"),
+    )
+    speaker = models.ForeignKey(
+        ConferenceSpeaker,
+        related_name="programme_contributions",
+        on_delete=models.CASCADE,
+        verbose_name=_("speaker / facilitator"),
+    )
+    role = models.CharField(
+        _("programme role"),
+        max_length=30,
+        choices=Role.choices,
+        default=Role.SPEAKER,
+    )
+    display_order = models.PositiveIntegerField(_("display order"), default=0)
+
+    class Meta:
+        ordering = ("display_order", "id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("programme_item", "speaker", "role"),
+                name="unique_contributor_role_per_programme_item",
+            ),
+        ]
+
+    def clean(self):
+        if (
+            self.programme_item_id
+            and self.speaker_id
+            and self.programme_item.session.event_id != self.speaker.event_id
+        ):
+            raise ValidationError({
+                "speaker": _("The contributor belongs to another conference."),
+            })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.speaker} — {self.get_role_display()}"

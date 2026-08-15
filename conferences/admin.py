@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import ConferenceSession, ConferenceSessionAttendance
+from .models import (
+    ConferenceProgrammeContributor,
+    ConferenceProgrammeItem,
+    ConferenceSession,
+    ConferenceSessionAttendance,
+    ConferenceSpeaker,
+)
 
 
 class AuditAdminMixin:
@@ -38,3 +44,71 @@ class ConferenceSessionAttendanceAdmin(AuditAdminMixin, admin.ModelAdmin):
     )
     autocomplete_fields = ("submission", "session", "checked_in_by")
     readonly_fields = AuditAdminMixin.readonly_fields + ("checked_in_at",)
+
+
+class ConferenceProgrammeContributorInline(admin.TabularInline):
+    model = ConferenceProgrammeContributor
+    extra = 1
+    autocomplete_fields = ("speaker",)
+    fields = ("speaker", "role", "display_order", "is_active")
+
+
+@admin.register(ConferenceSpeaker)
+class ConferenceSpeakerAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "full_name",
+        "position_title",
+        "institution",
+        "event",
+        "is_active",
+    )
+    list_filter = ("event", "is_active")
+    search_fields = (
+        "full_name",
+        "position_title",
+        "institution",
+        "event__code",
+    )
+    ordering = ("event", "display_order", "full_name")
+
+
+@admin.register(ConferenceProgrammeItem)
+class ConferenceProgrammeItemAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "code",
+        "title",
+        "session",
+        "item_type",
+        "starts_at",
+        "ends_at",
+        "is_published",
+        "is_active",
+    )
+    list_filter = (
+        "session__event",
+        "session",
+        "item_type",
+        "is_published",
+        "is_active",
+    )
+    search_fields = (
+        "code",
+        "title",
+        "description",
+        "session__title",
+        "session__event__code",
+    )
+    ordering = ("session__event", "starts_at", "display_order")
+    inlines = (ConferenceProgrammeContributorInline,)
+
+
+@admin.register(ConferenceProgrammeContributor)
+class ConferenceProgrammeContributorAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = ("speaker", "programme_item", "role", "is_active")
+    list_filter = ("programme_item__session__event", "role", "is_active")
+    search_fields = (
+        "speaker__full_name",
+        "programme_item__title",
+        "programme_item__session__event__code",
+    )
+    autocomplete_fields = ("speaker", "programme_item")

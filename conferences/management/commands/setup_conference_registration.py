@@ -9,7 +9,7 @@ from events.models import Event, EventCategory, Venue
 from forms_builder.models import EventForm, FormQuestion, FormSection, QuestionOption
 from forms_builder.services import public_form_path, sync_badge_identity_from_answers
 
-from conferences.models import ConferenceSession
+from conferences.models import ConferenceProgrammeItem, ConferenceSession
 
 
 EVENT_CODE = "NESIF-2026"
@@ -256,7 +256,7 @@ class Command(BaseCommand):
             session_records,
             start=1,
         ):
-            ConferenceSession.objects.update_or_create(
+            session, _ = ConferenceSession.objects.update_or_create(
                 event=event,
                 code=code,
                 defaults={
@@ -269,6 +269,75 @@ class Command(BaseCommand):
                     "is_active": True,
                 },
             )
+            programme_specs = [
+                (
+                    "OPENING",
+                    ConferenceProgrammeItem.ItemType.OPENING,
+                    "Opening and welcome",
+                    starts_at.replace(hour=9, minute=0),
+                    starts_at.replace(hour=9, minute=30),
+                    "Welcome, introductions and session objectives.",
+                ),
+                (
+                    "STRATEGIC-DIALOGUE",
+                    (
+                        ConferenceProgrammeItem.ItemType.WORKSHOP
+                        if code == "FURSA-CLINIC"
+                        else ConferenceProgrammeItem.ItemType.PANEL
+                    ),
+                    f"{title}: Strategic dialogue",
+                    starts_at.replace(hour=9, minute=30),
+                    starts_at.replace(hour=12, minute=0),
+                    "Presentations and moderated stakeholder discussion.",
+                ),
+                (
+                    "LUNCH-BREAK",
+                    ConferenceProgrammeItem.ItemType.BREAK,
+                    "Lunch and networking break",
+                    starts_at.replace(hour=12, minute=0),
+                    starts_at.replace(hour=13, minute=0),
+                    "",
+                ),
+                (
+                    "PRIORITY-ACTIONS",
+                    ConferenceProgrammeItem.ItemType.PANEL,
+                    "Priority actions and stakeholder commitments",
+                    starts_at.replace(hour=13, minute=0),
+                    starts_at.replace(hour=14, minute=30),
+                    "Agreement on practical actions, responsibilities and collaboration opportunities.",
+                ),
+                (
+                    "CLOSING",
+                    ConferenceProgrammeItem.ItemType.CLOSING,
+                    "Summary and closing",
+                    starts_at.replace(hour=14, minute=30),
+                    starts_at.replace(hour=15, minute=0),
+                    "Session conclusions and next steps.",
+                ),
+            ]
+            for programme_order, (
+                programme_code,
+                item_type,
+                programme_title,
+                programme_starts,
+                programme_ends,
+                description,
+            ) in enumerate(programme_specs, start=1):
+                ConferenceProgrammeItem.objects.get_or_create(
+                    session=session,
+                    code=programme_code,
+                    defaults={
+                        "item_type": item_type,
+                        "title": programme_title,
+                        "description": description,
+                        "starts_at": programme_starts,
+                        "ends_at": programme_ends,
+                        "venue_name": session.venue_name,
+                        "is_published": True,
+                        "display_order": programme_order,
+                        "is_active": True,
+                    },
+                )
 
         for submission in event_form.submissions.filter(
             is_active=True,
@@ -279,4 +348,5 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Conference registration is ready."))
         self.stdout.write(f"Event: {event.code} — {event.title_en}")
         self.stdout.write(f"Public form: {public_form_path(event_form, language='en')}")
+        self.stdout.write(f"Public programme: /en/conferences/{event.slug}/programme/")
         self.stdout.write("Staff QR centre: /en/staff/conferences/")
