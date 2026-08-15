@@ -29,6 +29,7 @@
                     <p><strong>{% translate "Completed registrations" %}:</strong> {{ registration.submission_count }}</p>
                     {% if registration.form.is_published %}
                         <div class="conference-actions">
+                            <a class="conference-primary" href="{% url 'conferences:conference_detail' registration.form.pk %}">{% translate "Manage registrations and sessions" %}</a>
                             <a class="conference-primary" href="{{ registration.public_path }}" target="_blank" rel="noopener">{% translate "Open registration form" %}</a>
                             <a class="conference-secondary" href="{% url 'conferences:registration_qr' registration.form.pk %}?download=1">{% translate "Download registration QR" %}</a>
                         </div>

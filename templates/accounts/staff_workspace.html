@@ -33,6 +33,7 @@
         <nav class="workspace-actions" aria-label="{% translate 'Staff tools' %}">
             <a href="{% url 'meetings:personal_meeting_workspace' %}"><strong>{% translate "My meetings and actions" %}</strong><span>{% translate "Review my invitations, joining details and assigned actions" %}</span></a>
             <a href="{% url 'checkin:lookup' %}"><strong>{% translate "Participant check-in" %}</strong><span>{% translate "Scan a badge or enter a reference number" %}</span></a>
+            {% if request.user.role == 'REGISTRATION_OFFICER' %}<a href="{% url 'conferences:conference_list' %}"><strong>{% translate "Conference registration" %}</strong><span>{% translate "Review registrations and manage session attendance" %}</span></a>{% endif %}
             {% if is_event_admin %}
                 <a href="{% url 'events:special_event_participant_list' %}"><strong>{% translate "Special Event participants" %}</strong><span>{% translate "Import participant lists and print secure QR cards" %}</span></a>
                 <a href="{% url 'meetings:meeting_list' %}"><strong>{% translate "Meetings workflow" %}</strong><span>{% translate "Plan meetings, invitations, minutes and action items" %}</span></a>

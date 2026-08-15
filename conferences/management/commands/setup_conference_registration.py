@@ -9,6 +9,8 @@ from events.models import Event, EventCategory, Venue
 from forms_builder.models import EventForm, FormQuestion, FormSection, QuestionOption
 from forms_builder.services import public_form_path
 
+from conferences.models import ConferenceSession
+
 
 EVENT_CODE = "NESIF-2026"
 FORM_SLUG = "national-forum-registration"
@@ -199,6 +201,54 @@ class Command(BaseCommand):
                 },
             )
         session_question.options.exclude(value__in=active_values).update(is_active=False)
+
+        session_records = [
+            (
+                "BASIC-EDUCATION",
+                "Basic Education Session",
+                datetime(2026, 8, 17, 9, 0, tzinfo=TZ),
+                datetime(2026, 8, 17, 15, 0, tzinfo=TZ),
+                "BASIC_EDUCATION_17_AUG",
+            ),
+            (
+                "HIGHER-EDUCATION-TVET",
+                "Higher Education and TVET Session",
+                datetime(2026, 8, 19, 9, 0, tzinfo=TZ),
+                datetime(2026, 8, 19, 15, 0, tzinfo=TZ),
+                "HIGHER_EDUCATION_TVET_19_AUG",
+            ),
+            (
+                "STI",
+                "Science, Technology and Innovation Session",
+                datetime(2026, 8, 21, 9, 0, tzinfo=TZ),
+                datetime(2026, 8, 21, 15, 0, tzinfo=TZ),
+                "STI_21_AUG",
+            ),
+            (
+                "FURSA-CLINIC",
+                "Fursa Women and Youth Innovation Clinic (COSTECH)",
+                datetime(2026, 8, 22, 9, 0, tzinfo=TZ),
+                datetime(2026, 8, 22, 15, 0, tzinfo=TZ),
+                "FURSA_CLINIC_22_AUG",
+            ),
+        ]
+        for order, (code, title, starts_at, ends_at, option_value) in enumerate(
+            session_records,
+            start=1,
+        ):
+            ConferenceSession.objects.update_or_create(
+                event=event,
+                code=code,
+                defaults={
+                    "title": title,
+                    "starts_at": starts_at,
+                    "ends_at": ends_at,
+                    "venue_name": venue.name,
+                    "registration_option_value": option_value,
+                    "display_order": order,
+                    "is_active": True,
+                },
+            )
 
         self.stdout.write(self.style.SUCCESS("Conference registration is ready."))
         self.stdout.write(f"Event: {event.code} — {event.title_en}")
