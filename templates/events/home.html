@@ -126,6 +126,10 @@
                             <span class="module-link-mark">M</span>
                             <span>{% translate "Meetings" %}</span>
                         </a>
+                        <a href="{% url 'conferences:conference_list' %}" class="module-launcher-link conferences-module-link">
+                            <span class="module-link-mark">C</span>
+                            <span>{% translate "Conferences" %}</span>
+                        </a>
                     {% endif %}
 
                     {% if request.user.is_superuser or request.user.role == 'SYSTEM_ADMIN' or request.user.role == 'EVENT_ADMIN' or request.user.role == 'DIRECTOR' or request.user.role == 'ASSISTANT_DIRECTOR' %}

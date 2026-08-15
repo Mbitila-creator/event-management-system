@@ -123,6 +123,7 @@ INSTALLED_APPS = [
     "forms_builder",
     "checkin",
     "meetings",
+    "conferences",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

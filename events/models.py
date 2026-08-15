@@ -21,6 +21,7 @@ def special_event_researcher_identity(full_name, institution):
 
 class EventCategory(BaseModel):
     SPECIAL_EVENT_CODE = "SPECIAL_EVENT"
+    CONFERENCE_CODE = "CONFERENCE"
     name_sw = models.CharField(
         _("name in Kiswahili"),
         max_length=150,
@@ -91,6 +92,16 @@ class EventCategory(BaseModel):
             normalized_code == self.SPECIAL_EVENT_CODE
             or self.slug == "special-event"
             or self.name_en.strip().casefold() == "special event"
+        )
+
+    @property
+    def is_conference(self):
+        """Recognize Conference categories created before or after this module."""
+        normalized_code = self.code.strip().upper().replace("-", "_").replace(" ", "_")
+        return (
+            normalized_code == self.CONFERENCE_CODE
+            or self.slug in {"conference", "kongamano"}
+            or self.name_en.strip().casefold() == "conference"
         )
 
 

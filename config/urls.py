@@ -24,6 +24,7 @@ urlpatterns += i18n_patterns(
     path("", include("forms_builder.urls")),
     path("", include("checkin.urls")),
     path("", include("meetings.urls")),
+    path("", include("conferences.urls")),
 )
 
 

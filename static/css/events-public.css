@@ -366,6 +366,10 @@ img {
     background: #6546a5;
 }
 
+.conferences-module-link {
+    background: #087f73;
+}
+
 .module-link-mark {
     display: grid;
     flex: 0 0 34px;
