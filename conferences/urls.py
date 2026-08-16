@@ -62,4 +62,19 @@ urlpatterns = [
         views.paper_review,
         name="paper_review",
     ),
+    path(
+        "staff/conferences/forms/<int:form_id>/papers/<int:paper_id>/assign-reviewer/",
+        views.assign_paper_reviewer,
+        name="assign_paper_reviewer",
+    ),
+    path(
+        "staff/conferences/peer-reviews/",
+        views.reviewer_workspace,
+        name="reviewer_workspace",
+    ),
+    path(
+        "staff/conferences/peer-reviews/<int:assignment_id>/",
+        views.peer_review,
+        name="peer_review",
+    ),
 ]

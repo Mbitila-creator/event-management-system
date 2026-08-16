@@ -4,11 +4,13 @@ from .models import (
     ConferenceCallForPapers,
     ConferencePaper,
     ConferencePaperReview,
+    ConferencePaperReviewAssignment,
     ConferenceProgrammeContributor,
     ConferenceProgrammeItem,
     ConferenceSession,
     ConferenceSessionAttendance,
     ConferenceSpeaker,
+    ConferenceReviewer,
 )
 
 
@@ -158,3 +160,33 @@ class ConferencePaperReviewAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_filter = ("decision", "paper__call__event")
     search_fields = ("paper__reference_number", "paper__title", "reviewer__username")
     autocomplete_fields = ("paper", "assigned_session", "reviewer")
+
+
+@admin.register(ConferenceReviewer)
+class ConferenceReviewerAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = ("user", "event", "institution", "is_active")
+    list_filter = ("event", "is_active")
+    search_fields = (
+        "user__username", "user__first_name", "user__last_name",
+        "user__email", "institution", "expertise",
+    )
+    autocomplete_fields = ("user", "event")
+
+
+@admin.register(ConferencePaperReviewAssignment)
+class ConferencePaperReviewAssignmentAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "paper", "reviewer", "status", "average_score_display",
+        "recommendation", "due_at", "submitted_at",
+    )
+    list_filter = ("paper__call__event", "status", "recommendation")
+    search_fields = (
+        "paper__reference_number", "paper__title", "reviewer__user__username",
+        "reviewer__user__first_name", "reviewer__user__last_name",
+    )
+    autocomplete_fields = ("paper", "reviewer", "assigned_by")
+    readonly_fields = AuditAdminMixin.readonly_fields + ("submitted_at",)
+
+    @admin.display(description="Average score")
+    def average_score_display(self, obj):
+        return f"{obj.average_score:.1f}" if obj.average_score is not None else "—"

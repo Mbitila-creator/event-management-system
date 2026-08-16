@@ -500,3 +500,132 @@ class ConferencePaperReview(BaseModel):
 
     def __str__(self):
         return f"{self.paper.reference_number} — {self.get_decision_display()}"
+
+
+class ConferenceReviewer(BaseModel):
+    event = models.ForeignKey(
+        Event, related_name="conference_reviewers", on_delete=models.CASCADE,
+        verbose_name=_("conference event"),
+    )
+    user = models.ForeignKey(
+        "accounts.User", related_name="conference_reviewer_profiles",
+        on_delete=models.CASCADE, verbose_name=_("reviewer account"),
+    )
+    institution = models.CharField(_("institution"), max_length=250, blank=True)
+    expertise = models.TextField(
+        _("areas of expertise"),
+        help_text=_("Enter the research fields or thematic areas this reviewer can assess."),
+    )
+
+    class Meta:
+        ordering = ("user__first_name", "user__last_name", "user__username")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("event", "user"), name="unique_reviewer_per_conference",
+            ),
+        ]
+
+    def clean(self):
+        if self.event_id and not self.event.category.is_conference:
+            raise ValidationError({"event": _("Select a Conference event.")})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} — {self.event.code}"
+
+
+class ConferencePaperReviewAssignment(BaseModel):
+    class Status(models.TextChoices):
+        ASSIGNED = "ASSIGNED", _("Assigned")
+        IN_PROGRESS = "IN_PROGRESS", _("In progress")
+        COMPLETED = "COMPLETED", _("Completed")
+        CONFLICT = "CONFLICT", _("Conflict of interest")
+
+    class Recommendation(models.TextChoices):
+        ACCEPT = "ACCEPT", _("Accept")
+        MINOR_REVISION = "MINOR_REVISION", _("Minor revision")
+        MAJOR_REVISION = "MAJOR_REVISION", _("Major revision")
+        REJECT = "REJECT", _("Reject")
+
+    paper = models.ForeignKey(
+        ConferencePaper, related_name="peer_review_assignments",
+        on_delete=models.CASCADE, verbose_name=_("conference paper"),
+    )
+    reviewer = models.ForeignKey(
+        ConferenceReviewer, related_name="assignments",
+        on_delete=models.PROTECT, verbose_name=_("reviewer"),
+    )
+    assigned_by = models.ForeignKey(
+        "accounts.User", related_name="assigned_conference_paper_reviews",
+        on_delete=models.PROTECT, verbose_name=_("assigned by"),
+    )
+    due_at = models.DateTimeField(_("review deadline"), null=True, blank=True)
+    status = models.CharField(
+        _("assignment status"), max_length=20, choices=Status.choices,
+        default=Status.ASSIGNED,
+    )
+    conflict_reason = models.TextField(_("conflict reason"), blank=True)
+    relevance_score = models.PositiveSmallIntegerField(_("relevance score"), null=True, blank=True)
+    originality_score = models.PositiveSmallIntegerField(_("originality score"), null=True, blank=True)
+    methodology_score = models.PositiveSmallIntegerField(_("methodology score"), null=True, blank=True)
+    clarity_score = models.PositiveSmallIntegerField(_("clarity score"), null=True, blank=True)
+    impact_score = models.PositiveSmallIntegerField(_("potential impact score"), null=True, blank=True)
+    recommendation = models.CharField(
+        _("recommendation"), max_length=30, choices=Recommendation.choices, blank=True,
+    )
+    comments_to_author = models.TextField(_("comments to the author"), blank=True)
+    confidential_comments = models.TextField(_("confidential comments"), blank=True)
+    submitted_at = models.DateTimeField(_("review submitted at"), null=True, blank=True)
+
+    class Meta:
+        ordering = ("due_at", "created_at")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("paper", "reviewer"), name="unique_reviewer_assignment_per_paper",
+            ),
+        ]
+
+    @property
+    def average_score(self):
+        scores = (
+            self.relevance_score, self.originality_score, self.methodology_score,
+            self.clarity_score, self.impact_score,
+        )
+        if any(score is None for score in scores):
+            return None
+        return sum(scores) / len(scores)
+
+    def clean(self):
+        errors = {}
+        if self.paper_id and self.reviewer_id and self.paper.call.event_id != self.reviewer.event_id:
+            errors["reviewer"] = _("The reviewer belongs to another conference.")
+        scores = {
+            "relevance_score": self.relevance_score,
+            "originality_score": self.originality_score,
+            "methodology_score": self.methodology_score,
+            "clarity_score": self.clarity_score,
+            "impact_score": self.impact_score,
+        }
+        for field_name, score in scores.items():
+            if score is not None and score not in range(1, 6):
+                errors[field_name] = _("Enter a score from 1 to 5.")
+        if self.status == self.Status.COMPLETED:
+            for field_name, score in scores.items():
+                if score is None:
+                    errors[field_name] = _("All scores are required to complete the review.")
+            if not self.recommendation:
+                errors["recommendation"] = _("Select a recommendation.")
+        if self.status == self.Status.CONFLICT and not self.conflict_reason.strip():
+            errors["conflict_reason"] = _("Explain the conflict of interest.")
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.paper.reference_number} — {self.reviewer}"

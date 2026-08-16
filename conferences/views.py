@@ -9,6 +9,7 @@ from django.db.models import Prefetch, Q
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
@@ -23,14 +24,16 @@ from forms_builder.services import (
     safe_spreadsheet_value,
 )
 
-from .forms import ConferencePaperSubmissionForm
+from .forms import ConferencePaperSubmissionForm, ConferencePeerReviewForm
 
 from .models import (
     ConferenceCallForPapers,
     ConferencePaper,
     ConferencePaperReview,
+    ConferencePaperReviewAssignment,
     ConferenceProgrammeContributor,
     ConferenceProgrammeItem,
+    ConferenceReviewer,
     ConferenceSession,
     ConferenceSessionAttendance,
 )
@@ -308,10 +311,107 @@ def paper_review(request, form_id, paper_id):
             messages.success(request, _("The paper review decision was saved."))
             return redirect("conferences:paper_review_list", form_id=event_form.pk)
     sessions = ConferenceSession.objects.filter(event=event_form.event, is_active=True)
+    reviewers = ConferenceReviewer.objects.filter(event=event_form.event, is_active=True).select_related("user")
+    assignments = paper.peer_review_assignments.filter(is_active=True).select_related("reviewer__user")
     return render(request, "conferences/paper_review.html", {
         "event_form": event_form,
         "paper": paper,
         "sessions": sessions,
+        "reviewers": reviewers,
+        "assignments": assignments,
+    })
+
+
+@login_required
+@require_POST
+def assign_paper_reviewer(request, form_id, paper_id):
+    _require_manager(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    paper = get_object_or_404(
+        ConferencePaper, pk=paper_id, call__event=event_form.event, is_active=True,
+    )
+    reviewer = get_object_or_404(
+        ConferenceReviewer,
+        pk=request.POST.get("reviewer"),
+        event=event_form.event,
+        is_active=True,
+    )
+    due_at = parse_datetime(request.POST.get("due_at", ""))
+    if due_at and timezone.is_naive(due_at):
+        due_at = timezone.make_aware(due_at)
+    assignment, created = ConferencePaperReviewAssignment.objects.get_or_create(
+        paper=paper,
+        reviewer=reviewer,
+        defaults={
+            "assigned_by": request.user,
+            "due_at": due_at,
+            "created_by": request.user,
+            "updated_by": request.user,
+        },
+    )
+    if not created:
+        assignment.due_at = due_at
+        assignment.updated_by = request.user
+        assignment.save()
+        messages.info(request, _("The existing reviewer assignment was updated."))
+    else:
+        if paper.status == ConferencePaper.Status.SUBMITTED:
+            paper.status = ConferencePaper.Status.UNDER_REVIEW
+            paper.updated_by = request.user
+            paper.save()
+        messages.success(request, _("Reviewer assigned successfully."))
+    return redirect("conferences:paper_review", form_id=event_form.pk, paper_id=paper.pk)
+
+
+@login_required
+def reviewer_workspace(request):
+    profiles = ConferenceReviewer.objects.filter(user=request.user, is_active=True)
+    assignments = ConferencePaperReviewAssignment.objects.filter(
+        reviewer__in=profiles,
+        is_active=True,
+    ).select_related("paper__call__event", "reviewer")
+    return render(request, "conferences/reviewer_workspace.html", {
+        "assignments": assignments,
+        "summary": {
+            "total": assignments.count(),
+            "pending": assignments.exclude(status=ConferencePaperReviewAssignment.Status.COMPLETED).exclude(status=ConferencePaperReviewAssignment.Status.CONFLICT).count(),
+            "completed": assignments.filter(status=ConferencePaperReviewAssignment.Status.COMPLETED).count(),
+        },
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def peer_review(request, assignment_id):
+    assignment = get_object_or_404(
+        ConferencePaperReviewAssignment.objects.select_related(
+            "paper__call__event", "reviewer__user",
+        ),
+        pk=assignment_id,
+        is_active=True,
+    )
+    is_manager = request.user.is_superuser or request.user.role in CONFERENCE_MANAGER_ROLES
+    if assignment.reviewer.user_id != request.user.id and not is_manager:
+        raise PermissionDenied
+    if request.method == "POST":
+        form = ConferencePeerReviewForm(request.POST, instance=assignment)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.updated_by = request.user
+            assignment.submitted_at = (
+                timezone.now()
+                if assignment.status == ConferencePaperReviewAssignment.Status.COMPLETED
+                else None
+            )
+            assignment.save()
+            messages.success(request, _("Peer review saved successfully."))
+            return redirect("conferences:reviewer_workspace")
+    else:
+        form = ConferencePeerReviewForm(instance=assignment)
+    return render(request, "conferences/peer_review.html", {
+        "assignment": assignment,
+        "paper": assignment.paper,
+        "form": form,
     })
 
 

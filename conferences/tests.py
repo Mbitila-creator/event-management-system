@@ -11,11 +11,13 @@ from .models import (
     ConferenceCallForPapers,
     ConferencePaper,
     ConferencePaperReview,
+    ConferencePaperReviewAssignment,
     ConferenceProgrammeContributor,
     ConferenceProgrammeItem,
     ConferenceSession,
     ConferenceSessionAttendance,
     ConferenceSpeaker,
+    ConferenceReviewer,
 )
 
 
@@ -451,5 +453,108 @@ class ConferenceRegistrationTests(TestCase):
         self.client.force_login(self.participant_user)
         response = self.client.get(
             reverse("conferences:paper_review_list", kwargs={"form_id": self.event_form.pk})
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_peer_reviewer_can_score_only_assigned_paper(self):
+        reviewer_user = User.objects.create_user(
+            username="peer-reviewer",
+            email="reviewer@example.test",
+            password="safe-test-password",
+            role=User.Role.REPORT_OFFICER,
+        )
+        reviewer = ConferenceReviewer.objects.create(
+            event=self.event_form.event,
+            user=reviewer_user,
+            institution="University of Dar es Salaam",
+            expertise="Education technology and research methods",
+        )
+        call = ConferenceCallForPapers.objects.get(event=self.event_form.event)
+        paper = ConferencePaper.objects.create(call=call, **{
+            key: value for key, value in self.paper_payload().items()
+            if key != "confirmation"
+        })
+        assignment = ConferencePaperReviewAssignment.objects.create(
+            paper=paper,
+            reviewer=reviewer,
+            assigned_by=self.admin_user,
+        )
+        self.client.force_login(reviewer_user)
+        response = self.client.post(
+            reverse("conferences:peer_review", kwargs={"assignment_id": assignment.pk}),
+            {
+                "status": ConferencePaperReviewAssignment.Status.COMPLETED,
+                "conflict_reason": "",
+                "relevance_score": 5,
+                "originality_score": 4,
+                "methodology_score": 4,
+                "clarity_score": 5,
+                "impact_score": 5,
+                "recommendation": ConferencePaperReviewAssignment.Recommendation.ACCEPT,
+                "comments_to_author": "A strong and relevant contribution.",
+                "confidential_comments": "Suitable for the main programme.",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        assignment.refresh_from_db()
+        self.assertEqual(assignment.status, ConferencePaperReviewAssignment.Status.COMPLETED)
+        self.assertEqual(assignment.average_score, 4.6)
+        self.assertIsNotNone(assignment.submitted_at)
+
+    def test_manager_can_assign_reviewer_and_paper_moves_under_review(self):
+        reviewer_user = User.objects.create_user(
+            username="assigned-reviewer",
+            password="safe-test-password",
+            role=User.Role.REPORT_OFFICER,
+        )
+        reviewer = ConferenceReviewer.objects.create(
+            event=self.event_form.event,
+            user=reviewer_user,
+            expertise="Innovation policy",
+        )
+        call = ConferenceCallForPapers.objects.get(event=self.event_form.event)
+        paper = ConferencePaper.objects.create(call=call, **{
+            key: value for key, value in self.paper_payload().items()
+            if key != "confirmation"
+        })
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse(
+                "conferences:assign_paper_reviewer",
+                kwargs={"form_id": self.event_form.pk, "paper_id": paper.pk},
+            ),
+            {"reviewer": reviewer.pk},
+        )
+        self.assertEqual(response.status_code, 302)
+        paper.refresh_from_db()
+        self.assertEqual(paper.status, ConferencePaper.Status.UNDER_REVIEW)
+        self.assertTrue(
+            ConferencePaperReviewAssignment.objects.filter(
+                paper=paper, reviewer=reviewer,
+            ).exists()
+        )
+
+    def test_unassigned_user_cannot_open_peer_review(self):
+        reviewer_user = User.objects.create_user(
+            username="restricted-reviewer",
+            password="safe-test-password",
+            role=User.Role.REPORT_OFFICER,
+        )
+        reviewer = ConferenceReviewer.objects.create(
+            event=self.event_form.event,
+            user=reviewer_user,
+            expertise="Research",
+        )
+        call = ConferenceCallForPapers.objects.get(event=self.event_form.event)
+        paper = ConferencePaper.objects.create(call=call, **{
+            key: value for key, value in self.paper_payload().items()
+            if key != "confirmation"
+        })
+        assignment = ConferencePaperReviewAssignment.objects.create(
+            paper=paper, reviewer=reviewer, assigned_by=self.admin_user,
+        )
+        self.client.force_login(self.participant_user)
+        response = self.client.get(
+            reverse("conferences:peer_review", kwargs={"assignment_id": assignment.pk})
         )
         self.assertEqual(response.status_code, 403)
