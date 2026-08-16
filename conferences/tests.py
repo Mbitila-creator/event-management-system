@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -18,6 +20,7 @@ from .models import (
     ConferenceSessionAttendance,
     ConferenceSpeaker,
     ConferenceReviewer,
+    ConferencePresentation,
 )
 
 
@@ -558,3 +561,72 @@ class ConferenceRegistrationTests(TestCase):
             reverse("conferences:peer_review", kwargs={"assignment_id": assignment.pk})
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_manager_schedules_accepted_paper_and_author_confirms(self):
+        call = ConferenceCallForPapers.objects.get(event=self.event_form.event)
+        paper = ConferencePaper.objects.create(call=call, **{
+            key: value for key, value in self.paper_payload().items()
+            if key != "confirmation"
+        })
+        paper.status = ConferencePaper.Status.ACCEPTED
+        paper.save()
+        session = ConferenceSession.objects.get(event=call.event, code="BASIC-EDUCATION")
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse(
+                "conferences:presentation_schedule",
+                kwargs={"form_id": self.event_form.pk, "paper_id": paper.pk},
+            ),
+            {
+                "session": session.pk,
+                "programme_item": "",
+                "presenter_name": "Dr. Amina Mushi",
+                "starts_at": "2026-08-17T10:00",
+                "ends_at": "2026-08-17T10:20",
+                "venue_name": "Main Conference Hall",
+                "status": ConferencePresentation.Status.SCHEDULED,
+                "manager_notes": "Arrive 20 minutes early.",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        presentation = ConferencePresentation.objects.get(paper=paper)
+        self.client.logout()
+        confirmation = self.client.post(
+            reverse(
+                "conferences:presentation_confirm",
+                kwargs={"public_token": paper.public_token},
+            ),
+            {
+                "presenter_name": "Dr. Amina Mushi",
+                "presenter_notes": "Confirmed.",
+                "confirmation": "on",
+            },
+        )
+        self.assertEqual(confirmation.status_code, 302)
+        presentation.refresh_from_db()
+        self.assertEqual(presentation.status, ConferencePresentation.Status.CONFIRMED)
+        self.assertIsNotNone(presentation.confirmed_at)
+
+    def test_scheduled_accepted_paper_appears_in_public_programme(self):
+        call = ConferenceCallForPapers.objects.get(event=self.event_form.event)
+        paper = ConferencePaper.objects.create(call=call, **{
+            key: value for key, value in self.paper_payload().items()
+            if key != "confirmation"
+        })
+        paper.status = ConferencePaper.Status.ACCEPTED
+        paper.save()
+        session = ConferenceSession.objects.get(event=call.event, code="STI")
+        ConferencePresentation.objects.create(
+            paper=paper,
+            session=session,
+            presenter_name=paper.corresponding_author,
+            starts_at=session.starts_at,
+            ends_at=session.starts_at + timedelta(minutes=20),
+            venue_name="Innovation Hall",
+        )
+        response = self.client.get(
+            reverse("conferences:public_programme", kwargs={"event_slug": call.event.slug})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, paper.title)
+        self.assertContains(response, "Accepted paper presentation")

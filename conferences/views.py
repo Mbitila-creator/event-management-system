@@ -24,7 +24,12 @@ from forms_builder.services import (
     safe_spreadsheet_value,
 )
 
-from .forms import ConferencePaperSubmissionForm, ConferencePeerReviewForm
+from .forms import (
+    ConferencePaperSubmissionForm,
+    ConferencePeerReviewForm,
+    ConferencePresentationConfirmationForm,
+    ConferencePresentationScheduleForm,
+)
 
 from .models import (
     ConferenceCallForPapers,
@@ -33,6 +38,7 @@ from .models import (
     ConferencePaperReviewAssignment,
     ConferenceProgrammeContributor,
     ConferenceProgrammeItem,
+    ConferencePresentation,
     ConferenceReviewer,
     ConferenceSession,
     ConferenceSessionAttendance,
@@ -152,6 +158,13 @@ def public_programme(request, event_slug):
         ConferenceSession.objects.filter(event=event, is_active=True)
         .prefetch_related(
             Prefetch("programme_items", queryset=programme_items),
+            Prefetch(
+                "paper_presentations",
+                queryset=ConferencePresentation.objects.exclude(
+                    status=ConferencePresentation.Status.CANCELLED,
+                ).select_related("paper"),
+                to_attr="public_presentations",
+            ),
         )
         .order_by("starts_at", "display_order")
     )
@@ -210,7 +223,9 @@ def paper_submit(request, event_slug):
 @require_GET
 def paper_status(request, public_token):
     paper = get_object_or_404(
-        ConferencePaper.objects.select_related("call__event", "assigned_session"),
+        ConferencePaper.objects.select_related(
+            "call__event", "assigned_session", "presentation__session",
+        ),
         public_token=public_token,
         is_active=True,
     )
@@ -413,6 +428,113 @@ def peer_review(request, assignment_id):
         "paper": assignment.paper,
         "form": form,
     })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def presentation_schedule(request, form_id, paper_id):
+    _require_manager(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    paper = get_object_or_404(
+        ConferencePaper,
+        pk=paper_id,
+        call__event=event_form.event,
+        status=ConferencePaper.Status.ACCEPTED,
+        is_active=True,
+    )
+    presentation = ConferencePresentation.objects.filter(paper=paper).first()
+    if request.method == "POST":
+        form = ConferencePresentationScheduleForm(
+            request.POST,
+            instance=presentation,
+            event=event_form.event,
+        )
+        if form.is_valid():
+            presentation = form.save(commit=False)
+            presentation.paper = paper
+            presentation.created_by = presentation.created_by or request.user
+            presentation.updated_by = request.user
+            presentation.save()
+            messages.success(request, _("Presentation schedule saved successfully."))
+            return redirect("conferences:presentation_list", form_id=event_form.pk)
+    else:
+        form = ConferencePresentationScheduleForm(
+            instance=presentation,
+            event=event_form.event,
+            initial={"presenter_name": paper.corresponding_author},
+        )
+    return render(request, "conferences/presentation_schedule.html", {
+        "event_form": event_form, "paper": paper, "form": form,
+    })
+
+
+@login_required
+def presentation_list(request, form_id):
+    _require_access(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    presentations = ConferencePresentation.objects.filter(
+        paper__call__event=event_form.event,
+        is_active=True,
+    ).select_related("paper", "session", "programme_item")
+    accepted_unscheduled = ConferencePaper.objects.filter(
+        call__event=event_form.event,
+        status=ConferencePaper.Status.ACCEPTED,
+        is_active=True,
+        presentation__isnull=True,
+    )
+    return render(request, "conferences/presentation_list.html", {
+        "event_form": event_form,
+        "presentations": presentations,
+        "accepted_unscheduled": accepted_unscheduled,
+    })
+
+
+@require_http_methods(["GET", "POST"])
+def presentation_confirm(request, public_token):
+    paper = get_object_or_404(
+        ConferencePaper.objects.select_related("presentation__session"),
+        public_token=public_token,
+        status=ConferencePaper.Status.ACCEPTED,
+        is_active=True,
+    )
+    try:
+        presentation = paper.presentation
+    except ConferencePresentation.DoesNotExist:
+        raise Http404("This paper has not yet been scheduled.")
+    if request.method == "POST":
+        form = ConferencePresentationConfirmationForm(
+            request.POST, request.FILES, instance=presentation,
+        )
+        if form.is_valid():
+            presentation = form.save(commit=False)
+            presentation.status = (
+                ConferencePresentation.Status.READY
+                if presentation.slides
+                else ConferencePresentation.Status.CONFIRMED
+            )
+            presentation.confirmed_at = timezone.now()
+            presentation.save()
+            return redirect("conferences:paper_status", public_token=paper.public_token)
+    else:
+        form = ConferencePresentationConfirmationForm(instance=presentation)
+    return render(request, "conferences/presentation_confirm.html", {
+        "paper": paper, "presentation": presentation, "form": form,
+    })
+
+
+@require_GET
+def presentation_slides(request, public_token):
+    paper = get_object_or_404(ConferencePaper, public_token=public_token, is_active=True)
+    try:
+        presentation = paper.presentation
+    except ConferencePresentation.DoesNotExist:
+        raise Http404
+    if not presentation.slides:
+        raise Http404
+    return FileResponse(
+        presentation.slides.open("rb"), as_attachment=True,
+        filename=presentation.slides.name.rsplit("/", 1)[-1],
+    )
 
 
 @login_required

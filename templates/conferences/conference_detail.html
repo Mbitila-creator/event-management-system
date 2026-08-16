@@ -13,6 +13,7 @@
             <a class="conference-secondary" href="{% url 'conferences:public_programme' event_form.event.slug %}" target="_blank" rel="noopener">{% translate "Public programme" %}</a>
             <a class="conference-secondary" href="{% url 'conferences:paper_review_list' event_form.pk %}">{% translate "Review abstracts and papers" %}</a>
             <a class="conference-secondary" href="{% url 'conferences:reviewer_workspace' %}">{% translate "My peer reviews" %}</a>
+            <a class="conference-secondary" href="{% url 'conferences:presentation_list' event_form.pk %}">{% translate "Presentation schedule" %}</a>
             {% if can_manage %}
                 <a class="conference-secondary" href="{% url 'admin:conferences_conferenceprogrammeitem_changelist' %}?session__event__id__exact={{ event_form.event.pk }}">{% translate "Edit programme" %}</a>
                 <a class="conference-secondary" href="{% url 'admin:conferences_conferencespeaker_changelist' %}?event__id__exact={{ event_form.event.pk }}">{% translate "Manage speakers" %}</a>

@@ -1,7 +1,13 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import ConferencePaper, ConferencePaperReviewAssignment
+from .models import (
+    ConferencePaper,
+    ConferencePaperReviewAssignment,
+    ConferencePresentation,
+    ConferenceProgrammeItem,
+    ConferenceSession,
+)
 
 
 class ConferencePaperSubmissionForm(forms.ModelForm):
@@ -82,3 +88,40 @@ class ConferencePeerReviewForm(forms.ModelForm):
             (ConferencePaperReviewAssignment.Status.COMPLETED, "Submit completed review"),
             (ConferencePaperReviewAssignment.Status.CONFLICT, "Declare conflict of interest"),
         )
+
+
+class ConferencePresentationScheduleForm(forms.ModelForm):
+    class Meta:
+        model = ConferencePresentation
+        fields = (
+            "session", "programme_item", "presenter_name", "starts_at", "ends_at",
+            "venue_name", "status", "manager_notes",
+        )
+        widgets = {
+            "starts_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "ends_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "manager_notes": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, event, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["session"].queryset = ConferenceSession.objects.filter(
+            event=event, is_active=True,
+        )
+        self.fields["programme_item"].queryset = ConferenceProgrammeItem.objects.filter(
+            session__event=event, is_active=True, is_published=True,
+        )
+
+
+class ConferencePresentationConfirmationForm(forms.ModelForm):
+    confirmation = forms.BooleanField(
+        label="I confirm that I will deliver this presentation at the scheduled time.",
+    )
+
+    class Meta:
+        model = ConferencePresentation
+        fields = ("presenter_name", "slides", "presenter_notes")
+        widgets = {"presenter_notes": forms.Textarea(attrs={"rows": 4})}
+        help_texts = {
+            "slides": "Optional PDF, PPT or PPTX file, maximum 20 MB.",
+        }

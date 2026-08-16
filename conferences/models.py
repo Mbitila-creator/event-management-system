@@ -629,3 +629,81 @@ class ConferencePaperReviewAssignment(BaseModel):
 
     def __str__(self):
         return f"{self.paper.reference_number} — {self.reviewer}"
+
+
+class ConferencePresentation(BaseModel):
+    class Status(models.TextChoices):
+        SCHEDULED = "SCHEDULED", _("Scheduled")
+        CONFIRMED = "CONFIRMED", _("Confirmed by presenter")
+        READY = "READY", _("Slides received / ready")
+        DELIVERED = "DELIVERED", _("Delivered")
+        CANCELLED = "CANCELLED", _("Cancelled")
+
+    paper = models.OneToOneField(
+        ConferencePaper, related_name="presentation", on_delete=models.CASCADE,
+        verbose_name=_("accepted paper"),
+    )
+    session = models.ForeignKey(
+        ConferenceSession, related_name="paper_presentations", on_delete=models.PROTECT,
+        verbose_name=_("conference session"),
+    )
+    programme_item = models.ForeignKey(
+        ConferenceProgrammeItem, related_name="paper_presentations",
+        on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name=_("programme item"),
+    )
+    presenter_name = models.CharField(_("presenter name"), max_length=200)
+    starts_at = models.DateTimeField(_("presentation starts"))
+    ends_at = models.DateTimeField(_("presentation ends"))
+    venue_name = models.CharField(_("presentation venue"), max_length=250, blank=True)
+    status = models.CharField(
+        _("presentation status"), max_length=20, choices=Status.choices,
+        default=Status.SCHEDULED,
+    )
+    slides = models.FileField(
+        _("presentation slides"), upload_to="conferences/presentations/%Y/%m/",
+        blank=True, null=True,
+        validators=[FileExtensionValidator(("pdf", "ppt", "pptx"))],
+    )
+    presenter_notes = models.TextField(_("presenter notes"), blank=True)
+    manager_notes = models.TextField(_("manager notes"), blank=True)
+    confirmed_at = models.DateTimeField(_("confirmed at"), null=True, blank=True)
+
+    class Meta:
+        ordering = ("starts_at", "id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("session", "starts_at", "venue_name"),
+                name="unique_presentation_slot_per_venue",
+            ),
+        ]
+
+    def clean(self):
+        errors = {}
+        if self.paper_id and self.paper.status != ConferencePaper.Status.ACCEPTED:
+            errors["paper"] = _("Only accepted papers may be scheduled for presentation.")
+        if self.paper_id and self.session_id and self.paper.call.event_id != self.session.event_id:
+            errors["session"] = _("Select a session from the paper's conference.")
+        if self.programme_item_id and self.session_id and self.programme_item.session_id != self.session_id:
+            errors["programme_item"] = _("Select a programme item from the chosen session.")
+        if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
+            errors["ends_at"] = _("The presentation must end after it starts.")
+        if self.session_id and self.starts_at and self.starts_at < self.session.starts_at:
+            errors["starts_at"] = _("The presentation cannot start before its session.")
+        if self.session_id and self.ends_at and self.ends_at > self.session.ends_at:
+            errors["ends_at"] = _("The presentation cannot end after its session.")
+        uploaded_file = getattr(self.slides, "_file", None)
+        if uploaded_file and uploaded_file.size > 20 * 1024 * 1024:
+            errors["slides"] = _("Presentation slides must not exceed 20 MB.")
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.presenter_name = self.presenter_name.strip()
+        if not self.venue_name and self.session_id:
+            self.venue_name = self.session.venue_name
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.paper.reference_number} — {self.starts_at:%d %b %Y %H:%M}"

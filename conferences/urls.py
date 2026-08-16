@@ -26,6 +26,16 @@ urlpatterns = [
         views.paper_document,
         name="paper_document",
     ),
+    path(
+        "conference-papers/<uuid:public_token>/presentation/confirm/",
+        views.presentation_confirm,
+        name="presentation_confirm",
+    ),
+    path(
+        "conference-papers/<uuid:public_token>/presentation/slides/",
+        views.presentation_slides,
+        name="presentation_slides",
+    ),
     path("staff/conferences/", views.conference_list, name="conference_list"),
     path(
         "staff/conferences/forms/<int:form_id>/",
@@ -76,5 +86,15 @@ urlpatterns = [
         "staff/conferences/peer-reviews/<int:assignment_id>/",
         views.peer_review,
         name="peer_review",
+    ),
+    path(
+        "staff/conferences/forms/<int:form_id>/presentations/",
+        views.presentation_list,
+        name="presentation_list",
+    ),
+    path(
+        "staff/conferences/forms/<int:form_id>/papers/<int:paper_id>/presentation/",
+        views.presentation_schedule,
+        name="presentation_schedule",
     ),
 ]

@@ -11,6 +11,7 @@ from .models import (
     ConferenceSessionAttendance,
     ConferenceSpeaker,
     ConferenceReviewer,
+    ConferencePresentation,
 )
 
 
@@ -190,3 +191,16 @@ class ConferencePaperReviewAssignmentAdmin(AuditAdminMixin, admin.ModelAdmin):
     @admin.display(description="Average score")
     def average_score_display(self, obj):
         return f"{obj.average_score:.1f}" if obj.average_score is not None else "—"
+
+
+@admin.register(ConferencePresentation)
+class ConferencePresentationAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "paper", "presenter_name", "session", "starts_at", "ends_at", "status",
+    )
+    list_filter = ("paper__call__event", "session", "status")
+    search_fields = (
+        "paper__reference_number", "paper__title", "presenter_name", "venue_name",
+    )
+    autocomplete_fields = ("paper", "session", "programme_item")
+    readonly_fields = AuditAdminMixin.readonly_fields + ("confirmed_at",)
