@@ -366,8 +366,28 @@ img {
     background: #6546a5;
 }
 
-.conferences-module-link {
-    background: #087f73;
+a.conferences-module-link {
+    border: 1px solid #005f56;
+    background-color: #00695c;
+    background-image: linear-gradient(135deg, #00695c, #00897b);
+    color: #fff;
+}
+
+a.conferences-module-link:hover,
+a.conferences-module-link:focus-visible {
+    background-color: #00574d;
+    background-image: linear-gradient(135deg, #00574d, #00766c);
+    color: #fff;
+}
+
+a.conferences-module-link:focus-visible {
+    outline: 3px solid #f6c945;
+    outline-offset: 3px;
+}
+
+a.conferences-module-link .module-link-mark,
+a.conferences-module-link > span {
+    color: #fff;
 }
 
 .module-link-mark {

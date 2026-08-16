@@ -46,6 +46,9 @@ class PublicNavigationTests(TestCase):
         self.assertContains(response, 'class="module-launcher"')
         self.assertContains(response, "Exhibitions")
         self.assertContains(response, "/en/staff/meetings/")
+        self.assertContains(response, "conferences-module-link")
+        self.assertContains(response, "/en/staff/conferences/")
+        self.assertContains(response, "css/events-public.css?v=20260816a", html=False)
         self.assertNotContains(response, "meetings-link")
 
 
