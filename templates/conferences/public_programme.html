@@ -24,7 +24,7 @@
                 {% if event.venue %} · {{ event.venue.name }}{% endif %}
             </p>
         </div>
-        <div class="conference-actions no-print"><a class="conference-secondary" href="{% url 'conferences:paper_submit' event.slug %}">{% translate "Submit abstract or paper" %}</a><button class="conference-secondary" type="button" onclick="window.print()">{% translate "Print programme" %}</button></div>
+        <div class="conference-actions no-print"><a class="conference-secondary" href="{% url 'conferences:paper_submit' event.slug %}">{% translate "Submit abstract or paper" %}</a><a class="conference-secondary" href="{% url 'conferences:feedback_submit' event.slug %}">{% translate "Evaluate conference" %}</a><button class="conference-secondary" type="button" onclick="window.print()">{% translate "Print programme" %}</button></div>
     </header>
 
     <nav class="conference-programme-nav no-print" aria-label="{% translate 'Programme dates' %}">

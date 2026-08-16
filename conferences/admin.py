@@ -14,6 +14,7 @@ from .models import (
     ConferencePresentation,
     ConferencePaperCommunication,
     ConferenceCertificate,
+    ConferenceFeedback,
 )
 
 
@@ -235,3 +236,20 @@ class ConferenceCertificateAdmin(AuditAdminMixin, admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+@admin.register(ConferenceFeedback)
+class ConferenceFeedbackAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "reference_number", "event", "session", "display_name", "overall_rating",
+        "would_recommend", "created_at",
+    )
+    list_filter = ("event", "session", "is_anonymous", "would_recommend", "created_at")
+    search_fields = (
+        "reference_number", "respondent_name", "institution", "email",
+        "most_valuable", "improvements", "additional_comments",
+    )
+    readonly_fields = AuditAdminMixin.readonly_fields + (
+        "reference_number", "public_token",
+    )
+    autocomplete_fields = ("event", "session")

@@ -8,6 +8,7 @@ from .models import (
     ConferencePaperCommunication,
     ConferenceProgrammeItem,
     ConferenceSession,
+    ConferenceFeedback,
 )
 
 
@@ -133,3 +134,72 @@ class ConferencePaperCommunicationForm(forms.ModelForm):
         model = ConferencePaperCommunication
         fields = ("communication_type", "recipient_email", "subject", "message")
         widgets = {"message": forms.Textarea(attrs={"rows": 12})}
+
+
+class ConferenceFeedbackForm(forms.ModelForm):
+    is_anonymous = forms.BooleanField(
+        label="Submit this evaluation anonymously",
+        required=False,
+        initial=True,
+    )
+    would_recommend = forms.TypedChoiceField(
+        label="Would you recommend this conference to others?",
+        choices=((True, "Yes"), (False, "No")),
+        coerce=lambda value: value == "True",
+        widget=forms.RadioSelect,
+    )
+    website = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    class Meta:
+        model = ConferenceFeedback
+        fields = (
+            "session", "is_anonymous", "respondent_name", "institution", "email",
+            "overall_rating", "content_rating", "speakers_rating",
+            "organization_rating", "venue_rating", "would_recommend",
+            "most_valuable", "improvements", "additional_comments",
+        )
+        widgets = {
+            "overall_rating": forms.RadioSelect,
+            "content_rating": forms.RadioSelect,
+            "speakers_rating": forms.RadioSelect,
+            "organization_rating": forms.RadioSelect,
+            "venue_rating": forms.RadioSelect,
+            "most_valuable": forms.Textarea(attrs={"rows": 4}),
+            "improvements": forms.Textarea(attrs={"rows": 4}),
+            "additional_comments": forms.Textarea(attrs={"rows": 4}),
+        }
+        help_texts = {
+            "session": "Optional: select one session if this feedback concerns it specifically.",
+        }
+
+    def __init__(self, *args, event, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.event = event
+        self.fields["session"].queryset = ConferenceSession.objects.filter(
+            event=event, is_active=True,
+        ).order_by("starts_at", "display_order")
+        self.fields["session"].empty_label = "Overall conference (all sessions)"
+        self.fields["respondent_name"].required = False
+        for field_name in (
+            "overall_rating", "content_rating", "speakers_rating",
+            "organization_rating", "venue_rating",
+        ):
+            self.fields[field_name].choices = tuple(
+                (value, f"{value} — {label}")
+                for value, label in (
+                    (1, "Very poor"), (2, "Poor"), (3, "Good"),
+                    (4, "Very good"), (5, "Excellent"),
+                )
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get("website"):
+            raise ValidationError("Unable to submit this evaluation.")
+        if cleaned_data.get("is_anonymous"):
+            cleaned_data["respondent_name"] = ""
+            cleaned_data["institution"] = ""
+            cleaned_data["email"] = ""
+        elif not (cleaned_data.get("respondent_name") or "").strip():
+            self.add_error("respondent_name", "Enter your name or submit anonymously.")
+        return cleaned_data

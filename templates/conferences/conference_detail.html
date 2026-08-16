@@ -15,6 +15,7 @@
             <a class="conference-secondary" href="{% url 'conferences:reviewer_workspace' %}">{% translate "My peer reviews" %}</a>
             <a class="conference-secondary" href="{% url 'conferences:presentation_list' event_form.pk %}">{% translate "Presentation schedule" %}</a>
             <a class="conference-secondary" href="{% url 'conferences:certificate_list' event_form.pk %}">{% translate "Conference certificates" %}</a>
+            <a class="conference-secondary" href="{% url 'conferences:feedback_dashboard' event_form.pk %}">{% translate "Feedback and evaluation" %}</a>
             {% if can_manage %}
                 <a class="conference-secondary" href="{% url 'admin:conferences_conferenceprogrammeitem_changelist' %}?session__event__id__exact={{ event_form.event.pk }}">{% translate "Edit programme" %}</a>
                 <a class="conference-secondary" href="{% url 'admin:conferences_conferencespeaker_changelist' %}?event__id__exact={{ event_form.event.pk }}">{% translate "Manage speakers" %}</a>

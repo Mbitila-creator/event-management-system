@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Prefetch, Q
+from django.db.models import Avg, Count, Prefetch, Q
 from django.core.mail import send_mail
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -32,6 +32,7 @@ from .forms import (
     ConferencePresentationConfirmationForm,
     ConferencePresentationScheduleForm,
     ConferencePaperCommunicationForm,
+    ConferenceFeedbackForm,
 )
 
 from .models import (
@@ -44,6 +45,7 @@ from .models import (
     ConferencePresentation,
     ConferencePaperCommunication,
     ConferenceCertificate,
+    ConferenceFeedback,
     ConferenceReviewer,
     ConferenceSession,
     ConferenceSessionAttendance,
@@ -158,6 +160,18 @@ def _conference_registration_forms():
     )
 
 
+def _public_conference(event_slug):
+    event = get_object_or_404(
+        Event.objects.select_related("category", "venue"),
+        slug=event_slug,
+        is_active=True,
+        is_public=True,
+    )
+    if not event.category.is_conference:
+        raise PermissionDenied
+    return event
+
+
 def _selected_submissions(event_form, session, approved_only=True):
     queryset = FormSubmission.objects.filter(
         event_form=event_form,
@@ -184,14 +198,7 @@ def _submission_session_values(submission):
 
 @require_GET
 def public_programme(request, event_slug):
-    event = get_object_or_404(
-        Event.objects.select_related("category", "venue"),
-        slug=event_slug,
-        is_active=True,
-        is_public=True,
-    )
-    if not event.category.is_conference:
-        raise PermissionDenied
+    event = _public_conference(event_slug)
 
     contributors = ConferenceProgrammeContributor.objects.filter(
         is_active=True,
@@ -222,6 +229,49 @@ def public_programme(request, event_slug):
         "conferences/public_programme.html",
         {"event": event, "sessions": sessions},
     )
+
+
+@require_http_methods(["GET", "POST"])
+def feedback_submit(request, event_slug):
+    event = _public_conference(event_slug)
+    if request.method == "POST":
+        form = ConferenceFeedbackForm(request.POST, event=event)
+        if form.is_valid():
+            feedback = form.save(commit=False)
+            feedback.event = event
+            feedback.save()
+            return redirect(
+                "conferences:feedback_thanks",
+                public_token=feedback.public_token,
+            )
+    else:
+        form = ConferenceFeedbackForm(event=event)
+    return render(request, "conferences/feedback_form.html", {
+        "event": event,
+        "form": form,
+    })
+
+
+@require_GET
+def feedback_thanks(request, public_token):
+    feedback = get_object_or_404(
+        ConferenceFeedback.objects.select_related("event", "session"),
+        public_token=public_token,
+        is_active=True,
+    )
+    return render(request, "conferences/feedback_thanks.html", {
+        "feedback": feedback,
+    })
+
+
+@require_GET
+def feedback_qr(request, event_slug):
+    event = _public_conference(event_slug)
+    feedback_url = request.build_absolute_uri(reverse(
+        "conferences:feedback_submit",
+        kwargs={"event_slug": event.slug},
+    ))
+    return HttpResponse(generate_qr_png(feedback_url), content_type="image/png")
 
 
 def _public_call(event_slug):
@@ -811,6 +861,98 @@ def certificate_revoke(request, form_id, certificate_id):
         certificate.save()
         messages.success(request, _("The certificate has been revoked."))
     return redirect("conferences:certificate_list", form_id=event_form.pk)
+
+
+@login_required
+@require_GET
+def feedback_dashboard(request, form_id):
+    _require_access(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    responses = ConferenceFeedback.objects.filter(
+        event=event_form.event,
+        is_active=True,
+    ).select_related("session")
+    session_filter = request.GET.get("session", "").strip()
+    if session_filter.isdigit():
+        responses = responses.filter(session_id=int(session_filter))
+    aggregates = responses.aggregate(
+        overall=Avg("overall_rating"),
+        content=Avg("content_rating"),
+        speakers=Avg("speakers_rating"),
+        organization=Avg("organization_rating"),
+        venue=Avg("venue_rating"),
+    )
+    response_count = responses.count()
+    recommend_count = responses.filter(would_recommend=True).count()
+    summary = {
+        "total": response_count,
+        "anonymous": responses.filter(is_anonymous=True).count(),
+        "recommend_percent": round(recommend_count * 100 / response_count) if response_count else 0,
+        **aggregates,
+    }
+    sessions = ConferenceSession.objects.filter(
+        event=event_form.event,
+        is_active=True,
+    ).annotate(
+        response_count=Count(
+            "feedback_responses",
+            filter=Q(feedback_responses__is_active=True),
+        ),
+        average_rating=Avg(
+            "feedback_responses__overall_rating",
+            filter=Q(feedback_responses__is_active=True),
+        ),
+    ).order_by("starts_at", "display_order")
+    return render(request, "conferences/feedback_dashboard.html", {
+        "event_form": event_form,
+        "responses": responses,
+        "sessions": sessions,
+        "summary": summary,
+        "session_filter": session_filter,
+    })
+
+
+@login_required
+@require_GET
+def feedback_csv(request, form_id):
+    _require_access(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    responses = ConferenceFeedback.objects.filter(
+        event=event_form.event,
+        is_active=True,
+    ).select_related("session").order_by("created_at")
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{event_form.event.code}-conference-feedback.csv"'
+    )
+    response.write("\ufeff")
+    writer = csv.writer(response)
+    writer.writerow((
+        "Reference", "Submitted at", "Anonymous", "Name", "Institution", "Email",
+        "Session", "Overall rating", "Content rating", "Speakers rating",
+        "Organization rating", "Venue rating", "Would recommend",
+        "Most valuable aspect", "Suggested improvements", "Additional comments",
+    ))
+    for item in responses:
+        writer.writerow(tuple(safe_spreadsheet_value(value) for value in (
+            item.reference_number,
+            timezone.localtime(item.created_at).strftime("%Y-%m-%d %H:%M"),
+            "Yes" if item.is_anonymous else "No",
+            "" if item.is_anonymous else item.respondent_name,
+            "" if item.is_anonymous else item.institution,
+            "" if item.is_anonymous else item.email,
+            item.session.title if item.session else "Overall conference",
+            item.overall_rating,
+            item.content_rating,
+            item.speakers_rating,
+            item.organization_rating,
+            item.venue_rating,
+            "Yes" if item.would_recommend else "No",
+            item.most_valuable,
+            item.improvements,
+            item.additional_comments,
+        )))
+    return response
 
 
 @login_required

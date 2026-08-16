@@ -852,3 +852,81 @@ class ConferenceCertificate(BaseModel):
 
     def __str__(self):
         return f"{self.certificate_number} — {self.recipient_name}"
+
+
+class ConferenceFeedback(BaseModel):
+    RATING_CHOICES = tuple((value, str(value)) for value in range(1, 6))
+
+    event = models.ForeignKey(
+        Event, related_name="conference_feedback", on_delete=models.CASCADE,
+        verbose_name=_("conference event"),
+    )
+    session = models.ForeignKey(
+        ConferenceSession, related_name="feedback_responses",
+        on_delete=models.PROTECT, null=True, blank=True,
+        verbose_name=_("conference session"),
+    )
+    reference_number = models.CharField(
+        _("feedback reference"), max_length=100, unique=True, null=True, blank=True,
+    )
+    public_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    is_anonymous = models.BooleanField(_("submit anonymously"), default=True)
+    respondent_name = models.CharField(_("respondent name"), max_length=200, blank=True)
+    institution = models.CharField(_("institution"), max_length=250, blank=True)
+    email = models.EmailField(_("email address"), blank=True)
+    overall_rating = models.PositiveSmallIntegerField(
+        _("overall experience"), choices=RATING_CHOICES,
+    )
+    content_rating = models.PositiveSmallIntegerField(
+        _("content relevance and quality"), choices=RATING_CHOICES,
+    )
+    speakers_rating = models.PositiveSmallIntegerField(
+        _("speakers and presentations"), choices=RATING_CHOICES,
+    )
+    organization_rating = models.PositiveSmallIntegerField(
+        _("organization and communication"), choices=RATING_CHOICES,
+    )
+    venue_rating = models.PositiveSmallIntegerField(
+        _("venue and facilities"), choices=RATING_CHOICES,
+    )
+    would_recommend = models.BooleanField(_("would recommend this conference"))
+    most_valuable = models.TextField(_("most valuable aspect"), blank=True)
+    improvements = models.TextField(_("suggested improvements"), blank=True)
+    additional_comments = models.TextField(_("additional comments"), blank=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def clean(self):
+        errors = {}
+        if self.event_id and not self.event.category.is_conference:
+            errors["event"] = _("Select a Conference event.")
+        if self.session_id and self.event_id and self.session.event_id != self.event_id:
+            errors["session"] = _("Select a session from the same conference.")
+        if not self.is_anonymous and not self.respondent_name.strip():
+            errors["respondent_name"] = _("Enter your name or submit anonymously.")
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if self.is_anonymous:
+            self.respondent_name = ""
+            self.institution = ""
+            self.email = ""
+        else:
+            self.respondent_name = self.respondent_name.strip()
+            self.institution = self.institution.strip()
+            self.email = self.email.strip().lower()
+        self.full_clean()
+        super().save(*args, **kwargs)
+        if not self.reference_number:
+            reference = f"{self.event.code}-FB-{self.pk:05d}"
+            type(self).objects.filter(pk=self.pk).update(reference_number=reference)
+            self.reference_number = reference
+
+    @property
+    def display_name(self):
+        return _("Anonymous respondent") if self.is_anonymous else self.respondent_name
+
+    def __str__(self):
+        return f"{self.reference_number or 'New'} — {self.display_name}"

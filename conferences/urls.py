@@ -17,6 +17,21 @@ urlpatterns = [
         name="paper_submit",
     ),
     path(
+        "conferences/<slug:event_slug>/feedback/",
+        views.feedback_submit,
+        name="feedback_submit",
+    ),
+    path(
+        "conferences/<slug:event_slug>/feedback/qr.png",
+        views.feedback_qr,
+        name="feedback_qr",
+    ),
+    path(
+        "conference-feedback/<uuid:public_token>/thank-you/",
+        views.feedback_thanks,
+        name="feedback_thanks",
+    ),
+    path(
         "conference-papers/<uuid:public_token>/",
         views.paper_status,
         name="paper_status",
@@ -116,6 +131,16 @@ urlpatterns = [
         "staff/conferences/forms/<int:form_id>/certificates/",
         views.certificate_list,
         name="certificate_list",
+    ),
+    path(
+        "staff/conferences/forms/<int:form_id>/feedback/",
+        views.feedback_dashboard,
+        name="feedback_dashboard",
+    ),
+    path(
+        "staff/conferences/forms/<int:form_id>/feedback/export/",
+        views.feedback_csv,
+        name="feedback_csv",
     ),
     path(
         "staff/conferences/forms/<int:form_id>/certificates/<int:certificate_id>/revoke/",

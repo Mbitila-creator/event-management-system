@@ -24,6 +24,7 @@ from .models import (
     ConferencePresentation,
     ConferencePaperCommunication,
     ConferenceCertificate,
+    ConferenceFeedback,
 )
 
 
@@ -810,3 +811,144 @@ class ConferenceRegistrationTests(TestCase):
             "conferences:certificate_list", kwargs={"form_id": self.event_form.pk},
         ))
         self.assertEqual(response.status_code, 403)
+
+    def feedback_payload(self, **overrides):
+        payload = {
+            "session": "",
+            "overall_rating": "5",
+            "content_rating": "4",
+            "speakers_rating": "5",
+            "organization_rating": "4",
+            "venue_rating": "4",
+            "would_recommend": "True",
+            "most_valuable": "Strategic dialogue and practical examples.",
+            "improvements": "Allow more time for participant questions.",
+            "additional_comments": "A valuable national forum.",
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_public_conference_feedback_form_accepts_identified_response(self):
+        session = ConferenceSession.objects.get(
+            event=self.event_form.event,
+            code="BASIC-EDUCATION",
+        )
+        url = reverse(
+            "conferences:feedback_submit",
+            kwargs={"event_slug": self.event_form.event.slug},
+        )
+        page = self.client.get(url)
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Conference feedback and evaluation")
+        self.assertContains(page, "Basic Education Session")
+        response = self.client.post(url, self.feedback_payload(
+            session=str(session.pk),
+            respondent_name="Dr. Amina Mushi",
+            institution="University of Dodoma",
+            email="AMINA@EXAMPLE.TEST",
+        ))
+        self.assertEqual(response.status_code, 302)
+        feedback = ConferenceFeedback.objects.get()
+        self.assertFalse(feedback.is_anonymous)
+        self.assertEqual(feedback.respondent_name, "Dr. Amina Mushi")
+        self.assertEqual(feedback.email, "amina@example.test")
+        self.assertEqual(feedback.session, session)
+        self.assertTrue(feedback.reference_number.startswith("NESIF-2026-FB-"))
+        thanks = self.client.get(response.url)
+        self.assertContains(thanks, feedback.reference_number)
+        self.assertContains(thanks, self.event_form.event.code)
+
+    def test_anonymous_feedback_does_not_store_identity(self):
+        url = reverse(
+            "conferences:feedback_submit",
+            kwargs={"event_slug": self.event_form.event.slug},
+        )
+        response = self.client.post(url, self.feedback_payload(
+            is_anonymous="on",
+            respondent_name="Should Not Be Stored",
+            institution="Private Institution",
+            email="private@example.test",
+        ))
+        self.assertEqual(response.status_code, 302)
+        feedback = ConferenceFeedback.objects.get()
+        self.assertTrue(feedback.is_anonymous)
+        self.assertEqual(feedback.respondent_name, "")
+        self.assertEqual(feedback.institution, "")
+        self.assertEqual(feedback.email, "")
+
+    def test_identified_feedback_requires_name_and_valid_ratings(self):
+        url = reverse(
+            "conferences:feedback_submit",
+            kwargs={"event_slug": self.event_form.event.slug},
+        )
+        response = self.client.post(url, self.feedback_payload(
+            respondent_name="",
+            overall_rating="7",
+        ))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("respondent_name", response.context["form"].errors)
+        self.assertIn("overall_rating", response.context["form"].errors)
+        self.assertFalse(ConferenceFeedback.objects.exists())
+
+    def test_feedback_dashboard_aggregates_and_exports_responses(self):
+        ConferenceFeedback.objects.create(
+            event=self.event_form.event,
+            is_anonymous=True,
+            overall_rating=5,
+            content_rating=4,
+            speakers_rating=5,
+            organization_rating=4,
+            venue_rating=3,
+            would_recommend=True,
+            most_valuable="National collaboration",
+        )
+        ConferenceFeedback.objects.create(
+            event=self.event_form.event,
+            is_anonymous=False,
+            respondent_name="Dr. John Massawe",
+            institution="UDSM",
+            email="john@example.test",
+            overall_rating=3,
+            content_rating=4,
+            speakers_rating=3,
+            organization_rating=2,
+            venue_rating=3,
+            would_recommend=False,
+            improvements="More discussion time",
+        )
+        self.client.force_login(self.admin_user)
+        dashboard_url = reverse(
+            "conferences:feedback_dashboard",
+            kwargs={"form_id": self.event_form.pk},
+        )
+        response = self.client.get(dashboard_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["summary"]["total"], 2)
+        self.assertEqual(response.context["summary"]["anonymous"], 1)
+        self.assertEqual(response.context["summary"]["overall"], 4)
+        self.assertEqual(response.context["summary"]["recommend_percent"], 50)
+        export = self.client.get(reverse(
+            "conferences:feedback_csv",
+            kwargs={"form_id": self.event_form.pk},
+        ))
+        self.assertEqual(export.status_code, 200)
+        self.assertIn("text/csv", export["Content-Type"])
+        csv_text = export.content.decode("utf-8-sig")
+        self.assertIn("Most valuable aspect", csv_text)
+        self.assertIn("National collaboration", csv_text)
+        self.assertIn("Dr. John Massawe", csv_text)
+
+    def test_feedback_qr_is_png_and_dashboard_is_permission_protected(self):
+        qr = self.client.get(reverse(
+            "conferences:feedback_qr",
+            kwargs={"event_slug": self.event_form.event.slug},
+        ))
+        self.assertEqual(qr.status_code, 200)
+        self.assertEqual(qr["Content-Type"], "image/png")
+        self.assertTrue(qr.content.startswith(b"\x89PNG"))
+        self.client.force_login(self.participant_user)
+        dashboard = self.client.get(reverse(
+            "conferences:feedback_dashboard",
+            kwargs={"form_id": self.event_form.pk},
+        ))
+        self.assertEqual(dashboard.status_code, 403)
