@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.core.management import call_command
+from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import translation
@@ -21,6 +22,7 @@ from .models import (
     ConferenceSpeaker,
     ConferenceReviewer,
     ConferencePresentation,
+    ConferencePaperCommunication,
 )
 
 
@@ -630,3 +632,40 @@ class ConferenceRegistrationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, paper.title)
         self.assertContains(response, "Accepted paper presentation")
+
+    def test_manager_sends_logged_author_communication_and_letter(self):
+        call = ConferenceCallForPapers.objects.get(event=self.event_form.event)
+        paper = ConferencePaper.objects.create(call=call, **{
+            key: value for key, value in self.paper_payload().items()
+            if key != "confirmation"
+        })
+        paper.status = ConferencePaper.Status.ACCEPTED
+        paper.decision_message = "Accepted following peer review."
+        paper.save()
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse(
+                "conferences:paper_communication",
+                kwargs={"form_id": self.event_form.pk, "paper_id": paper.pk},
+            ),
+            {
+                "communication_type": ConferencePaperCommunication.CommunicationType.ACCEPTANCE,
+                "recipient_email": paper.email,
+                "subject": "Paper acceptance notification",
+                "message": "Your paper has been accepted for presentation.",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        communication = ConferencePaperCommunication.objects.get(paper=paper)
+        self.assertEqual(
+            communication.delivery_status,
+            ConferencePaperCommunication.DeliveryStatus.SENT,
+        )
+        self.assertIsNotNone(communication.sent_at)
+        self.assertEqual(len(mail.outbox), 1)
+        letter = self.client.get(
+            reverse("conferences:paper_letter", kwargs={"public_token": paper.public_token})
+        )
+        self.assertContains(letter, "ACCEPTANCE AND PRESENTATION INVITATION")
+        self.assertContains(letter, paper.reference_number)
+        self.assertContains(letter, "MINISTRY OF EDUCATION, SCIENCE AND TECHNOLOGY")

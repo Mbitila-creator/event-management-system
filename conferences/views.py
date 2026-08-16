@@ -6,8 +6,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Prefetch, Q
+from django.core.mail import send_mail
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.translation import gettext as _
@@ -29,6 +31,7 @@ from .forms import (
     ConferencePeerReviewForm,
     ConferencePresentationConfirmationForm,
     ConferencePresentationScheduleForm,
+    ConferencePaperCommunicationForm,
 )
 
 from .models import (
@@ -39,6 +42,7 @@ from .models import (
     ConferenceProgrammeContributor,
     ConferenceProgrammeItem,
     ConferencePresentation,
+    ConferencePaperCommunication,
     ConferenceReviewer,
     ConferenceSession,
     ConferenceSessionAttendance,
@@ -535,6 +539,109 @@ def presentation_slides(request, public_token):
         presentation.slides.open("rb"), as_attachment=True,
         filename=presentation.slides.name.rsplit("/", 1)[-1],
     )
+
+
+def _communication_defaults(paper, request):
+    status_url = request.build_absolute_uri(
+        reverse("conferences:paper_status", kwargs={"public_token": paper.public_token})
+    )
+    if paper.status == ConferencePaper.Status.ACCEPTED:
+        communication_type = ConferencePaperCommunication.CommunicationType.ACCEPTANCE
+        subject = f"{paper.call.event.code}: Paper acceptance — {paper.reference_number}"
+        decision = paper.decision_message or "Your submission has been accepted."
+    elif paper.status == ConferencePaper.Status.REVISION_REQUIRED:
+        communication_type = ConferencePaperCommunication.CommunicationType.REVISION
+        subject = f"{paper.call.event.code}: Revision required — {paper.reference_number}"
+        decision = paper.decision_message or "Please revise your submission as advised."
+    elif paper.status == ConferencePaper.Status.REJECTED:
+        communication_type = ConferencePaperCommunication.CommunicationType.REJECTION
+        subject = f"{paper.call.event.code}: Submission decision — {paper.reference_number}"
+        decision = paper.decision_message or "We regret that your submission was not accepted."
+    else:
+        communication_type = ConferencePaperCommunication.CommunicationType.ACKNOWLEDGEMENT
+        subject = f"{paper.call.event.code}: Submission update — {paper.reference_number}"
+        decision = "Your submission is currently being processed."
+    schedule = ""
+    try:
+        presentation = paper.presentation
+        schedule = (
+            f"\n\nPresentation schedule:\n{presentation.session.title}\n"
+            f"{presentation.starts_at:%d %B %Y, %H:%M}–{presentation.ends_at:%H:%M}\n"
+            f"Venue: {presentation.venue_name}"
+        )
+        if paper.status == ConferencePaper.Status.ACCEPTED:
+            communication_type = ConferencePaperCommunication.CommunicationType.PRESENTATION_INVITATION
+            subject = f"{paper.call.event.code}: Presentation invitation — {paper.reference_number}"
+    except ConferencePresentation.DoesNotExist:
+        pass
+    message = (
+        f"Dear {paper.corresponding_author},\n\n"
+        f"Reference: {paper.reference_number}\nPaper: {paper.title}\n\n"
+        f"{decision}{schedule}\n\n"
+        f"View your private submission record and respond here:\n{status_url}\n\n"
+        "Ministry of Education, Science and Technology\n"
+        f"{paper.call.event.title_en}"
+    )
+    return {
+        "communication_type": communication_type,
+        "recipient_email": paper.email,
+        "subject": subject,
+        "message": message,
+    }
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def paper_communication(request, form_id, paper_id):
+    _require_manager(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    paper = get_object_or_404(
+        ConferencePaper.objects.select_related("call__event", "presentation__session"),
+        pk=paper_id, call__event=event_form.event, is_active=True,
+    )
+    if request.method == "POST":
+        form = ConferencePaperCommunicationForm(request.POST)
+        if form.is_valid():
+            communication = form.save(commit=False)
+            communication.paper = paper
+            communication.sent_by = request.user
+            communication.created_by = request.user
+            communication.updated_by = request.user
+            try:
+                send_mail(
+                    communication.subject,
+                    communication.message,
+                    None,
+                    [communication.recipient_email],
+                    fail_silently=False,
+                )
+                communication.delivery_status = ConferencePaperCommunication.DeliveryStatus.SENT
+                communication.sent_at = timezone.now()
+                messages.success(request, _("Communication sent successfully."))
+            except Exception as exc:
+                communication.delivery_status = ConferencePaperCommunication.DeliveryStatus.FAILED
+                communication.failure_message = str(exc)[:1000]
+                messages.error(request, _("The email could not be sent. Its failure was logged."))
+            communication.save()
+            return redirect("conferences:paper_communication", form_id=event_form.pk, paper_id=paper.pk)
+    else:
+        form = ConferencePaperCommunicationForm(initial=_communication_defaults(paper, request))
+    return render(request, "conferences/paper_communication.html", {
+        "event_form": event_form,
+        "paper": paper,
+        "form": form,
+        "communications": paper.communications.select_related("sent_by"),
+    })
+
+
+@require_GET
+def paper_letter(request, public_token):
+    paper = get_object_or_404(
+        ConferencePaper.objects.select_related("call__event", "presentation__session"),
+        public_token=public_token,
+        is_active=True,
+    )
+    return render(request, "conferences/paper_letter.html", {"paper": paper})
 
 
 @login_required

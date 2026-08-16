@@ -12,6 +12,7 @@ from .models import (
     ConferenceSpeaker,
     ConferenceReviewer,
     ConferencePresentation,
+    ConferencePaperCommunication,
 )
 
 
@@ -204,3 +205,15 @@ class ConferencePresentationAdmin(AuditAdminMixin, admin.ModelAdmin):
     )
     autocomplete_fields = ("paper", "session", "programme_item")
     readonly_fields = AuditAdminMixin.readonly_fields + ("confirmed_at",)
+
+
+@admin.register(ConferencePaperCommunication)
+class ConferencePaperCommunicationAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "paper", "communication_type", "recipient_email", "delivery_status", "sent_at",
+    )
+    list_filter = ("paper__call__event", "communication_type", "delivery_status")
+    search_fields = ("paper__reference_number", "recipient_email", "subject", "message")
+    readonly_fields = AuditAdminMixin.readonly_fields + (
+        "delivery_status", "sent_by", "sent_at", "failure_message",
+    )

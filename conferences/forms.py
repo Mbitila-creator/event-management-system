@@ -5,6 +5,7 @@ from .models import (
     ConferencePaper,
     ConferencePaperReviewAssignment,
     ConferencePresentation,
+    ConferencePaperCommunication,
     ConferenceProgrammeItem,
     ConferenceSession,
 )
@@ -125,3 +126,10 @@ class ConferencePresentationConfirmationForm(forms.ModelForm):
         help_texts = {
             "slides": "Optional PDF, PPT or PPTX file, maximum 20 MB.",
         }
+
+
+class ConferencePaperCommunicationForm(forms.ModelForm):
+    class Meta:
+        model = ConferencePaperCommunication
+        fields = ("communication_type", "recipient_email", "subject", "message")
+        widgets = {"message": forms.Textarea(attrs={"rows": 12})}

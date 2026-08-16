@@ -707,3 +707,53 @@ class ConferencePresentation(BaseModel):
 
     def __str__(self):
         return f"{self.paper.reference_number} — {self.starts_at:%d %b %Y %H:%M}"
+
+
+class ConferencePaperCommunication(BaseModel):
+    class CommunicationType(models.TextChoices):
+        ACKNOWLEDGEMENT = "ACKNOWLEDGEMENT", _("Submission acknowledgement")
+        REVISION = "REVISION", _("Revision request")
+        ACCEPTANCE = "ACCEPTANCE", _("Acceptance notification")
+        REJECTION = "REJECTION", _("Rejection notification")
+        PRESENTATION_INVITATION = "PRESENTATION_INVITATION", _("Presentation invitation")
+        PRESENTATION_REMINDER = "PRESENTATION_REMINDER", _("Presentation reminder")
+        OTHER = "OTHER", _("Other communication")
+
+    class DeliveryStatus(models.TextChoices):
+        PENDING = "PENDING", _("Pending")
+        SENT = "SENT", _("Sent")
+        FAILED = "FAILED", _("Failed")
+
+    paper = models.ForeignKey(
+        ConferencePaper, related_name="communications", on_delete=models.CASCADE,
+        verbose_name=_("conference paper"),
+    )
+    communication_type = models.CharField(
+        _("communication type"), max_length=30, choices=CommunicationType.choices,
+    )
+    recipient_email = models.EmailField(_("recipient email"))
+    subject = models.CharField(_("email subject"), max_length=300)
+    message = models.TextField(_("message"))
+    delivery_status = models.CharField(
+        _("delivery status"), max_length=20, choices=DeliveryStatus.choices,
+        default=DeliveryStatus.PENDING,
+    )
+    sent_by = models.ForeignKey(
+        "accounts.User", related_name="sent_conference_paper_communications",
+        on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name=_("sent by"),
+    )
+    sent_at = models.DateTimeField(_("sent at"), null=True, blank=True)
+    failure_message = models.TextField(_("failure message"), blank=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def save(self, *args, **kwargs):
+        self.recipient_email = self.recipient_email.strip().lower()
+        self.subject = self.subject.strip()
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.paper.reference_number} — {self.get_communication_type_display()}"
