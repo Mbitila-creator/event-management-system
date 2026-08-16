@@ -13,6 +13,7 @@ from .models import (
     ConferenceReviewer,
     ConferencePresentation,
     ConferencePaperCommunication,
+    ConferenceCertificate,
 )
 
 
@@ -217,3 +218,20 @@ class ConferencePaperCommunicationAdmin(AuditAdminMixin, admin.ModelAdmin):
     readonly_fields = AuditAdminMixin.readonly_fields + (
         "delivery_status", "sent_by", "sent_at", "failure_message",
     )
+
+
+@admin.register(ConferenceCertificate)
+class ConferenceCertificateAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "certificate_number", "recipient_name", "recipient_type", "event",
+        "issued_at", "is_revoked",
+    )
+    list_filter = ("event", "recipient_type", "is_revoked", "issued_at")
+    search_fields = ("certificate_number", "recipient_name", "institution", "event__code")
+    readonly_fields = AuditAdminMixin.readonly_fields + (
+        "certificate_number", "verification_token", "issued_by", "issued_at",
+    )
+    autocomplete_fields = ("participant_submission", "paper", "reviewer")
+
+    def has_add_permission(self, request):
+        return False

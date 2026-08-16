@@ -757,3 +757,98 @@ class ConferencePaperCommunication(BaseModel):
 
     def __str__(self):
         return f"{self.paper.reference_number} — {self.get_communication_type_display()}"
+
+
+class ConferenceCertificate(BaseModel):
+    class RecipientType(models.TextChoices):
+        PARTICIPANT = "PARTICIPANT", _("Participant")
+        PRESENTER = "PRESENTER", _("Presenter")
+        REVIEWER = "REVIEWER", _("Peer reviewer")
+
+    event = models.ForeignKey(
+        Event, related_name="conference_certificates", on_delete=models.CASCADE,
+        verbose_name=_("conference event"),
+    )
+    recipient_type = models.CharField(
+        _("recipient type"), max_length=20, choices=RecipientType.choices,
+    )
+    recipient_name = models.CharField(_("recipient name"), max_length=200)
+    institution = models.CharField(_("institution"), max_length=250, blank=True)
+    participant_submission = models.ForeignKey(
+        FormSubmission, related_name="conference_certificates",
+        on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name=_("participant registration"),
+    )
+    paper = models.ForeignKey(
+        ConferencePaper, related_name="conference_certificates",
+        on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name=_("presented paper"),
+    )
+    reviewer = models.ForeignKey(
+        ConferenceReviewer, related_name="conference_certificates",
+        on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name=_("peer reviewer"),
+    )
+    certificate_number = models.CharField(
+        _("certificate number"), max_length=100, unique=True,
+    )
+    verification_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    issued_by = models.ForeignKey(
+        "accounts.User", related_name="issued_conference_certificates",
+        on_delete=models.PROTECT, verbose_name=_("issued by"),
+    )
+    issued_at = models.DateTimeField(_("issued at"), auto_now_add=True)
+    is_revoked = models.BooleanField(_("revoked"), default=False)
+    revocation_reason = models.TextField(_("revocation reason"), blank=True)
+
+    class Meta:
+        ordering = ("-issued_at",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=("event", "recipient_type", "participant_submission"),
+                condition=models.Q(participant_submission__isnull=False),
+                name="unique_participant_conference_certificate",
+            ),
+            models.UniqueConstraint(
+                fields=("event", "recipient_type", "paper"),
+                condition=models.Q(paper__isnull=False),
+                name="unique_presenter_conference_certificate",
+            ),
+            models.UniqueConstraint(
+                fields=("event", "recipient_type", "reviewer"),
+                condition=models.Q(reviewer__isnull=False),
+                name="unique_reviewer_conference_certificate",
+            ),
+        ]
+
+    def clean(self):
+        errors = {}
+        source_fields = {
+            self.RecipientType.PARTICIPANT: "participant_submission",
+            self.RecipientType.PRESENTER: "paper",
+            self.RecipientType.REVIEWER: "reviewer",
+        }
+        required_source = source_fields.get(self.recipient_type)
+        for field_name in source_fields.values():
+            if field_name == required_source and not getattr(self, f"{field_name}_id"):
+                errors[field_name] = _("Select the record that supports this certificate.")
+            elif field_name != required_source and getattr(self, f"{field_name}_id"):
+                errors[field_name] = _("This record does not match the recipient type.")
+        if self.participant_submission_id and self.participant_submission.event_form.event_id != self.event_id:
+            errors["participant_submission"] = _("The participant belongs to another event.")
+        if self.paper_id and self.paper.call.event_id != self.event_id:
+            errors["paper"] = _("The paper belongs to another event.")
+        if self.reviewer_id and self.reviewer.event_id != self.event_id:
+            errors["reviewer"] = _("The reviewer belongs to another event.")
+        if self.is_revoked and not self.revocation_reason.strip():
+            errors["revocation_reason"] = _("Enter a reason for revoking the certificate.")
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.recipient_name = self.recipient_name.strip()
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.certificate_number} — {self.recipient_name}"

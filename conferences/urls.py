@@ -41,6 +41,21 @@ urlpatterns = [
         views.paper_letter,
         name="paper_letter",
     ),
+    path(
+        "conference-certificates/<uuid:verification_token>/",
+        views.certificate_print,
+        name="certificate_print",
+    ),
+    path(
+        "conference-certificates/<uuid:verification_token>/verify/",
+        views.certificate_verify,
+        name="certificate_verify",
+    ),
+    path(
+        "conference-certificates/<uuid:verification_token>/qr.png",
+        views.certificate_qr,
+        name="certificate_qr",
+    ),
     path("staff/conferences/", views.conference_list, name="conference_list"),
     path(
         "staff/conferences/forms/<int:form_id>/",
@@ -96,6 +111,16 @@ urlpatterns = [
         "staff/conferences/forms/<int:form_id>/presentations/",
         views.presentation_list,
         name="presentation_list",
+    ),
+    path(
+        "staff/conferences/forms/<int:form_id>/certificates/",
+        views.certificate_list,
+        name="certificate_list",
+    ),
+    path(
+        "staff/conferences/forms/<int:form_id>/certificates/<int:certificate_id>/revoke/",
+        views.certificate_revoke,
+        name="certificate_revoke",
     ),
     path(
         "staff/conferences/forms/<int:form_id>/papers/<int:paper_id>/presentation/",

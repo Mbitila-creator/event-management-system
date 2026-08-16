@@ -23,6 +23,7 @@ from .models import (
     ConferenceReviewer,
     ConferencePresentation,
     ConferencePaperCommunication,
+    ConferenceCertificate,
 )
 
 
@@ -669,3 +670,143 @@ class ConferenceRegistrationTests(TestCase):
         self.assertContains(letter, "ACCEPTANCE AND PRESENTATION INVITATION")
         self.assertContains(letter, paper.reference_number)
         self.assertContains(letter, "MINISTRY OF EDUCATION, SCIENCE AND TECHNOLOGY")
+
+    def test_certificates_are_generated_only_from_eligible_records(self):
+        participant = self.submit_registration()
+        participant.review_status = FormSubmission.ReviewStatus.APPROVED
+        participant.save()
+        unattended = self.submit_registration(name="Dr. Neema Kimaro")
+        unattended.review_status = FormSubmission.ReviewStatus.APPROVED
+        unattended.save()
+        session = ConferenceSession.objects.get(
+            event=self.event_form.event,
+            registration_option_value="BASIC_EDUCATION_17_AUG",
+        )
+        ConferenceSessionAttendance.objects.create(
+            session=session,
+            submission=participant,
+            checked_in_by=self.admin_user,
+        )
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse("conferences:certificate_list", kwargs={"form_id": self.event_form.pk}),
+            {"recipient_type": ConferenceCertificate.RecipientType.PARTICIPANT},
+        )
+        self.assertEqual(response.status_code, 302)
+        certificate = ConferenceCertificate.objects.get()
+        self.assertEqual(certificate.participant_submission, participant)
+        self.assertEqual(certificate.recipient_name, "Dr. Amina Mushi")
+        self.assertFalse(
+            ConferenceCertificate.objects.filter(participant_submission=unattended).exists()
+        )
+
+    def test_delivered_presenter_and_completed_reviewer_receive_certificates(self):
+        call = ConferenceCallForPapers.objects.get(event=self.event_form.event)
+        paper = ConferencePaper.objects.create(call=call, **{
+            key: value for key, value in self.paper_payload().items()
+            if key != "confirmation"
+        })
+        paper.status = ConferencePaper.Status.ACCEPTED
+        paper.save()
+        session = ConferenceSession.objects.get(event=call.event, code="STI")
+        ConferencePresentation.objects.create(
+            paper=paper,
+            session=session,
+            presenter_name="Prof. Asha Mrema",
+            starts_at=session.starts_at,
+            ends_at=session.starts_at + timedelta(minutes=20),
+            venue_name="Innovation Hall",
+            status=ConferencePresentation.Status.DELIVERED,
+        )
+        reviewer_user = User.objects.create_user(
+            username="certificate-reviewer",
+            first_name="John",
+            last_name="Massawe",
+            password="safe-test-password",
+        )
+        reviewer = ConferenceReviewer.objects.create(
+            event=call.event,
+            user=reviewer_user,
+            institution="University of Dar es Salaam",
+            expertise="Education technology",
+        )
+        ConferencePaperReviewAssignment.objects.create(
+            paper=paper,
+            reviewer=reviewer,
+            assigned_by=self.admin_user,
+            status=ConferencePaperReviewAssignment.Status.COMPLETED,
+            relevance_score=5,
+            originality_score=4,
+            methodology_score=4,
+            clarity_score=5,
+            impact_score=5,
+            recommendation=ConferencePaperReviewAssignment.Recommendation.ACCEPT,
+        )
+        self.client.force_login(self.admin_user)
+        url = reverse("conferences:certificate_list", kwargs={"form_id": self.event_form.pk})
+        self.client.post(url, {"recipient_type": "ALL"})
+        self.assertTrue(ConferenceCertificate.objects.filter(
+            recipient_type=ConferenceCertificate.RecipientType.PRESENTER,
+            paper=paper,
+        ).exists())
+        self.assertTrue(ConferenceCertificate.objects.filter(
+            recipient_type=ConferenceCertificate.RecipientType.REVIEWER,
+            reviewer=reviewer,
+        ).exists())
+        self.client.post(url, {"recipient_type": "ALL"})
+        self.assertEqual(ConferenceCertificate.objects.count(), 2)
+
+    def test_certificate_qr_verification_and_revocation(self):
+        participant = self.submit_registration()
+        participant.review_status = FormSubmission.ReviewStatus.APPROVED
+        participant.save()
+        session = ConferenceSession.objects.get(
+            event=self.event_form.event,
+            registration_option_value="BASIC_EDUCATION_17_AUG",
+        )
+        ConferenceSessionAttendance.objects.create(
+            session=session, submission=participant, checked_in_by=self.admin_user,
+        )
+        self.client.force_login(self.admin_user)
+        list_url = reverse(
+            "conferences:certificate_list", kwargs={"form_id": self.event_form.pk},
+        )
+        self.client.post(list_url, {
+            "recipient_type": ConferenceCertificate.RecipientType.PARTICIPANT,
+        })
+        certificate = ConferenceCertificate.objects.get()
+        qr = self.client.get(reverse(
+            "conferences:certificate_qr",
+            kwargs={"verification_token": certificate.verification_token},
+        ))
+        self.assertEqual(qr.status_code, 200)
+        self.assertEqual(qr["Content-Type"], "image/png")
+        self.assertTrue(qr.content.startswith(b"\x89PNG"))
+        printable = self.client.get(reverse(
+            "conferences:certificate_print",
+            kwargs={"verification_token": certificate.verification_token},
+        ))
+        self.assertContains(printable, certificate.certificate_number)
+        self.assertContains(printable, "Print / save as PDF")
+        verify_url = reverse(
+            "conferences:certificate_verify",
+            kwargs={"verification_token": certificate.verification_token},
+        )
+        self.assertContains(self.client.get(verify_url), "Valid conference certificate")
+        response = self.client.post(reverse(
+            "conferences:certificate_revoke",
+            kwargs={"form_id": self.event_form.pk, "certificate_id": certificate.pk},
+        ), {"reason": "Issued against an incorrect attendance record."})
+        self.assertEqual(response.status_code, 302)
+        certificate.refresh_from_db()
+        self.assertTrue(certificate.is_revoked)
+        self.assertContains(
+            self.client.get(verify_url), "Issued against an incorrect attendance record.",
+        )
+
+    def test_participant_cannot_access_certificate_management(self):
+        self.client.force_login(self.participant_user)
+        response = self.client.get(reverse(
+            "conferences:certificate_list", kwargs={"form_id": self.event_form.pk},
+        ))
+        self.assertEqual(response.status_code, 403)

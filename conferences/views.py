@@ -43,6 +43,7 @@ from .models import (
     ConferenceProgrammeItem,
     ConferencePresentation,
     ConferencePaperCommunication,
+    ConferenceCertificate,
     ConferenceReviewer,
     ConferenceSession,
     ConferenceSessionAttendance,
@@ -97,6 +98,50 @@ def _require_checkin(user):
         and (user.is_superuser or user.role in CONFERENCE_CHECKIN_ROLES)
     ):
         raise PermissionDenied
+
+
+def _certificate_number(event, recipient_type, source_pk):
+    prefixes = {
+        ConferenceCertificate.RecipientType.PARTICIPANT: "P",
+        ConferenceCertificate.RecipientType.PRESENTER: "PR",
+        ConferenceCertificate.RecipientType.REVIEWER: "R",
+    }
+    return f"{event.code}-CERT-{prefixes[recipient_type]}-{source_pk:05d}"
+
+
+def _certificate_defaults(recipient_type, source):
+    if recipient_type == ConferenceCertificate.RecipientType.PARTICIPANT:
+        return source.badge_display_name, source.badge_organization or ""
+    if recipient_type == ConferenceCertificate.RecipientType.PRESENTER:
+        return source.presentation.presenter_name, source.institution
+    user = source.user
+    return user.get_full_name() or user.username, source.institution
+
+
+def _eligible_certificate_sources(event_form, recipient_type):
+    event = event_form.event
+    if recipient_type == ConferenceCertificate.RecipientType.PARTICIPANT:
+        return FormSubmission.objects.filter(
+            event_form=event_form,
+            is_active=True,
+            is_complete=True,
+            review_status=FormSubmission.ReviewStatus.APPROVED,
+            conference_session_attendance__session__event=event,
+            conference_session_attendance__is_active=True,
+        ).distinct()
+    if recipient_type == ConferenceCertificate.RecipientType.PRESENTER:
+        return ConferencePaper.objects.filter(
+            call__event=event,
+            is_active=True,
+            presentation__is_active=True,
+            presentation__status=ConferencePresentation.Status.DELIVERED,
+        ).select_related("presentation")
+    return ConferenceReviewer.objects.filter(
+        event=event,
+        is_active=True,
+        assignments__is_active=True,
+        assignments__status=ConferencePaperReviewAssignment.Status.COMPLETED,
+    ).select_related("user").distinct()
 
 
 def _conference_registration_forms():
@@ -642,6 +687,130 @@ def paper_letter(request, public_token):
         is_active=True,
     )
     return render(request, "conferences/paper_letter.html", {"paper": paper})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def certificate_list(request, form_id):
+    _require_access(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    recipient_types = ConferenceCertificate.RecipientType
+    eligible = {
+        recipient_type: _eligible_certificate_sources(event_form, recipient_type).count()
+        for recipient_type in recipient_types.values
+    }
+    if request.method == "POST":
+        _require_manager(request.user)
+        selected_type = request.POST.get("recipient_type", "")
+        types_to_generate = list(recipient_types.values) if selected_type == "ALL" else [selected_type]
+        if any(value not in recipient_types.values for value in types_to_generate):
+            raise PermissionDenied
+        created_count = 0
+        with transaction.atomic():
+            for recipient_type in types_to_generate:
+                source_field = {
+                    recipient_types.PARTICIPANT: "participant_submission",
+                    recipient_types.PRESENTER: "paper",
+                    recipient_types.REVIEWER: "reviewer",
+                }[recipient_type]
+                for source in _eligible_certificate_sources(event_form, recipient_type):
+                    recipient_name, institution = _certificate_defaults(recipient_type, source)
+                    certificate, created = ConferenceCertificate.objects.get_or_create(
+                        event=event_form.event,
+                        recipient_type=recipient_type,
+                        **{source_field: source},
+                        defaults={
+                            "recipient_name": recipient_name,
+                            "institution": institution,
+                            "certificate_number": _certificate_number(
+                                event_form.event, recipient_type, source.pk,
+                            ),
+                            "issued_by": request.user,
+                            "created_by": request.user,
+                            "updated_by": request.user,
+                        },
+                    )
+                    created_count += int(created)
+        messages.success(
+            request,
+            _("%(count)s new certificate(s) generated successfully.") % {"count": created_count},
+        )
+        return redirect("conferences:certificate_list", form_id=event_form.pk)
+    certificates = ConferenceCertificate.objects.filter(
+        event=event_form.event,
+    ).select_related("issued_by").order_by("recipient_name", "recipient_type")
+    return render(request, "conferences/certificate_list.html", {
+        "event_form": event_form,
+        "certificates": certificates,
+        "eligible": eligible,
+        "eligible_participants": eligible[recipient_types.PARTICIPANT],
+        "eligible_presenters": eligible[recipient_types.PRESENTER],
+        "eligible_reviewers": eligible[recipient_types.REVIEWER],
+        "recipient_types": recipient_types,
+        "can_manage": request.user.is_superuser
+        or request.user.role in CONFERENCE_MANAGER_ROLES,
+    })
+
+
+@require_GET
+def certificate_print(request, verification_token):
+    certificate = get_object_or_404(
+        ConferenceCertificate.objects.select_related("event", "event__venue", "paper"),
+        verification_token=verification_token,
+        is_active=True,
+    )
+    return render(request, "conferences/conference_certificate.html", {
+        "certificate": certificate,
+    })
+
+
+@require_GET
+def certificate_verify(request, verification_token):
+    certificate = get_object_or_404(
+        ConferenceCertificate.objects.select_related("event"),
+        verification_token=verification_token,
+        is_active=True,
+    )
+    return render(request, "conferences/conference_certificate_verify.html", {
+        "certificate": certificate,
+    })
+
+
+@require_GET
+def certificate_qr(request, verification_token):
+    certificate = get_object_or_404(
+        ConferenceCertificate,
+        verification_token=verification_token,
+        is_active=True,
+    )
+    verification_url = request.build_absolute_uri(reverse(
+        "conferences:certificate_verify",
+        kwargs={"verification_token": certificate.verification_token},
+    ))
+    return HttpResponse(generate_qr_png(verification_url), content_type="image/png")
+
+
+@login_required
+@require_POST
+def certificate_revoke(request, form_id, certificate_id):
+    _require_manager(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    certificate = get_object_or_404(
+        ConferenceCertificate,
+        pk=certificate_id,
+        event=event_form.event,
+        is_active=True,
+    )
+    reason = request.POST.get("reason", "").strip()
+    if not reason:
+        messages.error(request, _("Enter a reason before revoking the certificate."))
+    else:
+        certificate.is_revoked = True
+        certificate.revocation_reason = reason
+        certificate.updated_by = request.user
+        certificate.save()
+        messages.success(request, _("The certificate has been revoked."))
+    return redirect("conferences:certificate_list", form_id=event_form.pk)
 
 
 @login_required

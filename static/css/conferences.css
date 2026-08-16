@@ -181,3 +181,57 @@
 .conference-letter-schedule { display: grid; gap: 5px; margin: 22px 0; padding: 16px; border-left: 4px solid #087f73; background: #edf8f6; }
 @media (max-width: 650px) { .conference-letter { min-height: 0; padding: 28px 22px; } .conference-letter header { display: block; } .conference-letter-meta { display: grid; gap: 4px; } }
 @media print { .conference-letter-body { padding: 0; background: #fff; } .conference-letter { max-width: none; min-height: 0; padding: 20mm; box-shadow: none; } }
+
+.conference-certificate-generator { display: flex; justify-content: space-between; gap: 24px; align-items: end; }
+.conference-certificate-generator h2 { margin: 4px 0; color: #17365d; }
+.conference-certificate-generator p { margin: 0; color: #64788b; }
+.conference-certificate-generator form { display: flex; gap: 10px; }
+.conference-certificate-generator select { min-height: 46px; padding: 8px 36px 8px 12px; border: 1px solid #9eb4c9; border-radius: 9px; background: #fff; font: inherit; }
+.conference-certificate-generator button { border: 0; cursor: pointer; }
+.conference-certificate-body { margin: 0; padding: 28px; background: #eaf0f5; color: #17365d; font-family: Georgia, "Times New Roman", serif; }
+.certificate-toolbar { display: flex; justify-content: center; gap: 12px; margin-bottom: 18px; }
+.certificate-toolbar button, .certificate-toolbar a { padding: 11px 17px; border: 0; border-radius: 8px; background: #17365d; color: #fff; font: 700 14px Arial, sans-serif; text-decoration: none; cursor: pointer; }
+.conference-certificate-sheet { position: relative; max-width: 1060px; min-height: 710px; box-sizing: border-box; margin: auto; padding: 42px 58px; border: 14px double #2f6fac; background: #fff; text-align: center; box-shadow: 0 10px 35px rgba(23,54,93,.15); }
+.conference-certificate-sheet::after { content: ""; position: absolute; inset: 14px; border: 1px solid #d5a900; pointer-events: none; }
+.conference-certificate-sheet > header { display: flex; justify-content: center; gap: 20px; align-items: center; }
+.conference-certificate-sheet > header img { width: 82px; height: 82px; object-fit: contain; }
+.conference-certificate-sheet > header strong { font-size: 13px; letter-spacing: .08em; }
+.conference-certificate-sheet > header h1 { max-width: 650px; margin: 5px 0 0; font: 800 20px Arial, sans-serif; }
+.certificate-kicker { margin: 28px 0 8px; color: #ad8500; font: 800 14px Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.conference-certificate-sheet > h2 { margin: 8px 0 22px; font-size: 38px; letter-spacing: .06em; }
+.certificate-presented { margin: 0; color: #607185; font-style: italic; }
+.conference-certificate-sheet > h3 { display: inline-block; min-width: 55%; margin: 14px 0 6px; padding-bottom: 6px; border-bottom: 2px solid #d5a900; font-size: 42px; }
+.certificate-institution { margin: 2px 0; color: #526579; font: 700 17px Arial, sans-serif; }
+.certificate-copy { max-width: 720px; margin: 22px auto; font-size: 19px; line-height: 1.55; }
+.conference-certificate-sheet > footer { display: grid; grid-template-columns: 1fr 125px 1fr; gap: 20px; align-items: center; margin-top: 28px; font-family: Arial, sans-serif; }
+.conference-certificate-sheet > footer img { width: 125px; height: 125px; }
+.conference-certificate-sheet > footer span, .conference-certificate-sheet > footer small { display: block; color: #667b8f; }
+.conference-certificate-sheet > footer strong { display: block; margin: 5px 0; }
+.certificate-revoked { opacity: .82; }
+.certificate-revoked-notice { padding: 10px; background: #fee8e7; color: #9a2923; font: 900 16px Arial, sans-serif; }
+.conference-verify-body { display: grid; min-height: 100vh; place-items: center; box-sizing: border-box; margin: 0; padding: 24px; background: #edf3f7; color: #17365d; font-family: Arial, sans-serif; }
+.conference-verify-card { width: min(100%, 600px); box-sizing: border-box; padding: 34px; border-radius: 18px; background: #fff; box-shadow: 0 12px 38px rgba(23,54,93,.14); text-align: center; }
+.conference-verify-card > img { width: 90px; height: 90px; object-fit: contain; }
+.conference-verify-state { display: grid; width: 64px; height: 64px; margin: 18px auto 10px; place-items: center; border-radius: 50%; color: #fff; font-size: 36px; font-weight: 900; }
+.conference-verify-state.valid { background: #14805e; }
+.conference-verify-state.invalid { background: #b93631; }
+.conference-verify-card h1 { margin: 8px 0; }
+.conference-verify-card > p { color: #5b7085; }
+.conference-verify-card dl { display: grid; gap: 10px; margin-top: 24px; text-align: left; }
+.conference-verify-card dl div { padding: 12px; border-radius: 9px; background: #f3f7fa; }
+.conference-verify-card dt { color: #667b8f; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.conference-verify-card dd { margin: 4px 0 0; font-weight: 800; }
+@media (max-width: 700px) {
+    .conference-certificate-generator, .conference-certificate-generator form { display: grid; }
+    .conference-certificate-body { padding: 0; }
+    .conference-certificate-sheet { min-height: 100vh; padding: 28px 22px; border-width: 8px; }
+    .conference-certificate-sheet > header { display: block; }
+    .conference-certificate-sheet > h2 { font-size: 27px; }
+    .conference-certificate-sheet > h3 { font-size: 32px; }
+    .conference-certificate-sheet > footer { grid-template-columns: 1fr; }
+    .conference-certificate-sheet > footer img { margin: auto; }
+}
+@media print {
+    .conference-certificate-body { padding: 0; background: #fff; }
+    .conference-certificate-sheet { max-width: none; min-height: 180mm; box-shadow: none; break-inside: avoid; }
+}
