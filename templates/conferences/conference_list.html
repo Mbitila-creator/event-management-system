@@ -32,6 +32,7 @@
                             <a class="conference-primary" href="{% url 'conferences:conference_detail' registration.form.pk %}">{% translate "Manage registrations and sessions" %}</a>
                             <a class="conference-primary" href="{{ registration.public_path }}" target="_blank" rel="noopener">{% translate "Open registration form" %}</a>
                             <a class="conference-secondary" href="{% url 'conferences:public_programme' registration.form.event.slug %}" target="_blank" rel="noopener">{% translate "Open programme" %}</a>
+                            <a class="conference-secondary" href="{% url 'conferences:paper_submit' registration.form.event.slug %}" target="_blank" rel="noopener">{% translate "Paper submission form" %}</a>
                             <a class="conference-secondary" href="{% url 'conferences:registration_qr' registration.form.pk %}?download=1">{% translate "Download registration QR" %}</a>
                         </div>
                     {% else %}

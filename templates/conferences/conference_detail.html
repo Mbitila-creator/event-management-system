@@ -11,6 +11,7 @@
         <div><span>{{ event_form.event.code }}</span><h1>{{ event_form.event.title_en }}</h1><p>{% translate "Review registrations, issue participant QR badges and monitor each session register." %}</p></div>
         <div class="conference-actions">
             <a class="conference-secondary" href="{% url 'conferences:public_programme' event_form.event.slug %}" target="_blank" rel="noopener">{% translate "Public programme" %}</a>
+            <a class="conference-secondary" href="{% url 'conferences:paper_review_list' event_form.pk %}">{% translate "Review abstracts and papers" %}</a>
             {% if can_manage %}
                 <a class="conference-secondary" href="{% url 'admin:conferences_conferenceprogrammeitem_changelist' %}?session__event__id__exact={{ event_form.event.pk }}">{% translate "Edit programme" %}</a>
                 <a class="conference-secondary" href="{% url 'admin:conferences_conferencespeaker_changelist' %}?event__id__exact={{ event_form.event.pk }}">{% translate "Manage speakers" %}</a>

@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Prefetch, Q
-from django.http import HttpResponse
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -23,7 +23,12 @@ from forms_builder.services import (
     safe_spreadsheet_value,
 )
 
+from .forms import ConferencePaperSubmissionForm
+
 from .models import (
+    ConferenceCallForPapers,
+    ConferencePaper,
+    ConferencePaperReview,
     ConferenceProgrammeContributor,
     ConferenceProgrammeItem,
     ConferenceSession,
@@ -152,6 +157,162 @@ def public_programme(request, event_slug):
         "conferences/public_programme.html",
         {"event": event, "sessions": sessions},
     )
+
+
+def _public_call(event_slug):
+    call = get_object_or_404(
+        ConferenceCallForPapers.objects.select_related("event", "event__category"),
+        event__slug=event_slug,
+        event__is_active=True,
+        event__is_public=True,
+        is_active=True,
+        is_published=True,
+    )
+    now = timezone.now()
+    if (call.opens_at and now < call.opens_at) or (call.closes_at and now > call.closes_at):
+        raise Http404("This call for papers is not open.")
+    return call
+
+
+@require_http_methods(["GET", "POST"])
+def paper_submit(request, event_slug):
+    call = _public_call(event_slug)
+    if request.method == "POST":
+        form = ConferencePaperSubmissionForm(request.POST, request.FILES)
+        if form.is_valid():
+            duplicate = ConferencePaper.objects.filter(
+                call=call,
+                email__iexact=form.cleaned_data["email"],
+                title__iexact=form.cleaned_data["title"],
+                is_active=True,
+            ).exists()
+            if duplicate:
+                form.add_error(
+                    "title",
+                    _("This author has already submitted a paper with this title."),
+                )
+            else:
+                paper = form.save(commit=False)
+                paper.call = call
+                paper.save()
+                return redirect(
+                    "conferences:paper_status",
+                    public_token=paper.public_token,
+                )
+    else:
+        form = ConferencePaperSubmissionForm()
+    return render(request, "conferences/paper_submit.html", {"call": call, "form": form})
+
+
+@require_GET
+def paper_status(request, public_token):
+    paper = get_object_or_404(
+        ConferencePaper.objects.select_related("call__event", "assigned_session"),
+        public_token=public_token,
+        is_active=True,
+    )
+    return render(request, "conferences/paper_status.html", {"paper": paper})
+
+
+@require_GET
+def paper_document(request, public_token):
+    paper = get_object_or_404(ConferencePaper, public_token=public_token, is_active=True)
+    if not paper.document:
+        raise Http404("No document was uploaded.")
+    return FileResponse(
+        paper.document.open("rb"),
+        as_attachment=True,
+        filename=paper.document.name.rsplit("/", 1)[-1],
+    )
+
+
+@login_required
+def paper_review_list(request, form_id):
+    _require_access(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    papers = ConferencePaper.objects.filter(
+        call__event=event_form.event,
+        is_active=True,
+    ).select_related("assigned_session", "reviewed_by")
+    status_filter = request.GET.get("status", "").strip()
+    if status_filter in ConferencePaper.Status.values:
+        papers = papers.filter(status=status_filter)
+    summary = {
+        "total": ConferencePaper.objects.filter(call__event=event_form.event, is_active=True).count(),
+        "submitted": ConferencePaper.objects.filter(call__event=event_form.event, is_active=True, status=ConferencePaper.Status.SUBMITTED).count(),
+        "review": ConferencePaper.objects.filter(call__event=event_form.event, is_active=True, status=ConferencePaper.Status.UNDER_REVIEW).count(),
+        "accepted": ConferencePaper.objects.filter(call__event=event_form.event, is_active=True, status=ConferencePaper.Status.ACCEPTED).count(),
+    }
+    return render(request, "conferences/paper_review_list.html", {
+        "event_form": event_form,
+        "papers": papers,
+        "summary": summary,
+        "status_filter": status_filter,
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def paper_review(request, form_id, paper_id):
+    _require_manager(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    paper = get_object_or_404(
+        ConferencePaper.objects.select_related("call__event", "assigned_session"),
+        pk=paper_id,
+        call__event=event_form.event,
+        is_active=True,
+    )
+    if request.method == "POST":
+        decision = request.POST.get("decision", "")
+        allowed = {
+            ConferencePaper.Status.UNDER_REVIEW,
+            ConferencePaper.Status.REVISION_REQUIRED,
+            ConferencePaper.Status.ACCEPTED,
+            ConferencePaper.Status.REJECTED,
+        }
+        if decision not in allowed:
+            raise PermissionDenied
+        message = request.POST.get("decision_message", "").strip()
+        internal_notes = request.POST.get("internal_notes", "").strip()
+        if decision in {ConferencePaper.Status.REVISION_REQUIRED, ConferencePaper.Status.REJECTED} and not message:
+            messages.error(request, _("Enter a message to the author for this decision."))
+        else:
+            session_id = request.POST.get("assigned_session", "").strip()
+            assigned_session = None
+            if session_id:
+                assigned_session = get_object_or_404(
+                    ConferenceSession,
+                    pk=session_id,
+                    event=event_form.event,
+                    is_active=True,
+                )
+            with transaction.atomic():
+                paper.status = decision
+                paper.decision_message = message
+                paper.internal_notes = internal_notes
+                paper.assigned_session = assigned_session
+                paper.reviewed_by = request.user
+                paper.reviewed_at = timezone.now()
+                paper.updated_by = request.user
+                paper.save()
+                ConferencePaperReview.objects.create(
+                    paper=paper,
+                    decision=decision,
+                    message_to_author=message,
+                    internal_notes=internal_notes,
+                    assigned_session=assigned_session,
+                    reviewer=request.user,
+                    created_by=request.user,
+                    updated_by=request.user,
+                )
+            messages.success(request, _("The paper review decision was saved."))
+            return redirect("conferences:paper_review_list", form_id=event_form.pk)
+    sessions = ConferenceSession.objects.filter(event=event_form.event, is_active=True)
+    return render(request, "conferences/paper_review.html", {
+        "event_form": event_form,
+        "paper": paper,
+        "sessions": sessions,
+    })
 
 
 @login_required

@@ -9,7 +9,11 @@ from events.models import Event, EventCategory, Venue
 from forms_builder.models import EventForm, FormQuestion, FormSection, QuestionOption
 from forms_builder.services import public_form_path, sync_badge_identity_from_answers
 
-from conferences.models import ConferenceProgrammeItem, ConferenceSession
+from conferences.models import (
+    ConferenceCallForPapers,
+    ConferenceProgrammeItem,
+    ConferenceSession,
+)
 
 
 EVENT_CODE = "NESIF-2026"
@@ -121,6 +125,29 @@ class Command(BaseCommand):
                 "opens_at": None,
                 "closes_at": None,
                 "allow_multiple_submissions": False,
+                "is_published": True,
+                "is_active": True,
+            },
+        )
+
+        ConferenceCallForPapers.objects.update_or_create(
+            event=event,
+            defaults={
+                "title": "Call for Abstracts and Papers",
+                "introduction": (
+                    "Researchers, practitioners, innovators and institutions are invited "
+                    "to submit abstracts or full papers for consideration in the National "
+                    "Education, Research, Skills and Innovation Forum 2026."
+                ),
+                "guidelines": (
+                    "Provide the paper title, thematic area, corresponding-author details "
+                    "and an abstract describing the problem, methods, findings and contribution.\n"
+                    "Abstracts must contain between 20 and 1,000 words.\n"
+                    "Full-paper submissions must include a PDF, DOC or DOCX file not exceeding 10 MB.\n"
+                    "Accepted submissions may be assigned to an oral, poster, panel or workshop session."
+                ),
+                "opens_at": None,
+                "closes_at": None,
                 "is_published": True,
                 "is_active": True,
             },
@@ -349,4 +376,5 @@ class Command(BaseCommand):
         self.stdout.write(f"Event: {event.code} — {event.title_en}")
         self.stdout.write(f"Public form: {public_form_path(event_form, language='en')}")
         self.stdout.write(f"Public programme: /en/conferences/{event.slug}/programme/")
+        self.stdout.write(f"Paper submission: /en/conferences/{event.slug}/papers/submit/")
         self.stdout.write("Staff QR centre: /en/staff/conferences/")

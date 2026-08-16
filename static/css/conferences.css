@@ -114,3 +114,37 @@
     .conference-programme-hero p { color: #526579; }
     .conference-programme-session { break-inside: avoid; box-shadow: none; }
 }
+
+.conference-paper-page { max-width: 960px; }
+.conference-guidelines h2, .conference-paper-form h2 { color: #17365d; }
+.conference-guidelines { color: #455b70; line-height: 1.65; }
+.conference-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.conference-form-field { display: grid; gap: 7px; }
+.conference-form-wide { grid-column: 1 / -1; }
+.conference-form-field label, .conference-review-form label { color: #294966; font-weight: 800; }
+.conference-form-field input:not([type="checkbox"]), .conference-form-field select, .conference-form-field textarea, .conference-review-form select, .conference-review-form textarea { width: 100%; min-height: 46px; box-sizing: border-box; padding: 10px 12px; border: 1px solid #9eb4c9; border-radius: 9px; background: #fff; color: #172b3f; font: inherit; }
+.conference-form-field textarea { resize: vertical; }
+.conference-form-field small { color: #677b8e; line-height: 1.45; }
+.conference-checkbox { display: flex; gap: 10px; align-items: flex-start; }
+.conference-checkbox input { margin-top: 4px; }
+.conference-field-error { color: #a52d27; font-size: 13px; font-weight: 800; }
+.conference-submit-button { margin-top: 22px; border: 0; cursor: pointer; }
+.conference-paper-reference span, .conference-paper-reference strong { display: block; }
+.conference-paper-reference span { color: #64788b; font-size: 12px; font-weight: 900; text-transform: uppercase; }
+.conference-paper-reference strong { margin: 4px 0 14px; color: #17365d; font-size: clamp(22px, 4vw, 34px); }
+.conference-paper-status h2 { color: #17365d; }
+.conference-paper-status dl { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.conference-paper-status dl div { padding: 12px; border-radius: 9px; background: #f3f7fa; }
+.conference-paper-status dt { color: #667b8f; font-size: 12px; font-weight: 900; text-transform: uppercase; }
+.conference-paper-status dd { margin: 5px 0 0; color: #17365d; font-weight: 800; }
+.conference-decision-message { margin: 18px 0; padding: 16px; border-left: 4px solid #087f73; background: #e9f7f4; }
+.conference-paper-review-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(300px, .8fr); gap: 20px; }
+.conference-paper-content h2, .conference-paper-content h3, .conference-review-form h2 { color: #17365d; }
+.conference-review-form { align-self: start; display: grid; gap: 9px; }
+.conference-review-form button { margin-top: 10px; border: 0; cursor: pointer; }
+.conference-status-submitted { background: #e7f0ff; color: #245586; }
+.conference-status-under_review { background: #fff0c9; color: #755200; }
+.conference-status-revision_required { background: #fff0e0; color: #8b4c0d; }
+.conference-status-accepted { background: #ddf5ea; color: #116149; }
+.conference-status-rejected { background: #fee8e7; color: #9a2923; }
+@media (max-width: 760px) { .conference-form-grid, .conference-paper-status dl, .conference-paper-review-layout { grid-template-columns: 1fr; } }

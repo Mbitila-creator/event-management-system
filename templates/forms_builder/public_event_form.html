@@ -236,6 +236,9 @@
                         <a class="form-programme-link" href="{% url 'conferences:public_programme' event.slug %}">
                             {% translate "View conference programme" %}
                         </a>
+                        <a class="form-programme-link" href="{% url 'conferences:paper_submit' event.slug %}">
+                            {% translate "Submit abstract or paper" %}
+                        </a>
                     {% endif %}
 
                 </div>

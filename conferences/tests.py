@@ -8,6 +8,9 @@ from forms_builder.models import EventForm, FormAnswer, FormQuestion, FormSubmis
 
 from .management.commands.setup_conference_registration import EVENT_CODE
 from .models import (
+    ConferenceCallForPapers,
+    ConferencePaper,
+    ConferencePaperReview,
     ConferenceProgrammeContributor,
     ConferenceProgrammeItem,
     ConferenceSession,
@@ -97,6 +100,10 @@ class ConferenceRegistrationTests(TestCase):
                 session__event=self.event_form.event,
             ).count(),
             20,
+        )
+        self.assertEqual(
+            ConferenceCallForPapers.objects.filter(event=self.event_form.event).count(),
+            1,
         )
 
     def test_public_form_shows_invitation_and_session_examples(self):
@@ -351,4 +358,98 @@ class ConferenceRegistrationTests(TestCase):
         with translation.override("sw"):
             url = reverse("conferences:conference_list")
         response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+
+    def paper_payload(self):
+        return {
+            "submission_type": ConferencePaper.SubmissionType.ABSTRACT,
+            "presentation_format": ConferencePaper.PresentationFormat.ORAL,
+            "title": "Digital learning systems for inclusive secondary education",
+            "abstract": (
+                "This study examines digital learning systems in secondary schools across "
+                "Tanzania. It describes the methods, findings, implementation challenges, "
+                "practical lessons and recommendations for improving equitable access and "
+                "learning outcomes through sustainable education technology investments."
+            ),
+            "thematic_area": "Basic Education and Digital Learning",
+            "keywords": "education, digital learning, inclusion",
+            "corresponding_author": "Dr. Amina Mushi",
+            "institution": "University of Dodoma",
+            "email": "amina.paper@example.test",
+            "phone": "+255700000001",
+            "co_authors": "Prof. Baraka Juma — University of Dodoma",
+            "confirmation": "on",
+        }
+
+    def test_public_author_can_submit_and_track_an_abstract(self):
+        call = ConferenceCallForPapers.objects.get(event=self.event_form.event)
+        response = self.client.post(
+            reverse(
+                "conferences:paper_submit",
+                kwargs={"event_slug": call.event.slug},
+            ),
+            self.paper_payload(),
+        )
+        paper = ConferencePaper.objects.get(email="amina.paper@example.test")
+        self.assertRedirects(
+            response,
+            reverse("conferences:paper_status", kwargs={"public_token": paper.public_token}),
+        )
+        self.assertEqual(paper.status, ConferencePaper.Status.SUBMITTED)
+        self.assertTrue(paper.reference_number.startswith("NESIF-2026-ABS-"))
+        status_page = self.client.get(response["Location"])
+        self.assertContains(status_page, paper.reference_number)
+        self.assertContains(status_page, "Digital learning systems")
+
+    def test_full_paper_requires_supported_document(self):
+        payload = self.paper_payload()
+        payload["submission_type"] = ConferencePaper.SubmissionType.FULL_PAPER
+        response = self.client.post(
+            reverse(
+                "conferences:paper_submit",
+                kwargs={"event_slug": self.event_form.event.slug},
+            ),
+            payload,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Upload the document when submitting a full paper")
+        self.assertFalse(ConferencePaper.objects.filter(email=payload["email"]).exists())
+
+    def test_manager_can_accept_paper_and_assign_session(self):
+        call = ConferenceCallForPapers.objects.get(event=self.event_form.event)
+        paper = ConferencePaper.objects.create(call=call, **{
+            key: value for key, value in self.paper_payload().items()
+            if key not in {"confirmation"}
+        })
+        session = ConferenceSession.objects.get(event=call.event, code="BASIC-EDUCATION")
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse(
+                "conferences:paper_review",
+                kwargs={"form_id": self.event_form.pk, "paper_id": paper.pk},
+            ),
+            {
+                "decision": ConferencePaper.Status.ACCEPTED,
+                "assigned_session": session.pk,
+                "decision_message": "Accepted for an oral presentation.",
+                "internal_notes": "Strong policy relevance.",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        paper.refresh_from_db()
+        self.assertEqual(paper.status, ConferencePaper.Status.ACCEPTED)
+        self.assertEqual(paper.assigned_session, session)
+        self.assertEqual(paper.reviewed_by, self.admin_user)
+        self.assertTrue(ConferencePaperReview.objects.filter(paper=paper).exists())
+        public_status = self.client.get(
+            reverse("conferences:paper_status", kwargs={"public_token": paper.public_token})
+        )
+        self.assertContains(public_status, "Accepted for an oral presentation")
+        self.assertNotContains(public_status, "Strong policy relevance")
+
+    def test_participant_cannot_open_paper_review_centre(self):
+        self.client.force_login(self.participant_user)
+        response = self.client.get(
+            reverse("conferences:paper_review_list", kwargs={"form_id": self.event_form.pk})
+        )
         self.assertEqual(response.status_code, 403)

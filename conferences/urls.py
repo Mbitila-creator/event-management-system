@@ -11,6 +11,21 @@ urlpatterns = [
         views.public_programme,
         name="public_programme",
     ),
+    path(
+        "conferences/<slug:event_slug>/papers/submit/",
+        views.paper_submit,
+        name="paper_submit",
+    ),
+    path(
+        "conference-papers/<uuid:public_token>/",
+        views.paper_status,
+        name="paper_status",
+    ),
+    path(
+        "conference-papers/<uuid:public_token>/document/",
+        views.paper_document,
+        name="paper_document",
+    ),
     path("staff/conferences/", views.conference_list, name="conference_list"),
     path(
         "staff/conferences/forms/<int:form_id>/",
@@ -36,5 +51,15 @@ urlpatterns = [
         "staff/conferences/forms/<int:form_id>/qr/",
         views.registration_qr,
         name="registration_qr",
+    ),
+    path(
+        "staff/conferences/forms/<int:form_id>/papers/",
+        views.paper_review_list,
+        name="paper_review_list",
+    ),
+    path(
+        "staff/conferences/forms/<int:form_id>/papers/<int:paper_id>/review/",
+        views.paper_review,
+        name="paper_review",
     ),
 ]

@@ -1,6 +1,9 @@
 from django.contrib import admin
 
 from .models import (
+    ConferenceCallForPapers,
+    ConferencePaper,
+    ConferencePaperReview,
     ConferenceProgrammeContributor,
     ConferenceProgrammeItem,
     ConferenceSession,
@@ -112,3 +115,46 @@ class ConferenceProgrammeContributorAdmin(AuditAdminMixin, admin.ModelAdmin):
         "programme_item__session__event__code",
     )
     autocomplete_fields = ("speaker", "programme_item")
+
+
+@admin.register(ConferenceCallForPapers)
+class ConferenceCallForPapersAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = ("title", "event", "opens_at", "closes_at", "is_published")
+    list_filter = ("is_published", "event")
+    search_fields = ("title", "event__code", "event__title_en")
+
+
+class ConferencePaperReviewInline(admin.TabularInline):
+    model = ConferencePaperReview
+    extra = 0
+    readonly_fields = (
+        "decision", "message_to_author", "internal_notes", "assigned_session",
+        "reviewer", "created_at",
+    )
+    fields = readonly_fields
+    can_delete = False
+
+
+@admin.register(ConferencePaper)
+class ConferencePaperAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = (
+        "reference_number", "title", "corresponding_author", "submission_type",
+        "status", "assigned_session", "created_at",
+    )
+    list_filter = ("call__event", "status", "submission_type", "presentation_format")
+    search_fields = (
+        "reference_number", "title", "corresponding_author", "institution", "email",
+    )
+    readonly_fields = AuditAdminMixin.readonly_fields + (
+        "public_token", "reference_number", "reviewed_by", "reviewed_at",
+    )
+    autocomplete_fields = ("assigned_session",)
+    inlines = (ConferencePaperReviewInline,)
+
+
+@admin.register(ConferencePaperReview)
+class ConferencePaperReviewAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = ("paper", "decision", "reviewer", "assigned_session", "created_at")
+    list_filter = ("decision", "paper__call__event")
+    search_fields = ("paper__reference_number", "paper__title", "reviewer__username")
+    autocomplete_fields = ("paper", "assigned_session", "reviewer")
