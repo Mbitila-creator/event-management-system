@@ -1,5 +1,9 @@
 import csv
 import re
+from io import BytesIO
+
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -1206,6 +1210,137 @@ def conference_detail(request, form_id):
         "can_manage": request.user.is_superuser
         or request.user.role in CONFERENCE_MANAGER_ROLES,
     })
+
+
+def _participant_export_rows(event_form):
+    submissions = list(
+        event_form.submissions.filter(is_active=True, is_complete=True)
+        .prefetch_related("answers__selected_options")
+        .order_by("badge_name", "created_at", "id")
+    )
+    sessions = list(
+        ConferenceSession.objects.filter(event=event_form.event, is_active=True)
+        .order_by("starts_at", "display_order", "id")
+    )
+    sessions_by_value = {
+        session.registration_option_value: session for session in sessions
+    }
+    rows = []
+    for number, submission in enumerate(submissions, start=1):
+        selected_sessions = [
+            sessions_by_value[value]
+            for value in _submission_session_values(submission)
+            if value in sessions_by_value
+        ]
+        selected_sessions.sort(key=lambda item: (item.starts_at, item.display_order))
+        rows.append({
+            "number": number,
+            "submission": submission,
+            "sessions": selected_sessions,
+            "session_names": ", ".join(item.title for item in selected_sessions),
+        })
+    return rows
+
+
+@login_required
+@require_GET
+def participant_list_print(request, form_id):
+    _require_access(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    return render(request, "conferences/participant_list_print.html", {
+        "event_form": event_form,
+        "event": event_form.event,
+        "rows": _participant_export_rows(event_form),
+        "generated_at": timezone.localtime(),
+    })
+
+
+@login_required
+@require_GET
+def participant_list_excel(request, form_id):
+    _require_access(request.user)
+    event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    event = event_form.event
+    rows = _participant_export_rows(event_form)
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Registered participants"
+    navy = "173B67"
+    teal = "087F73"
+    pale_blue = "EAF2F8"
+    white = "FFFFFF"
+    thin = Side(style="thin", color="C8D6E5")
+
+    sheet.merge_cells("A1:H1")
+    sheet["A1"] = event.title_en
+    sheet["A1"].font = Font(size=16, bold=True, color=white)
+    sheet["A1"].fill = PatternFill("solid", fgColor=navy)
+    sheet["A1"].alignment = Alignment(horizontal="center", vertical="center")
+    sheet.row_dimensions[1].height = 28
+    sheet.merge_cells("A2:H2")
+    sheet["A2"] = f"{event.code} — REGISTERED PARTICIPANTS"
+    sheet["A2"].font = Font(size=12, bold=True, color=teal)
+    sheet["A2"].alignment = Alignment(horizontal="center")
+    sheet.merge_cells("A3:H3")
+    date_range = f"{event.starts_at:%d %B %Y} – {event.ends_at:%d %B %Y}"
+    venue = event.venue.name if event.venue else ""
+    sheet["A3"] = f"{date_range}{' · ' + venue if venue else ''} · Total: {len(rows)}"
+    sheet["A3"].alignment = Alignment(horizontal="center")
+
+    headers = (
+        "No.", "Reference", "Full name", "Institution", "Email address",
+        "Phone number", "Selected sessions", "Status",
+    )
+    for column, header in enumerate(headers, start=1):
+        cell = sheet.cell(row=5, column=column, value=header)
+        cell.font = Font(bold=True, color=white)
+        cell.fill = PatternFill("solid", fgColor=teal)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = Border(bottom=thin)
+
+    for row_number, item in enumerate(rows, start=6):
+        submission = item["submission"]
+        values = (
+            item["number"],
+            safe_spreadsheet_value(submission.reference_number),
+            safe_spreadsheet_value(submission.badge_display_name),
+            safe_spreadsheet_value(submission.badge_organization),
+            safe_spreadsheet_value(submission.submitter_email),
+            safe_spreadsheet_value(submission.submitter_phone),
+            safe_spreadsheet_value(item["session_names"]),
+            submission.get_review_status_display(),
+        )
+        for column, value in enumerate(values, start=1):
+            cell = sheet.cell(row=row_number, column=column, value=value)
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+            cell.border = Border(bottom=thin)
+            if row_number % 2 == 0:
+                cell.fill = PatternFill("solid", fgColor=pale_blue)
+
+    widths = (6, 23, 24, 25, 28, 18, 45, 15)
+    for column, width in enumerate(widths, start=1):
+        sheet.column_dimensions[chr(64 + column)].width = width
+    sheet.freeze_panes = "A6"
+    sheet.auto_filter.ref = f"A5:H{max(5, len(rows) + 5)}"
+    sheet.sheet_properties.pageSetUpPr.fitToPage = True
+    sheet.page_setup.orientation = "portrait"
+    sheet.page_setup.paperSize = sheet.PAPERSIZE_A4
+    sheet.page_setup.fitToWidth = 1
+    sheet.page_setup.fitToHeight = 0
+    sheet.print_title_rows = "1:5"
+    sheet.sheet_view.showGridLines = False
+
+    output = BytesIO()
+    workbook.save(output)
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="{event.code}-registered-participants.xlsx"'
+    )
+    return response
 
 
 @login_required

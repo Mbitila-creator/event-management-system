@@ -93,6 +93,16 @@ urlpatterns = [
         name="conference_detail",
     ),
     path(
+        "staff/conferences/forms/<int:form_id>/participants/print/",
+        views.participant_list_print,
+        name="participant_list_print",
+    ),
+    path(
+        "staff/conferences/forms/<int:form_id>/participants/excel/",
+        views.participant_list_excel,
+        name="participant_list_excel",
+    ),
+    path(
         "staff/conferences/forms/<int:form_id>/registrations/<int:submission_id>/<str:decision>/",
         views.registration_decision,
         name="registration_decision",

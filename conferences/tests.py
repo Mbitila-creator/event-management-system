@@ -1,4 +1,7 @@
 from datetime import timedelta
+from io import BytesIO
+
+from openpyxl import load_workbook
 
 from django.core.management import call_command
 from django.core import mail
@@ -266,6 +269,40 @@ class ConferenceRegistrationTests(TestCase):
             response,
             "Shifting to Competency: Strengthening Foundational Learning",
         )
+
+    def test_administrator_can_print_and_download_participant_list(self):
+        submission = self.submit_registration(
+            selected_values=["BASIC_EDUCATION_17_AUG"],
+            name="Dr. Amina Mushi",
+        )
+        self.client.force_login(User.objects.get(pk=self.admin_user.pk))
+
+        print_response = self.client.get(reverse(
+            "conferences:participant_list_print",
+            kwargs={"form_id": self.event_form.pk},
+        ), follow=True)
+        self.assertEqual(print_response.status_code, 200)
+        self.assertContains(print_response, "Registered Participants List")
+        self.assertContains(print_response, "@page{size:A4 portrait")
+        self.assertContains(print_response, submission.reference_number)
+        self.assertContains(print_response, "Dr. Amina Mushi")
+
+        excel_response = self.client.get(reverse(
+            "conferences:participant_list_excel",
+            kwargs={"form_id": self.event_form.pk},
+        ), follow=True)
+        self.assertEqual(excel_response.status_code, 200)
+        self.assertEqual(
+            excel_response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        workbook = load_workbook(BytesIO(excel_response.content))
+        sheet = workbook["Registered participants"]
+        self.assertEqual(sheet["A1"].value, self.event_form.event.title_en)
+        self.assertEqual(sheet["A6"].value, 1)
+        self.assertEqual(sheet["B6"].value, submission.reference_number)
+        self.assertEqual(sheet["C6"].value, "Dr. Amina Mushi")
+        self.assertEqual(sheet.page_setup.orientation, "portrait")
 
     def test_public_programme_shows_published_agenda_and_contributors(self):
         programme_item = ConferenceProgrammeItem.objects.get(
