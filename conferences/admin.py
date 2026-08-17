@@ -12,6 +12,7 @@ from .models import (
     ConferenceGuidingTopic,
     ConferenceGuidingQuestion,
     ConferenceGuidingResponse,
+    ConferenceGuidingSubmission,
     ConferenceSpeaker,
     ConferenceReviewer,
     ConferencePresentation,
@@ -57,6 +58,14 @@ class ConferenceGuidingResponseAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_filter = ("question__topic__session__event", "question__topic__session")
     search_fields = ("submission__reference_number", "response", "question__text")
     readonly_fields = AuditAdminMixin.readonly_fields + ("submission", "question")
+
+
+@admin.register(ConferenceGuidingSubmission)
+class ConferenceGuidingSubmissionAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = ("submission", "session", "status", "submitted_at", "updated_at")
+    list_filter = ("status", "session__event", "session")
+    search_fields = ("submission__reference_number", "session__title")
+    readonly_fields = AuditAdminMixin.readonly_fields + ("submission", "session", "submitted_at")
 
 
 @admin.register(ConferenceSession)

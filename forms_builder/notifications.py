@@ -17,73 +17,6 @@ def _absolute_url(path, request=None):
     return path
 
 
-def _conference_registration_content(submission, language, request=None):
-    selected_values = set(
-        submission.answers.filter(selected_options__is_active=True).values_list(
-            "selected_options__value",
-            flat=True,
-        )
-    )
-    if not selected_values:
-        return ""
-
-    sessions = list(
-        submission.event_form.event.conference_sessions.filter(
-            registration_option_value__in=selected_values,
-            is_active=True,
-        ).order_by("starts_at", "display_order", "id")
-    )
-    if not sessions:
-        return ""
-
-    programme_path = reverse(
-        "conferences:public_programme",
-        kwargs={"event_slug": submission.event_form.event.slug},
-    )
-    session_query = "&".join(f"session={session.pk}" for session in sessions)
-    programme_url = _absolute_url(
-        f"{programme_path}?{session_query}",
-        request=request,
-    )
-    download_path = reverse(
-        "conferences:programme_download",
-        kwargs={"event_slug": submission.event_form.event.slug},
-    )
-    download_url = _absolute_url(
-        f"{download_path}?{session_query}",
-        request=request,
-    )
-    questions_path = reverse(
-        "conferences:participant_guiding_questions",
-        kwargs={"participant_token": submission.participant_token},
-    )
-    questions_url = _absolute_url(questions_path, request=request)
-
-    with translation.override(language):
-        lines = ["", "", _("Your selected timetable:")]
-        for session in sessions:
-            session_date = session.starts_at.strftime("%d %B %Y")
-            session_time = (
-                f"{session.starts_at.strftime('%H:%M')}–"
-                f"{session.ends_at.strftime('%H:%M')}"
-            )
-            venue = f" · {session.venue_name}" if session.venue_name else ""
-            lines.append(
-                f"- {session_date}, {session_time} · {session.title}{venue}"
-            )
-        lines.extend(
-            [
-                _("View selected timetable: %(url)s") % {"url": programme_url},
-                _("Download selected timetable: %(url)s") % {"url": download_url},
-                "",
-                _("Access the session guiding questions and save your responses: %(url)s")
-                % {"url": questions_url},
-            ]
-        )
-
-    return "\n".join(lines)
-
-
 def _notification_content(submission, notification_type, request=None):
     language = submission.language if submission.language in {"sw", "en"} else "sw"
     event = submission.event_form.event
@@ -116,11 +49,6 @@ def _notification_content(submission, notification_type, request=None):
                 "reference": submission.reference_number,
                 "status_url": status_url,
             }
-            body += _conference_registration_content(
-                submission,
-                language,
-                request=request,
-            )
         elif notification_type == NotificationLog.NotificationType.REGISTRATION_REJECTED:
             subject = _("Registration update — %(event)s") % {"event": event_name}
             body = _(

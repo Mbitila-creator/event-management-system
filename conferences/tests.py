@@ -22,6 +22,7 @@ from .models import (
     ConferenceGuidingTopic,
     ConferenceGuidingQuestion,
     ConferenceGuidingResponse,
+    ConferenceGuidingSubmission,
     ConferenceSpeaker,
     ConferenceReviewer,
     ConferencePresentation,
@@ -142,27 +143,50 @@ class ConferenceRegistrationTests(TestCase):
             33,
         )
 
-    def test_approved_participant_can_save_selected_session_responses(self):
+    def test_approved_participant_can_save_draft_then_submit_one_session(self):
         submission = self.submit_registration(selected_values=["BASIC_EDUCATION_17_AUG"])
         submission.review_status = FormSubmission.ReviewStatus.APPROVED
         submission.save(update_fields=["review_status"])
         question = ConferenceGuidingQuestion.objects.filter(
             topic__session__registration_option_value="BASIC_EDUCATION_17_AUG"
         ).first()
+        session = question.topic.session
         url = reverse(
-            "conferences:participant_guiding_questions",
-            kwargs={"participant_token": submission.participant_token},
+            "conferences:participant_session_guiding_questions",
+            kwargs={
+                "participant_token": submission.participant_token,
+                "session_id": session.pk,
+            },
         )
 
-        response = self.client.post(url, {f"question_{question.pk}": "My contribution"})
+        response = self.client.post(url, {
+            f"question_{question.pk}": "My draft contribution",
+            "action": "draft",
+        })
 
         self.assertEqual(response.status_code, 302)
+        progress = ConferenceGuidingSubmission.objects.get(
+            submission=submission, session=session
+        )
+        self.assertEqual(progress.status, ConferenceGuidingSubmission.Status.DRAFT)
         self.assertTrue(
             ConferenceGuidingResponse.objects.filter(
                 submission=submission,
                 question=question,
-                response="My contribution",
+                response="My draft contribution",
             ).exists()
+        )
+        response = self.client.post(url, {
+            f"question_{question.pk}": "My final contribution",
+            "action": "submit",
+        })
+        self.assertEqual(response.status_code, 302)
+        progress.refresh_from_db()
+        self.assertEqual(progress.status, ConferenceGuidingSubmission.Status.SUBMITTED)
+        self.assertIsNotNone(progress.submitted_at)
+        self.assertEqual(
+            submission.conference_guiding_responses.get(question=question).response,
+            "My final contribution",
         )
 
     def test_pending_participant_cannot_access_guiding_questions(self):

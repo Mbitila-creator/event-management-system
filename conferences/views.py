@@ -51,6 +51,7 @@ from .models import (
     ConferenceSession,
     ConferenceSessionAttendance,
     ConferenceGuidingResponse,
+    ConferenceGuidingSubmission,
 )
 
 
@@ -233,7 +234,7 @@ def public_programme(request, event_slug):
     )
 
 
-@require_http_methods(["GET", "POST"])
+@require_GET
 def participant_guiding_questions(request, participant_token):
     submission = get_object_or_404(
         FormSubmission.objects.select_related("event_form__event"),
@@ -252,24 +253,69 @@ def participant_guiding_questions(request, participant_token):
             event=submission.event_form.event,
             registration_option_value__in=selected_values,
             is_active=True,
-        ).prefetch_related("guiding_topics__questions")
+        ).order_by("starts_at", "display_order", "id")
+    )
+    progress = {
+        item.session_id: item
+        for item in submission.conference_guiding_submissions.filter(
+            session_id__in=[session.pk for session in sessions]
+        )
+    }
+    session_rows = [
+        {"session": session, "progress": progress.get(session.pk)}
+        for session in sessions
+    ]
+    session_query = "&".join(f"session={session.pk}" for session in sessions)
+    programme_url = reverse(
+        "conferences:public_programme",
+        kwargs={"event_slug": submission.event_form.event.slug},
+    )
+    return render(request, "conferences/participant_guiding_questions.html", {
+        "submission": submission,
+        "event": submission.event_form.event,
+        "session_rows": session_rows,
+        "programme_url": f"{programme_url}?{session_query}",
+    })
+
+
+@require_http_methods(["GET", "POST"])
+def participant_session_guiding_questions(request, participant_token, session_id):
+    submission = get_object_or_404(
+        FormSubmission.objects.select_related("event_form__event"),
+        participant_token=participant_token,
+        review_status=FormSubmission.ReviewStatus.APPROVED,
+        is_active=True,
+        is_complete=True,
+    )
+    selected_values = submission.answers.filter(
+        selected_options__is_active=True
+    ).values_list("selected_options__value", flat=True)
+    session = get_object_or_404(
+        ConferenceSession.objects.prefetch_related("guiding_topics__questions"),
+        pk=session_id,
+        event=submission.event_form.event,
+        registration_option_value__in=selected_values,
+        is_active=True,
+    )
+    progress, progress_created = ConferenceGuidingSubmission.objects.get_or_create(
+        submission=submission,
+        session=session,
     )
     questions = [
         question
-        for session in sessions
         for topic in session.guiding_topics.all()
         if topic.is_active
         for question in topic.questions.all()
         if question.is_active
     ]
     existing = {
-        response.question_id: response
-        for response in submission.conference_guiding_responses.filter(
+        item.question_id: item
+        for item in submission.conference_guiding_responses.filter(
             question_id__in=[question.pk for question in questions]
         )
     }
 
-    if request.method == "POST":
+    if request.method == "POST" and progress.status != ConferenceGuidingSubmission.Status.SUBMITTED:
         with transaction.atomic():
             for question in questions:
                 value = request.POST.get(f"question_{question.pk}", "").strip()
@@ -281,21 +327,41 @@ def participant_guiding_questions(request, participant_token):
                     )
                 elif question.pk in existing:
                     existing[question.pk].delete()
-        messages.success(request, _("Your discussion responses have been saved."))
-        return redirect("conferences:participant_guiding_questions", participant_token=participant_token)
+            if request.POST.get("action") == "submit":
+                progress.status = ConferenceGuidingSubmission.Status.SUBMITTED
+                progress.submitted_at = timezone.now()
+                message = _("Your responses for this session have been submitted.")
+            else:
+                progress.status = ConferenceGuidingSubmission.Status.DRAFT
+                progress.submitted_at = None
+                message = _("Draft saved. You can return later and continue.")
+            progress.save(update_fields=["status", "submitted_at", "updated_at"])
+        messages.success(request, message)
+        return redirect(
+            "conferences:participant_session_guiding_questions",
+            participant_token=participant_token,
+            session_id=session.pk,
+        )
 
-    response_values = {question_id: item.response for question_id, item in existing.items()}
-    session_query = "&".join(f"session={session.pk}" for session in sessions)
-    programme_url = reverse(
-        "conferences:public_programme",
-        kwargs={"event_slug": submission.event_form.event.slug},
-    )
-    return render(request, "conferences/participant_guiding_questions.html", {
+    response_values = {key: item.response for key, item in existing.items()}
+    topic_rows = []
+    for topic in session.guiding_topics.all():
+        if not topic.is_active:
+            continue
+        topic_rows.append({
+            "topic": topic,
+            "questions": [
+                {"question": question, "value": response_values.get(question.pk, "")}
+                for question in topic.questions.all()
+                if question.is_active
+            ],
+        })
+    return render(request, "conferences/participant_session_guiding_questions.html", {
         "submission": submission,
         "event": submission.event_form.event,
-        "sessions": sessions,
-        "response_values": response_values,
-        "programme_url": f"{programme_url}?{session_query}",
+        "session": session,
+        "progress": progress,
+        "topic_rows": topic_rows,
     })
 @require_GET
 def programme_download(request, event_slug):

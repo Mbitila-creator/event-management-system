@@ -1008,12 +1008,6 @@ def participant_portal(request, participant_token):
             is_active=True,
         ).order_by("starts_at", "display_order", "id")
     )
-    programme_path = reverse(
-        "conferences:public_programme", kwargs={"event_slug": event.slug}
-    )
-    session_query = "&".join(
-        f"session={session.pk}" for session in selected_conference_sessions
-    )
     if event.evaluation_enabled:
         evaluation_form = EventForm.objects.filter(
             event=event,
@@ -1038,7 +1032,6 @@ def participant_portal(request, participant_token):
             "booth": getattr(submission, "booth_assignment", None),
             "evaluation_form": evaluation_form,
             "selected_conference_sessions": selected_conference_sessions,
-            "selected_programme_url": f"{programme_path}?{session_query}",
         },
     )
 
