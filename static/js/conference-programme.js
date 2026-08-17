@@ -61,6 +61,18 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    const requestedSessions = new URLSearchParams(window.location.search).getAll(
+        "session"
+    );
+    requestedSessions.forEach(function (sessionId) {
+        const tab = programme.querySelector(
+            '[data-programme-session="session-' + CSS.escape(sessionId) + '"]'
+        );
+        if (tab && tab.getAttribute("aria-pressed") !== "true") {
+            toggleSession(tab);
+        }
+    });
+
     if (printButton) {
         printButton.addEventListener("click", function () {
             window.print();
