@@ -50,7 +50,7 @@
     </section>
 
     <section class="conference-panel">
-        <div class="conference-panel-heading"><div><span>{% translate "Registration review" %}</span><h2>{% translate "Participants" %}</h2></div><strong>{{ submissions|length }}</strong></div>
+        <div class="conference-panel-heading"><div><span>{% translate "Registration review" %}</span><h2>{% translate "Participants" %}</h2></div><div class="conference-actions"><a class="conference-secondary" href="{% url 'conferences:participant_list_print' event_form.pk %}" target="_blank" rel="noopener">{% translate "Print A4 list" %}</a><a class="conference-primary" href="{% url 'conferences:participant_list_excel' event_form.pk %}">{% translate "Download Excel" %}</a><strong>{{ submissions|length }}</strong></div></div>
         <div class="conference-table-scroll">
             <table class="conference-table">
                 <thead><tr><th>{% translate "Participant" %}</th><th>{% translate "Institution" %}</th><th>{% translate "Selected sessions" %}</th><th>{% translate "Status" %}</th><th>{% translate "Actions" %}</th></tr></thead>
