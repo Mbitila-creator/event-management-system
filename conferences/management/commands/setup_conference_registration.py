@@ -14,6 +14,7 @@ from conferences.models import (
     ConferenceProgrammeItem,
     ConferenceSession,
 )
+from conferences.guiding_questions import configure_guiding_questions
 
 
 EVENT_CODE = "NESIF-2026"
@@ -248,6 +249,7 @@ class Command(BaseCommand):
                 },
             )
         session_question.options.exclude(value__in=active_values).update(is_active=False)
+        configure_guiding_questions(event_form)
 
         session_records = [
             (
