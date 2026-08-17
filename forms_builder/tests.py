@@ -1032,7 +1032,7 @@ class SubmissionNotificationTests(TestCase):
         self.assertEqual(log.delivery_status, NotificationLog.DeliveryStatus.SENT)
         self.assertIsNotNone(log.sent_at)
 
-    def test_approval_email_links_selected_timetable_and_discussion_questions(self):
+    def test_approval_email_contains_only_the_participant_portal_link(self):
         session = ConferenceSession.objects.create(
             event=self.submission.event_form.event,
             code="BASIC-ED",
@@ -1070,11 +1070,11 @@ class SubmissionNotificationTests(TestCase):
         )
 
         body = mail.outbox[0].body
-        self.assertIn("Your selected timetable", body)
-        self.assertIn("Basic Education Session", body)
-        self.assertIn(f"session={session.pk}", body)
-        self.assertIn("Download selected timetable", body)
-        self.assertIn("discussion-questions", body)
+        self.assertIn("Check status", body)
+        self.assertIn(str(self.submission.participant_token), body)
+        self.assertEqual(body.count("https://events.example.org"), 1)
+        self.assertNotIn("programme", body)
+        self.assertNotIn("discussion-questions", body)
 
     def test_received_email_does_not_expose_approved_participant_materials(self):
         send_submission_notification(

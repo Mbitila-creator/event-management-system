@@ -12,6 +12,11 @@ urlpatterns = [
         name="participant_guiding_questions",
     ),
     path(
+        "participants/<uuid:participant_token>/discussion-questions/<int:session_id>/",
+        views.participant_session_guiding_questions,
+        name="participant_session_guiding_questions",
+    ),
+    path(
         "conferences/<slug:event_slug>/programme/",
         views.public_programme,
         name="public_programme",

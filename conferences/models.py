@@ -92,6 +92,24 @@ class ConferenceGuidingQuestion(BaseModel):
         return self.text
 
 
+class ConferenceGuidingSubmission(BaseModel):
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", _("Draft")
+        SUBMITTED = "SUBMITTED", _("Submitted")
+
+    submission = models.ForeignKey(FormSubmission, related_name="conference_guiding_submissions", on_delete=models.CASCADE, verbose_name=_("participant registration"))
+    session = models.ForeignKey(ConferenceSession, related_name="guiding_submissions", on_delete=models.CASCADE, verbose_name=_("conference session"))
+    status = models.CharField(_("status"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    submitted_at = models.DateTimeField(_("submitted at"), null=True, blank=True)
+
+    class Meta:
+        ordering = ("submission", "session")
+        constraints = [models.UniqueConstraint(fields=("submission", "session"), name="unique_participant_guiding_session_submission")]
+
+    def __str__(self):
+        return f"{self.submission.reference_number} — {self.session.title}"
+
+
 class ConferenceGuidingResponse(BaseModel):
     submission = models.ForeignKey(FormSubmission, related_name="conference_guiding_responses", on_delete=models.CASCADE, verbose_name=_("participant registration"))
     question = models.ForeignKey(ConferenceGuidingQuestion, related_name="responses", on_delete=models.CASCADE, verbose_name=_("guiding question"))
