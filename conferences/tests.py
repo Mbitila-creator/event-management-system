@@ -275,22 +275,41 @@ class ConferenceRegistrationTests(TestCase):
             selected_values=["BASIC_EDUCATION_17_AUG"],
             name="Dr. Amina Mushi",
         )
+        self.submit_registration(
+            selected_values=["STI_21_AUG"],
+            name="Prof. Baraka Juma",
+        )
+        basic_session = ConferenceSession.objects.get(
+            event=self.event_form.event,
+            registration_option_value="BASIC_EDUCATION_17_AUG",
+        )
         self.client.force_login(User.objects.get(pk=self.admin_user.pk))
 
         print_response = self.client.get(reverse(
             "conferences:participant_list_print",
             kwargs={"form_id": self.event_form.pk},
-        ), follow=True)
+        ), {
+            "session": basic_session.pk,
+            "status": FormSubmission.ReviewStatus.PENDING,
+            "q": "Amina",
+        }, follow=True)
         self.assertEqual(print_response.status_code, 200)
         self.assertContains(print_response, "Registered Participants List")
         self.assertContains(print_response, "@page{size:A4 portrait")
-        self.assertContains(print_response, submission.reference_number)
         self.assertContains(print_response, "Dr. Amina Mushi")
+        self.assertNotContains(print_response, "Prof. Baraka Juma")
+        self.assertNotContains(print_response, '<th class="ref">')
+        self.assertNotContains(print_response, '<th class="status">')
+        self.assertContains(print_response, "Download filtered Excel")
 
         excel_response = self.client.get(reverse(
             "conferences:participant_list_excel",
             kwargs={"form_id": self.event_form.pk},
-        ), follow=True)
+        ), {
+            "session": basic_session.pk,
+            "status": FormSubmission.ReviewStatus.PENDING,
+            "q": "Amina",
+        }, follow=True)
         self.assertEqual(excel_response.status_code, 200)
         self.assertEqual(
             excel_response["Content-Type"],
@@ -302,6 +321,8 @@ class ConferenceRegistrationTests(TestCase):
         self.assertEqual(sheet["A6"].value, 1)
         self.assertEqual(sheet["B6"].value, submission.reference_number)
         self.assertEqual(sheet["C6"].value, "Dr. Amina Mushi")
+        self.assertIsNone(sheet["A7"].value)
+        self.assertIn("Basic Education Session", sheet["A4"].value)
         self.assertEqual(sheet.page_setup.orientation, "portrait")
 
     def test_public_programme_shows_published_agenda_and_contributors(self):
