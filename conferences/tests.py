@@ -145,8 +145,6 @@ class ConferenceRegistrationTests(TestCase):
 
     def test_approved_participant_can_save_draft_then_submit_one_session(self):
         submission = self.submit_registration(selected_values=["BASIC_EDUCATION_17_AUG"])
-        submission.review_status = FormSubmission.ReviewStatus.APPROVED
-        submission.save(update_fields=["review_status"])
         question = ConferenceGuidingQuestion.objects.filter(
             topic__session__registration_option_value="BASIC_EDUCATION_17_AUG"
         ).first()
@@ -189,13 +187,13 @@ class ConferenceRegistrationTests(TestCase):
             "My final contribution",
         )
 
-    def test_pending_participant_cannot_access_guiding_questions(self):
+    def test_newly_registered_participant_can_access_guiding_questions(self):
         submission = self.submit_registration(selected_values=["BASIC_EDUCATION_17_AUG"])
         response = self.client.get(reverse(
             "conferences:participant_guiding_questions",
             kwargs={"participant_token": submission.participant_token},
         ))
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
 
     def test_public_form_shows_invitation_and_session_examples(self):
         response = self.client.get(

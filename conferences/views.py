@@ -239,7 +239,6 @@ def participant_guiding_questions(request, participant_token):
     submission = get_object_or_404(
         FormSubmission.objects.select_related("event_form__event"),
         participant_token=participant_token,
-        review_status=FormSubmission.ReviewStatus.APPROVED,
         is_active=True,
         is_complete=True,
     )
@@ -283,7 +282,6 @@ def participant_session_guiding_questions(request, participant_token, session_id
     submission = get_object_or_404(
         FormSubmission.objects.select_related("event_form__event"),
         participant_token=participant_token,
-        review_status=FormSubmission.ReviewStatus.APPROVED,
         is_active=True,
         is_complete=True,
     )
