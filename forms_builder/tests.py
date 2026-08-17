@@ -1032,6 +1032,54 @@ class SubmissionNotificationTests(TestCase):
         self.assertEqual(log.delivery_status, NotificationLog.DeliveryStatus.SENT)
         self.assertIsNotNone(log.sent_at)
 
+    def test_form_reference_sequence_uses_existing_form_suffixes(self):
+        self.submission.reference_number = "MAIL-2026-REG-00027"
+        self.submission.save(update_fields=["reference_number"])
+
+        next_submission = FormSubmission.objects.create(
+            event_form=self.submission.event_form,
+        )
+
+        self.assertEqual(next_submission.reference_number, "MAIL-2026-REG-00028")
+
+    def test_renumber_command_previews_then_applies_chronological_sequence(self):
+        self.submission.reference_number = "MAIL-2026-REG-00027"
+        self.submission.save(update_fields=["reference_number"])
+        second = FormSubmission.objects.create(
+            event_form=self.submission.event_form,
+            reference_number="MAIL-2026-REG-00031",
+        )
+        third = FormSubmission.objects.create(
+            event_form=self.submission.event_form,
+            reference_number="MAIL-2026-REG-00035",
+        )
+        command_args = (
+            self.submission.event_form.event.code,
+            self.submission.event_form.slug,
+        )
+        preview = StringIO()
+
+        call_command("renumber_form_submissions", *command_args, stdout=preview)
+
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.reference_number, "MAIL-2026-REG-00027")
+        self.assertIn("Preview only", preview.getvalue())
+
+        call_command("renumber_form_submissions", *command_args, "--apply")
+
+        references = list(
+            FormSubmission.objects.filter(event_form=self.submission.event_form)
+            .order_by("created_at", "id")
+            .values_list("reference_number", flat=True)
+        )
+        self.assertEqual(references, [
+            "MAIL-2026-REG-00001",
+            "MAIL-2026-REG-00002",
+            "MAIL-2026-REG-00003",
+        ])
+        fourth = FormSubmission.objects.create(event_form=self.submission.event_form)
+        self.assertEqual(fourth.reference_number, "MAIL-2026-REG-00004")
+
     def test_approval_email_contains_only_the_participant_portal_link(self):
         session = ConferenceSession.objects.create(
             event=self.submission.event_form.event,

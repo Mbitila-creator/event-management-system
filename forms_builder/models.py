@@ -545,19 +545,16 @@ class FormSubmission(BaseModel):
         if not self.reference_number:
             prefix = self.event_form.event.code.replace(" ", "-").upper()
             form_code = self.event_form.form_type[:3].upper()
-
-            latest_id = (
-                FormSubmission.objects
-                .filter(event_form=self.event_form)
-                .order_by("-id")
-                .values_list("id", flat=True)
-                .first()
-                or 0
-            )
-
-            self.reference_number = (
-                f"{prefix}-{form_code}-{latest_id + 1:05d}"
-            )
+            reference_prefix = f"{prefix}-{form_code}-"
+            suffixes = []
+            for reference in FormSubmission.objects.filter(
+                event_form=self.event_form,
+                reference_number__startswith=reference_prefix,
+            ).values_list("reference_number", flat=True):
+                suffix = reference.removeprefix(reference_prefix)
+                if suffix.isdigit():
+                    suffixes.append(int(suffix))
+            self.reference_number = f"{reference_prefix}{max(suffixes, default=0) + 1:05d}"
 
         super().save(*args, **kwargs)
 
