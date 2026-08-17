@@ -34,6 +34,7 @@ from .forms import (
     ConferencePaperCommunicationForm,
     ConferenceFeedbackForm,
 )
+from .services import generate_programme_pdf
 
 from .models import (
     ConferenceCallForPapers,
@@ -229,6 +230,54 @@ def public_programme(request, event_slug):
         "conferences/public_programme.html",
         {"event": event, "sessions": sessions},
     )
+
+
+@require_GET
+def programme_download(request, event_slug):
+    event = _public_conference(event_slug)
+    session_ids = request.GET.getlist("session")
+
+    if not session_ids or any(not value.isdigit() for value in session_ids):
+        return HttpResponse("Select at least one valid session.", status=400)
+
+    sessions = list(
+        ConferenceSession.objects.filter(
+            event=event,
+            is_active=True,
+            pk__in=session_ids,
+        )
+        .prefetch_related(
+            Prefetch(
+                "programme_items",
+                queryset=ConferenceProgrammeItem.objects.filter(
+                    is_active=True,
+                    is_published=True,
+                ).prefetch_related(
+                    Prefetch(
+                        "contributors",
+                        queryset=ConferenceProgrammeContributor.objects.filter(
+                            is_active=True,
+                            speaker__is_active=True,
+                        ).select_related("speaker"),
+                    ),
+                ),
+            ),
+        )
+        .order_by("starts_at", "display_order")
+    )
+
+    if len(sessions) != len(set(session_ids)):
+        return HttpResponse("One or more sessions are unavailable.", status=400)
+
+    response = HttpResponse(
+        generate_programme_pdf(event, sessions),
+        content_type="application/pdf",
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="{event.slug}-timetable.pdf"'
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @require_http_methods(["GET", "POST"])

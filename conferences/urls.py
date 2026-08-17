@@ -12,6 +12,11 @@ urlpatterns = [
         name="public_programme",
     ),
     path(
+        "conferences/<slug:event_slug>/programme/download/",
+        views.programme_download,
+        name="programme_download",
+    ),
+    path(
         "conferences/<slug:event_slug>/papers/submit/",
         views.paper_submit,
         name="paper_submit",

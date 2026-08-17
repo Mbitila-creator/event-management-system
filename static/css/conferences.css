@@ -77,20 +77,32 @@
 .conference-programme-hero h2 { margin: 0 0 7px; font-size: clamp(17px, 2.5vw, 23px); font-weight: 700; }
 .conference-programme-hero p { margin: 0; color: #e6eff8; }
 .conference-programme-nav { display: flex; gap: 9px; overflow-x: auto; margin-bottom: 22px; padding-bottom: 5px; }
-.conference-programme-nav a { flex: 0 0 auto; padding: 9px 13px; border: 1px solid #b9cad9; border-radius: 999px; background: #fff; color: #17365d; font-size: 13px; font-weight: 800; text-decoration: none; }
+.conference-programme-nav button { flex: 0 0 auto; padding: 9px 13px; border: 1px solid #b9cad9; border-radius: 999px; background: #fff; color: #17365d; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.conference-programme-nav button:hover { border-color: #087f73; background: #edf8f6; }
+.conference-programme-nav button:focus-visible { outline: 3px solid rgba(8,127,115,.25); outline-offset: 2px; }
+.conference-programme-nav button[aria-pressed="true"] { border-color: #087f73; background: #087f73; color: #fff; }
+.conference-programme-controls { display: flex; flex-wrap: wrap; gap: 10px; margin: -8px 0 22px; }
+.conference-programme-controls button { border: 0; font: inherit; cursor: pointer; }
+.conference-programme-controls button:disabled { border: 1px solid #cbd5df; background: #e7edf2; color: #7b8a98; cursor: not-allowed; opacity: .8; }
 .conference-programme-sessions { display: grid; gap: 24px; }
+.conference-programme-session > .conference-programme-print-header { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 14px; border-bottom: 2px solid #17365d; background: #fff; }
+.conference-programme-session > .conference-programme-print-header img { width: 46px; max-height: 46px; object-fit: contain; }
+.conference-programme-session > .conference-programme-print-header span { display: block; color: #087f73; font-size: 9px; font-weight: 900; letter-spacing: .06em; }
+.conference-programme-session > .conference-programme-print-header strong { display: block; color: #17365d; font-size: 12px; }
+.conference-programme-session > .conference-programme-print-header h1 { margin: 1px 0; color: #17365d; font-size: 14px; line-height: 1.15; }
+.conference-programme-session > .conference-programme-print-header p { margin: 0; color: #526579; font-size: 10px; font-weight: 400; text-align: left; }
 .conference-programme-session { overflow: hidden; border: 1px solid #c9d8e5; border-radius: 16px; background: #fff; box-shadow: 0 8px 22px rgba(23,54,93,.06); scroll-margin-top: 20px; }
-.conference-programme-session > header { display: flex; justify-content: space-between; gap: 20px; align-items: end; padding: 20px 22px; background: #eaf2f8; }
+.conference-programme-session > header { display: flex; justify-content: space-between; gap: 20px; align-items: end; padding: 12px 18px; background: #eaf2f8; }
 .conference-programme-session > header span { color: #087f73; font-size: 12px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 .conference-programme-session > header h2 { margin: 4px 0 0; color: #17365d; }
 .conference-programme-session > header p { margin: 0; color: #526579; font-weight: 700; text-align: right; }
-.conference-programme-items { padding: 4px 22px; }
-.conference-programme-item { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 18px; padding: 20px 0; border-bottom: 1px solid #dde6ee; }
+.conference-programme-items { padding: 2px 18px; }
+.conference-programme-item { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-bottom: 1px solid #dde6ee; }
 .conference-programme-item:last-child { border-bottom: 0; }
-.conference-programme-time { color: #17365d; font-size: 20px; font-weight: 900; white-space: nowrap; }
+.conference-programme-time { color: #17365d; font-size: 17px; font-weight: 900; white-space: nowrap; }
 .conference-programme-type { color: #087f73; font-size: 11px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
-.conference-programme-copy h3 { margin: 4px 0 7px; color: #17365d; font-size: 20px; }
-.conference-programme-copy > p { margin: 0 0 8px; color: #526579; line-height: 1.55; }
+.conference-programme-copy h3 { margin: 3px 0 5px; color: #17365d; font-size: 17px; }
+.conference-programme-copy > p { margin: 0 0 5px; color: #526579; font-size: 14px; line-height: 1.4; }
 .conference-programme-venue::before { content: "Location: "; font-weight: 800; }
 .conference-contributors { display: grid; gap: 8px; margin-top: 13px; }
 .conference-contributor { display: flex; gap: 10px; align-items: center; }
@@ -108,11 +120,31 @@
     .conference-programme-time { font-size: 17px; }
 }
 @media print {
-    .no-print, .site-header, .public-footer { display: none !important; }
+    @page { size: A4 portrait; margin: 10mm; }
+    .no-print, .public-header, .public-footer { display: none !important; }
+    body { background: #fff; font-size: 10.5pt; }
     .conference-page { max-width: none; padding: 0; }
-    .conference-programme-hero { background: #fff; color: #17365d; border: 1px solid #9db2c8; }
-    .conference-programme-hero p { color: #526579; }
-    .conference-programme-session { break-inside: avoid; box-shadow: none; }
+    .conference-programme-hero { display: none; }
+    .conference-programme-sessions { display: block; }
+    .conference-programme-session { margin: 0; border-radius: 0; box-shadow: none; break-inside: avoid; break-after: page; }
+    .conference-programme-session.is-print-last { break-after: auto; }
+    .conference-programme-session > .conference-programme-print-header { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; align-items: center; padding: 7px 14px; border-bottom: 2px solid #17365d; background: #fff; break-after: avoid; }
+    .conference-programme-session > .conference-programme-print-header img { width: 58px; max-height: 58px; object-fit: contain; }
+    .conference-programme-session > .conference-programme-print-header span { display: block; color: #087f73; font-size: 9pt; font-weight: 900; letter-spacing: .06em; }
+    .conference-programme-session > .conference-programme-print-header strong { display: block; color: #17365d; font-size: 12pt; }
+    .conference-programme-session > .conference-programme-print-header h1 { margin: 1px 0; color: #17365d; font-size: 15pt; line-height: 1.15; }
+    .conference-programme-session > .conference-programme-print-header p { margin: 0; color: #526579; font-size: 9.5pt; font-weight: 400; text-align: left; }
+    .conference-programme-session > header { break-after: avoid; }
+    .conference-programme-session > header { padding: 10px 14px; }
+    .conference-programme-session > header h2 { margin-top: 2px; font-size: 16pt; }
+    .conference-programme-items { padding: 2px 14px; }
+    .conference-programme-item { grid-template-columns: 112px minmax(0, 1fr); gap: 12px; padding: 9px 0; }
+    .conference-programme-item { break-inside: avoid; }
+    .conference-programme-time { font-size: 14pt; }
+    .conference-programme-copy h3 { margin: 2px 0 3px; font-size: 14pt; }
+    .conference-programme-copy > p { margin-bottom: 3px; font-size: 10.5pt; line-height: 1.3; }
+    .conference-contributors { gap: 3px; margin-top: 5px; }
+    .conference-contributor > img { width: 30px; height: 30px; }
 }
 
 .conference-paper-page { max-width: 960px; }

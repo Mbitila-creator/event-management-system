@@ -4,7 +4,7 @@
 {% block title %}{{ event.code }} — {% translate "Conference programme" %}{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/conferences.css' %}?v=20260817a">
+    <link rel="stylesheet" href="{% static 'css/conferences.css' %}?v=20260817g">
 {% endblock %}
 
 {% block content %}
@@ -24,24 +24,41 @@
                 {% if event.venue %} · {{ event.venue.name }}{% endif %}
             </p>
         </div>
-        <div class="conference-actions no-print"><a class="conference-secondary" href="{% url 'conferences:paper_submit' event.slug %}">{% translate "Submit abstract or paper" %}</a><a class="conference-secondary" href="{% url 'conferences:feedback_submit' event.slug %}">{% translate "Evaluate conference" %}</a><button class="conference-secondary" type="button" onclick="window.print()">{% translate "Print programme" %}</button></div>
+        <div class="conference-actions no-print"><a class="conference-secondary" href="{% url 'conferences:paper_submit' event.slug %}">{% translate "Submit abstract or paper" %}</a><a class="conference-secondary" href="{% url 'conferences:feedback_submit' event.slug %}">{% translate "Evaluate conference" %}</a></div>
     </header>
 
     <nav class="conference-programme-nav no-print" aria-label="{% translate 'Programme dates' %}">
         {% for session in sessions %}
-            <a href="#session-{{ session.pk }}">{{ session.starts_at|date:"d M" }} · {{ session.title }}</a>
+            <button type="button" id="session-button-{{ session.pk }}" aria-pressed="false" aria-controls="session-{{ session.pk }}" data-programme-session="session-{{ session.pk }}">{{ session.starts_at|date:"d M" }} · {{ session.title }}</button>
         {% endfor %}
     </nav>
 
+    <div class="conference-programme-controls no-print">
+        <button class="conference-secondary" type="button" data-print-timetable disabled>{% translate "Print Timetable" %}</button>
+        <button class="conference-primary" type="button" data-download-timetable data-download-url="{% url 'conferences:programme_download' event.slug %}" disabled>{% translate "Download Timetable" %}</button>
+    </div>
+
     <div class="conference-programme-sessions">
         {% for session in sessions %}
-            <section class="conference-programme-session" id="session-{{ session.pk }}">
+            <section class="conference-programme-session" id="session-{{ session.pk }}" role="region" aria-labelledby="session-button-{{ session.pk }}" hidden>
+                <header class="conference-programme-print-header">
+                    {% if event.logo %}
+                        <img src="{{ event.logo.url }}" alt="{{ event.organizer_name_en }}">
+                    {% else %}
+                        <img src="{% static 'images/ministry-of-education-logo.png' %}" alt="Ministry of Education, Science and Technology logo">
+                    {% endif %}
+                    <div>
+                        <span>{{ event.code }}</span>
+                        <strong>{% translate "Conference programme" %}</strong>
+                        <h1>{{ event.title_en }}</h1>
+                        <p>{{ event.starts_at|date:"d M Y" }} – {{ event.ends_at|date:"d M Y" }}{% if event.venue %} · {{ event.venue.name }}{% endif %}</p>
+                    </div>
+                </header>
                 <header>
                     <div>
                         <span>{{ session.starts_at|date:"l, d F Y" }}</span>
                         <h2>{{ session.title }}</h2>
                     </div>
-                    <p>{{ session.starts_at|date:"H:i" }}–{{ session.ends_at|date:"H:i" }}{% if session.venue_name %} · {{ session.venue_name }}{% endif %}</p>
                 </header>
 
                 <div class="conference-programme-items">
@@ -89,4 +106,8 @@
         {% endfor %}
     </div>
 </main>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/conference-programme.js' %}?v=20260817a" defer></script>
 {% endblock %}

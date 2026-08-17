@@ -171,7 +171,30 @@ class ConferenceRegistrationTests(TestCase):
         self.assertContains(response, "Strategic dialogue")
         self.assertContains(response, "Dr. Amina Mushi")
         self.assertContains(response, "Moderator")
-        self.assertContains(response, "Print programme")
+        self.assertContains(response, "Print Timetable")
+        self.assertContains(response, "Download Timetable")
+        self.assertContains(response, "data-print-timetable")
+        self.assertContains(response, "data-download-timetable")
+        self.assertContains(response, 'data-programme-session="session-')
+        self.assertContains(response, 'aria-pressed="false"')
+        self.assertContains(response, 'role="region"')
+        self.assertContains(
+            response,
+            'class="conference-programme-print-header"',
+            count=ConferenceSession.objects.filter(
+                event=self.event_form.event,
+                is_active=True,
+            ).count(),
+        )
+        self.assertNotContains(response, "09:00–15:00 · Usagara")
+        self.assertContains(
+            response,
+            " hidden>",
+            count=ConferenceSession.objects.filter(
+                event=self.event_form.event,
+                is_active=True,
+            ).count(),
+        )
         self.assertContains(
             response,
             '<time class="conference-programme-time">09:30–12:00</time>',
@@ -197,6 +220,35 @@ class ConferenceRegistrationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Internal planning item")
+
+    def test_selected_programme_sessions_can_be_downloaded_as_pdf(self):
+        sessions = list(
+            ConferenceSession.objects.filter(
+                event=self.event_form.event,
+                is_active=True,
+            ).order_by("starts_at")[:2]
+        )
+
+        response = self.client.get(
+            reverse(
+                "conferences:programme_download",
+                kwargs={"event_slug": self.event_form.event.slug},
+            ),
+            {"session": [str(session.pk) for session in sessions]},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn("attachment;", response["Content-Disposition"])
+        self.assertTrue(response.content.startswith(b"%PDF"))
+
+        no_selection_response = self.client.get(
+            reverse(
+                "conferences:programme_download",
+                kwargs={"event_slug": self.event_form.event.slug},
+            )
+        )
+        self.assertEqual(no_selection_response.status_code, 400)
 
     def test_registration_accepts_more_than_one_session(self):
         submission = self.submit_registration()
