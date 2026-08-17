@@ -1249,7 +1249,6 @@ def registration_decision(request, form_id, submission_id, decision):
         else NotificationLog.NotificationType.REGISTRATION_REJECTED
     )
     send_submission_notification(submission, notification_type, request=request)
-    messages.success(request, _("Registration status updated successfully."))
     return redirect("conferences:conference_detail", form_id=event_form.pk)
 
 
