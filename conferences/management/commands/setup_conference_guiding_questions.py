@@ -24,10 +24,10 @@ class Command(BaseCommand):
                 "Run setup_conference_registration before configuring guiding questions."
             )
 
-        sections = configure_guiding_questions(event_form)
-        question_count = sum(section.questions.filter(is_active=True).count() for section in sections)
+        topics = configure_guiding_questions(event_form)
+        question_count = sum(topic.questions.filter(is_active=True).count() for topic in topics)
         self.stdout.write(
             self.style.SUCCESS(
-                f"Configured {len(sections)} guiding subtopics and {question_count} questions."
+                f"Configured {len(topics)} guiding subtopics and {question_count} questions."
             )
         )

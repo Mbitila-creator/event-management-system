@@ -1000,6 +1000,20 @@ def participant_portal(request, participant_token):
     certificate_record = getattr(submission, "certificate_record", None)
     latest_payment = submission.payments.order_by("-created_at").first()
     evaluation_form = None
+    selected_conference_sessions = list(
+        event.conference_sessions.filter(
+            registration_option_value__in=submission.answers.filter(
+                selected_options__is_active=True
+            ).values_list("selected_options__value", flat=True),
+            is_active=True,
+        ).order_by("starts_at", "display_order", "id")
+    )
+    programme_path = reverse(
+        "conferences:public_programme", kwargs={"event_slug": event.slug}
+    )
+    session_query = "&".join(
+        f"session={session.pk}" for session in selected_conference_sessions
+    )
     if event.evaluation_enabled:
         evaluation_form = EventForm.objects.filter(
             event=event,
@@ -1023,6 +1037,8 @@ def participant_portal(request, participant_token):
             "certificate_record": certificate_record,
             "booth": getattr(submission, "booth_assignment", None),
             "evaluation_form": evaluation_form,
+            "selected_conference_sessions": selected_conference_sessions,
+            "selected_programme_url": f"{programme_path}?{session_query}",
         },
     )
 

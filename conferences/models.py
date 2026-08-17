@@ -65,6 +65,46 @@ class ConferenceSession(BaseModel):
         return f"{self.event.code} — {self.title}"
 
 
+class ConferenceGuidingTopic(BaseModel):
+    session = models.ForeignKey(ConferenceSession, related_name="guiding_topics", on_delete=models.CASCADE, verbose_name=_("conference session"))
+    title = models.CharField(_("guiding subtopic"), max_length=500)
+    description = models.TextField(_("description"), blank=True)
+    display_order = models.PositiveIntegerField(_("display order"), default=0)
+
+    class Meta:
+        ordering = ("session", "display_order", "id")
+        constraints = [models.UniqueConstraint(fields=("session", "title"), name="unique_guiding_topic_per_session")]
+
+    def __str__(self):
+        return f"{self.session.title} — {self.title}"
+
+
+class ConferenceGuidingQuestion(BaseModel):
+    topic = models.ForeignKey(ConferenceGuidingTopic, related_name="questions", on_delete=models.CASCADE, verbose_name=_("guiding subtopic"))
+    text = models.TextField(_("question"))
+    display_order = models.PositiveIntegerField(_("display order"), default=0)
+
+    class Meta:
+        ordering = ("topic", "display_order", "id")
+        constraints = [models.UniqueConstraint(fields=("topic", "text"), name="unique_guiding_question_per_topic")]
+
+    def __str__(self):
+        return self.text
+
+
+class ConferenceGuidingResponse(BaseModel):
+    submission = models.ForeignKey(FormSubmission, related_name="conference_guiding_responses", on_delete=models.CASCADE, verbose_name=_("participant registration"))
+    question = models.ForeignKey(ConferenceGuidingQuestion, related_name="responses", on_delete=models.CASCADE, verbose_name=_("guiding question"))
+    response = models.TextField(_("response"), blank=True)
+
+    class Meta:
+        ordering = ("submission", "question")
+        constraints = [models.UniqueConstraint(fields=("submission", "question"), name="unique_participant_guiding_response")]
+
+    def __str__(self):
+        return f"{self.submission.reference_number} — {self.question}"
+
+
 class ConferenceSessionAttendance(BaseModel):
     class Method(models.TextChoices):
         QR = "QR", _("QR code")

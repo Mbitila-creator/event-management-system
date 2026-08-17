@@ -249,8 +249,6 @@ class Command(BaseCommand):
                 },
             )
         session_question.options.exclude(value__in=active_values).update(is_active=False)
-        configure_guiding_questions(event_form)
-
         session_records = [
             (
                 "BASIC-EDUCATION",
@@ -367,6 +365,8 @@ class Command(BaseCommand):
                         "is_active": True,
                     },
                 )
+
+        configure_guiding_questions(event_form)
 
         for submission in event_form.submissions.filter(
             is_active=True,
