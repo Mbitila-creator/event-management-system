@@ -1,4 +1,6 @@
-from forms_builder.models import FormQuestion, FormSection
+from forms_builder.models import FormSection
+
+from .models import ConferenceGuidingQuestion, ConferenceGuidingTopic, ConferenceSession
 
 
 GUIDING_SECTIONS = (
@@ -102,27 +104,22 @@ GUIDING_SECTIONS = (
 
 
 def configure_guiding_questions(event_form):
-    session_question = FormQuestion.objects.get(
-        section__event_form=event_form,
-        label_en="Which session(s) will you attend?",
-    )
-
-    created_sections = []
-    for display_order, specification in enumerate(GUIDING_SECTIONS, start=3):
+    created_topics = []
+    topic_order_by_session = {}
+    for specification in GUIDING_SECTIONS:
+        session = ConferenceSession.objects.get(event=event_form.event, registration_option_value=specification["condition_value"])
+        topic_order = topic_order_by_session.get(session.pk, 0) + 1
+        topic_order_by_session[session.pk] = topic_order
         description = (
             f"{specification['session']}. Respond to any or all of the guiding "
-            "questions below. Your responses will be submitted with your registration."
+            "questions below before or during the session."
         )
-        section, _ = FormSection.objects.update_or_create(
-            event_form=event_form,
-            title_en=specification["title"],
+        topic, _ = ConferenceGuidingTopic.objects.update_or_create(
+            session=session,
+            title=specification["title"],
             defaults={
-                "title_sw": specification["title"],
-                "description_en": description,
-                "description_sw": description,
-                "display_order": display_order,
-                "condition_question": session_question,
-                "condition_value": specification["condition_value"],
+                "description": description,
+                "display_order": topic_order,
                 "is_active": True,
             },
         )
@@ -130,23 +127,17 @@ def configure_guiding_questions(event_form):
         active_labels = []
         for question_order, label in enumerate(specification["questions"], start=1):
             active_labels.append(label)
-            FormQuestion.objects.update_or_create(
-                section=section,
-                label_en=label,
+            ConferenceGuidingQuestion.objects.update_or_create(
+                topic=topic,
+                text=label,
                 defaults={
-                    "label_sw": label,
-                    "question_type": FormQuestion.QuestionType.LONG_TEXT,
-                    "help_text_en": "Share your views, insights, contribution or comments.",
-                    "help_text_sw": "Share your views, insights, contribution or comments.",
-                    "placeholder_en": "Enter your response (optional)",
-                    "placeholder_sw": "Enter your response (optional)",
-                    "is_required": False,
                     "display_order": question_order,
-                    "maximum_length": 5000,
                     "is_active": True,
                 },
             )
-        section.questions.exclude(label_en__in=active_labels).update(is_active=False)
-        created_sections.append(section)
+        topic.questions.exclude(text__in=active_labels).update(is_active=False)
+        created_topics.append(topic)
 
-    return created_sections
+    FormSection.objects.filter(event_form=event_form, title_en__in=[item["title"] for item in GUIDING_SECTIONS]).update(is_active=False)
+
+    return created_topics

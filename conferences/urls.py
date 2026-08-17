@@ -7,6 +7,11 @@ app_name = "conferences"
 
 urlpatterns = [
     path(
+        "participants/<uuid:participant_token>/discussion-questions/",
+        views.participant_guiding_questions,
+        name="participant_guiding_questions",
+    ),
+    path(
         "conferences/<slug:event_slug>/programme/",
         views.public_programme,
         name="public_programme",

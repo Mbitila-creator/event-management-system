@@ -1032,7 +1032,7 @@ class SubmissionNotificationTests(TestCase):
         self.assertEqual(log.delivery_status, NotificationLog.DeliveryStatus.SENT)
         self.assertIsNotNone(log.sent_at)
 
-    def test_registration_email_includes_selected_timetable_and_guiding_topics(self):
+    def test_approval_email_links_selected_timetable_and_discussion_questions(self):
         session = ConferenceSession.objects.create(
             event=self.submission.event_form.event,
             code="BASIC-ED",
@@ -1064,24 +1064,9 @@ class SubmissionNotificationTests(TestCase):
             question=session_question,
         )
         answer.selected_options.add(option)
-        guiding_section = FormSection.objects.create(
-            event_form=self.submission.event_form,
-            title_sw="Mada Ndogo ya Elimu ya Msingi",
-            title_en="Basic Education Guiding Subtopic",
-            condition_question=session_question,
-            condition_value=session.registration_option_value,
-            display_order=3,
-        )
-        FormQuestion.objects.create(
-            section=guiding_section,
-            label_sw="Tunawezaje kuimarisha ujifunzaji?",
-            label_en="How can foundational learning be strengthened?",
-            question_type=FormQuestion.QuestionType.LONG_TEXT,
-        )
-
         send_submission_notification(
             self.submission,
-            NotificationLog.NotificationType.REGISTRATION_RECEIVED,
+            NotificationLog.NotificationType.REGISTRATION_APPROVED,
         )
 
         body = mail.outbox[0].body
@@ -1089,8 +1074,16 @@ class SubmissionNotificationTests(TestCase):
         self.assertIn("Basic Education Session", body)
         self.assertIn(f"session={session.pk}", body)
         self.assertIn("Download selected timetable", body)
-        self.assertIn("Basic Education Guiding Subtopic", body)
-        self.assertIn("How can foundational learning be strengthened?", body)
+        self.assertIn("discussion-questions", body)
+
+    def test_received_email_does_not_expose_approved_participant_materials(self):
+        send_submission_notification(
+            self.submission,
+            NotificationLog.NotificationType.REGISTRATION_RECEIVED,
+        )
+
+        self.assertNotIn("Your selected timetable", mail.outbox[0].body)
+        self.assertNotIn("discussion-questions", mail.outbox[0].body)
 
     def test_public_registration_automatically_sends_receipt(self):
         section = FormSection.objects.create(

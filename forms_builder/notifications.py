@@ -53,6 +53,11 @@ def _conference_registration_content(submission, language, request=None):
         f"{download_path}?{session_query}",
         request=request,
     )
+    questions_path = reverse(
+        "conferences:participant_guiding_questions",
+        kwargs={"participant_token": submission.participant_token},
+    )
+    questions_url = _absolute_url(questions_path, request=request)
 
     with translation.override(language):
         lines = ["", "", _("Your selected timetable:")]
@@ -71,22 +76,10 @@ def _conference_registration_content(submission, language, request=None):
                 _("View selected timetable: %(url)s") % {"url": programme_url},
                 _("Download selected timetable: %(url)s") % {"url": download_url},
                 "",
-                _("Guiding subtopics for your selected sessions:"),
+                _("Access the session guiding questions and save your responses: %(url)s")
+                % {"url": questions_url},
             ]
         )
-
-        sections = submission.event_form.sections.filter(
-            condition_value__in=selected_values,
-            is_active=True,
-        ).prefetch_related("questions").order_by("display_order", "id")
-        for section in sections:
-            title = section.title_en if language == "en" else section.title_sw
-            lines.extend(["", title])
-            for question in section.questions.filter(is_active=True).order_by(
-                "display_order", "id"
-            ):
-                label = question.label_en if language == "en" else question.label_sw
-                lines.append(f"- {label}")
 
     return "\n".join(lines)
 
@@ -112,11 +105,6 @@ def _notification_content(submission, notification_type, request=None):
                 "reference": submission.reference_number,
                 "status_url": status_url,
             }
-            body += _conference_registration_content(
-                submission,
-                language,
-                request=request,
-            )
         elif notification_type == NotificationLog.NotificationType.REGISTRATION_APPROVED:
             subject = _("Registration approved — %(event)s") % {"event": event_name}
             body = _(

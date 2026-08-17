@@ -50,6 +50,7 @@ from .models import (
     ConferenceReviewer,
     ConferenceSession,
     ConferenceSessionAttendance,
+    ConferenceGuidingResponse,
 )
 
 
@@ -232,6 +233,70 @@ def public_programme(request, event_slug):
     )
 
 
+@require_http_methods(["GET", "POST"])
+def participant_guiding_questions(request, participant_token):
+    submission = get_object_or_404(
+        FormSubmission.objects.select_related("event_form__event"),
+        participant_token=participant_token,
+        review_status=FormSubmission.ReviewStatus.APPROVED,
+        is_active=True,
+        is_complete=True,
+    )
+    selected_values = set(
+        submission.answers.filter(selected_options__is_active=True).values_list(
+            "selected_options__value", flat=True
+        )
+    )
+    sessions = list(
+        ConferenceSession.objects.filter(
+            event=submission.event_form.event,
+            registration_option_value__in=selected_values,
+            is_active=True,
+        ).prefetch_related("guiding_topics__questions")
+    )
+    questions = [
+        question
+        for session in sessions
+        for topic in session.guiding_topics.all()
+        if topic.is_active
+        for question in topic.questions.all()
+        if question.is_active
+    ]
+    existing = {
+        response.question_id: response
+        for response in submission.conference_guiding_responses.filter(
+            question_id__in=[question.pk for question in questions]
+        )
+    }
+
+    if request.method == "POST":
+        with transaction.atomic():
+            for question in questions:
+                value = request.POST.get(f"question_{question.pk}", "").strip()
+                if value:
+                    ConferenceGuidingResponse.objects.update_or_create(
+                        submission=submission,
+                        question=question,
+                        defaults={"response": value, "is_active": True},
+                    )
+                elif question.pk in existing:
+                    existing[question.pk].delete()
+        messages.success(request, _("Your discussion responses have been saved."))
+        return redirect("conferences:participant_guiding_questions", participant_token=participant_token)
+
+    response_values = {question_id: item.response for question_id, item in existing.items()}
+    session_query = "&".join(f"session={session.pk}" for session in sessions)
+    programme_url = reverse(
+        "conferences:public_programme",
+        kwargs={"event_slug": submission.event_form.event.slug},
+    )
+    return render(request, "conferences/participant_guiding_questions.html", {
+        "submission": submission,
+        "event": submission.event_form.event,
+        "sessions": sessions,
+        "response_values": response_values,
+        "programme_url": f"{programme_url}?{session_query}",
+    })
 @require_GET
 def programme_download(request, event_slug):
     event = _public_conference(event_slug)

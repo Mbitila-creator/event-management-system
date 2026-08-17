@@ -9,6 +9,9 @@ from .models import (
     ConferenceProgrammeItem,
     ConferenceSession,
     ConferenceSessionAttendance,
+    ConferenceGuidingTopic,
+    ConferenceGuidingQuestion,
+    ConferenceGuidingResponse,
     ConferenceSpeaker,
     ConferenceReviewer,
     ConferencePresentation,
@@ -26,6 +29,34 @@ class AuditAdminMixin:
             obj.created_by = request.user
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
+
+
+class ConferenceGuidingQuestionInline(admin.TabularInline):
+    model = ConferenceGuidingQuestion
+    extra = 0
+
+
+@admin.register(ConferenceGuidingTopic)
+class ConferenceGuidingTopicAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = ("title", "session", "display_order", "is_active")
+    list_filter = ("session__event", "session", "is_active")
+    search_fields = ("title", "session__title", "session__event__code")
+    inlines = (ConferenceGuidingQuestionInline,)
+
+
+@admin.register(ConferenceGuidingQuestion)
+class ConferenceGuidingQuestionAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = ("text", "topic", "display_order", "is_active")
+    list_filter = ("topic__session__event", "topic__session", "is_active")
+    search_fields = ("text", "topic__title")
+
+
+@admin.register(ConferenceGuidingResponse)
+class ConferenceGuidingResponseAdmin(AuditAdminMixin, admin.ModelAdmin):
+    list_display = ("submission", "question", "updated_at", "is_active")
+    list_filter = ("question__topic__session__event", "question__topic__session")
+    search_fields = ("submission__reference_number", "response", "question__text")
+    readonly_fields = AuditAdminMixin.readonly_fields + ("submission", "question")
 
 
 @admin.register(ConferenceSession)

@@ -19,6 +19,9 @@ from .models import (
     ConferenceProgrammeItem,
     ConferenceSession,
     ConferenceSessionAttendance,
+    ConferenceGuidingTopic,
+    ConferenceGuidingQuestion,
+    ConferenceGuidingResponse,
     ConferenceSpeaker,
     ConferenceReviewer,
     ConferencePresentation,
@@ -123,17 +126,52 @@ class ConferenceRegistrationTests(TestCase):
             ConferenceCallForPapers.objects.filter(event=self.event_form.event).count(),
             1,
         )
-        guiding_sections = self.event_form.sections.filter(
-            condition_question=question,
+        self.assertFalse(
+            self.event_form.sections.filter(condition_question=question, is_active=True).exists()
         )
-        self.assertEqual(guiding_sections.count(), 9)
+        guiding_topics = ConferenceGuidingTopic.objects.filter(
+            session__event=self.event_form.event,
+            is_active=True,
+        )
+        self.assertEqual(guiding_topics.count(), 9)
         self.assertEqual(
-            FormQuestion.objects.filter(
-                section__in=guiding_sections,
+            ConferenceGuidingQuestion.objects.filter(
+                topic__in=guiding_topics,
                 is_active=True,
             ).count(),
             33,
         )
+
+    def test_approved_participant_can_save_selected_session_responses(self):
+        submission = self.submit_registration(selected_values=["BASIC_EDUCATION_17_AUG"])
+        submission.review_status = FormSubmission.ReviewStatus.APPROVED
+        submission.save(update_fields=["review_status"])
+        question = ConferenceGuidingQuestion.objects.filter(
+            topic__session__registration_option_value="BASIC_EDUCATION_17_AUG"
+        ).first()
+        url = reverse(
+            "conferences:participant_guiding_questions",
+            kwargs={"participant_token": submission.participant_token},
+        )
+
+        response = self.client.post(url, {f"question_{question.pk}": "My contribution"})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            ConferenceGuidingResponse.objects.filter(
+                submission=submission,
+                question=question,
+                response="My contribution",
+            ).exists()
+        )
+
+    def test_pending_participant_cannot_access_guiding_questions(self):
+        submission = self.submit_registration(selected_values=["BASIC_EDUCATION_17_AUG"])
+        response = self.client.get(reverse(
+            "conferences:participant_guiding_questions",
+            kwargs={"participant_token": submission.participant_token},
+        ))
+        self.assertEqual(response.status_code, 404)
 
     def test_public_form_shows_invitation_and_session_examples(self):
         response = self.client.get(
@@ -159,47 +197,9 @@ class ConferenceRegistrationTests(TestCase):
         self.assertContains(response, "Higher Education and TVET Session")
         self.assertContains(response, "Fursa Women and Youth Innovation Clinic")
         self.assertContains(response, "View conference programme")
-        self.assertContains(
+        self.assertNotContains(
             response,
             "Shifting to Competency: Strengthening Foundational Learning",
-        )
-        self.assertContains(
-            response,
-            'data-condition-value="BASIC_EDUCATION_17_AUG"',
-        )
-
-    def test_selected_session_guiding_response_is_saved(self):
-        question_label = (
-            "How can apprenticeship systems be strengthened to meet future "
-            "labour market demands?"
-        )
-        submission = self.submit_registration(
-            selected_values=["HIGHER_EDUCATION_TVET_19_AUG"],
-            extra_answers={
-                question_label: "Expand structured partnerships with employers.",
-            },
-        )
-
-        answer = submission.answers.get(question__label_en=question_label)
-        self.assertEqual(
-            answer.text_value,
-            "Expand structured partnerships with employers.",
-        )
-
-    def test_unselected_session_guiding_response_is_not_saved(self):
-        question_label = (
-            "How can apprenticeship systems be strengthened to meet future "
-            "labour market demands?"
-        )
-        submission = self.submit_registration(
-            selected_values=["STI_21_AUG"],
-            extra_answers={
-                question_label: "This hidden response must be ignored.",
-            },
-        )
-
-        self.assertFalse(
-            submission.answers.filter(question__label_en=question_label).exists()
         )
 
     def test_public_programme_shows_published_agenda_and_contributors(self):
