@@ -195,6 +195,49 @@ class ConferenceRegistrationTests(TestCase):
         ))
         self.assertEqual(response.status_code, 200)
 
+    def test_same_name_email_and_phone_cannot_register_twice(self):
+        self.submit_registration(
+            selected_values=["BASIC_EDUCATION_17_AUG"],
+            name="Dr. Amina Mushi",
+        )
+        questions = {
+            question.label_en: question
+            for question in FormQuestion.objects.filter(
+                section__event_form=self.event_form,
+                is_active=True,
+            )
+        }
+        response = self.client.post(
+            reverse(
+                "forms_builder:public_event_form",
+                kwargs={
+                    "event_slug": self.event_form.event.slug,
+                    "form_slug": self.event_form.slug,
+                },
+            ),
+            {
+                f"question_{questions['Full Name'].pk}": "  dr.  AMINA mushi ",
+                f"question_{questions['Institution Name'].pk}": "Another institution",
+                f"question_{questions['Position / Title'].pk}": "Researcher",
+                f"question_{questions['Email Address'].pk}": "AMINA@example.test",
+                f"question_{questions['Phone Number'].pk}": "+255 700-000-001",
+                f"question_{questions['Which session(s) will you attend?'].pk}": [
+                    "STI_21_AUG"
+                ],
+            },
+        )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertTrue(response.json()["duplicate"])
+        self.assertEqual(
+            FormSubmission.objects.filter(event_form=self.event_form).count(),
+            1,
+        )
+        self.assertIn(
+            str(questions["Email Address"].pk),
+            response.json()["errors"],
+        )
+
     def test_public_form_shows_invitation_and_session_examples(self):
         response = self.client.get(
             reverse(

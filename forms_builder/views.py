@@ -1,4 +1,5 @@
 import csv
+import re
 import secrets
 from decimal import Decimal, InvalidOperation
 
@@ -803,6 +804,7 @@ def public_event_form(request, event_slug, form_slug):
 
         email_answers = []
         phone_answers = []
+        name_answers = []
 
         for answer_data in validated_answers:
             question = answer_data["question"]
@@ -823,6 +825,12 @@ def public_event_form(request, event_slug, form_slug):
                     (question, answer_data.get("text_value", ""))
                 )
 
+            labels = f"{question.label_en} {question.label_sw}".casefold()
+            if "full name" in labels or "jina kamili" in labels:
+                name_answers.append(
+                    (question, answer_data.get("text_value", ""))
+                )
+
         def representative_answer(answers):
             for question, value in answers:
                 labels = f"{question.label_en} {question.label_sw}".lower()
@@ -832,8 +840,66 @@ def public_event_form(request, event_slug, form_slug):
 
         submitter_email = representative_answer(email_answers)
         submitter_phone = representative_answer(phone_answers)
+        submitter_name = representative_answer(name_answers)
+
+        def normalize_text(value):
+            return " ".join(value.casefold().split())
+
+        def normalize_phone(value):
+            digits = re.sub(r"\D", "", value)
+            if digits.startswith("0"):
+                return f"255{digits[1:]}"
+            return digits
+
+        normalized_identity = (
+            normalize_text(submitter_name),
+            normalize_text(submitter_email),
+            normalize_phone(submitter_phone),
+        )
+
+        def find_duplicate_submission():
+            if not all(normalized_identity):
+                return None
+            for candidate in FormSubmission.objects.filter(
+                event_form=event_form,
+                is_active=True,
+                is_complete=True,
+            ).only(
+                "id", "badge_name", "submitter_email", "submitter_phone"
+            ):
+                candidate_identity = (
+                    normalize_text(candidate.badge_name),
+                    normalize_text(candidate.submitter_email),
+                    normalize_phone(candidate.submitter_phone),
+                )
+                if candidate_identity == normalized_identity:
+                    return candidate
+            return None
 
         with transaction.atomic():
+            EventForm.objects.select_for_update().get(pk=event_form.pk)
+            duplicate_submission = find_duplicate_submission()
+            if duplicate_submission is not None:
+                duplicate_message = _(
+                    "A registration with this name, email address and phone "
+                    "number already exists. Use the registration-status page "
+                    "to access your existing registration."
+                )
+                identity_errors = {
+                    str(question.pk): duplicate_message
+                    for question, _value in (
+                        name_answers + email_answers + phone_answers
+                    )
+                }
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "duplicate": True,
+                        "message": duplicate_message,
+                        "errors": identity_errors,
+                    },
+                    status=409,
+                )
             submission = FormSubmission.objects.create(
                 event_form=event_form,
                 submitted_by=(
