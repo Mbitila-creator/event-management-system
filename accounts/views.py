@@ -350,7 +350,6 @@ def review_registration(request, submission_id, decision):
         else NotificationLog.NotificationType.REGISTRATION_REJECTED
     )
     send_submission_notification(submission, notification_type, request=request)
-    messages.success(request, _("Registration status updated successfully."))
     return redirect("accounts:role_home")
 
 
