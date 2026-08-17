@@ -22,6 +22,7 @@ from django.utils import timezone
 
 from events.models import Event, EventCategory
 from checkin.models import ParticipantCheckIn
+from conferences.models import ConferenceSession
 
 from .admin import FormSubmissionAdmin
 from .models import (
@@ -1030,6 +1031,66 @@ class SubmissionNotificationTests(TestCase):
         self.assertIn("https://events.example.org", mail.outbox[0].body)
         self.assertEqual(log.delivery_status, NotificationLog.DeliveryStatus.SENT)
         self.assertIsNotNone(log.sent_at)
+
+    def test_registration_email_includes_selected_timetable_and_guiding_topics(self):
+        session = ConferenceSession.objects.create(
+            event=self.submission.event_form.event,
+            code="BASIC-ED",
+            title="Basic Education Session",
+            starts_at=self.submission.event_form.event.starts_at,
+            ends_at=self.submission.event_form.event.starts_at + timedelta(hours=6),
+            venue_name="Usagara Secondary School Sports Grounds",
+            registration_option_value="BASIC_EDUCATION_17_AUG",
+        )
+        attendance_section = FormSection.objects.create(
+            event_form=self.submission.event_form,
+            title_sw="Vipindi",
+            title_en="Sessions",
+        )
+        session_question = FormQuestion.objects.create(
+            section=attendance_section,
+            label_sw="Chagua vipindi",
+            label_en="Select sessions",
+            question_type=FormQuestion.QuestionType.MULTIPLE_CHOICE,
+        )
+        option = QuestionOption.objects.create(
+            question=session_question,
+            value=session.registration_option_value,
+            label_sw=session.title,
+            label_en=session.title,
+        )
+        answer = FormAnswer.objects.create(
+            submission=self.submission,
+            question=session_question,
+        )
+        answer.selected_options.add(option)
+        guiding_section = FormSection.objects.create(
+            event_form=self.submission.event_form,
+            title_sw="Mada Ndogo ya Elimu ya Msingi",
+            title_en="Basic Education Guiding Subtopic",
+            condition_question=session_question,
+            condition_value=session.registration_option_value,
+            display_order=3,
+        )
+        FormQuestion.objects.create(
+            section=guiding_section,
+            label_sw="Tunawezaje kuimarisha ujifunzaji?",
+            label_en="How can foundational learning be strengthened?",
+            question_type=FormQuestion.QuestionType.LONG_TEXT,
+        )
+
+        send_submission_notification(
+            self.submission,
+            NotificationLog.NotificationType.REGISTRATION_RECEIVED,
+        )
+
+        body = mail.outbox[0].body
+        self.assertIn("Your selected timetable", body)
+        self.assertIn("Basic Education Session", body)
+        self.assertIn(f"session={session.pk}", body)
+        self.assertIn("Download selected timetable", body)
+        self.assertIn("Basic Education Guiding Subtopic", body)
+        self.assertIn("How can foundational learning be strengthened?", body)
 
     def test_public_registration_automatically_sends_receipt(self):
         section = FormSection.objects.create(
