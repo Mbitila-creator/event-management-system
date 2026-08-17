@@ -4,7 +4,7 @@
 {% block title %}{{ event.code }} — {% translate "Conference programme" %}{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/conferences.css' %}?v=20260815c">
+    <link rel="stylesheet" href="{% static 'css/conferences.css' %}?v=20260817a">
 {% endblock %}
 
 {% block content %}
@@ -47,7 +47,7 @@
                 <div class="conference-programme-items">
                     {% for item in session.programme_items.all %}
                         <article class="conference-programme-item">
-                            <time>{{ item.starts_at|date:"H:i" }}<span>–{{ item.ends_at|date:"H:i" }}</span></time>
+                            <time class="conference-programme-time">{{ item.starts_at|date:"H:i" }}–{{ item.ends_at|date:"H:i" }}</time>
                             <div class="conference-programme-copy">
                                 <span class="conference-programme-type">{{ item.get_item_type_display }}</span>
                                 <h3>{{ item.title }}</h3>
@@ -77,7 +77,7 @@
                         <p class="conference-programme-empty">{% translate "Detailed programme items will be published soon." %}</p>
                     {% endfor %}
                     {% for presentation in session.public_presentations %}
-                        <article class="conference-programme-item conference-paper-presentation"><time>{{ presentation.starts_at|date:"H:i" }}<span>–{{ presentation.ends_at|date:"H:i" }}</span></time><div class="conference-programme-copy"><span class="conference-programme-type">{% translate "Accepted paper presentation" %}</span><h3>{{ presentation.paper.title }}</h3><p><strong>{{ presentation.presenter_name }}</strong> · {{ presentation.paper.institution }}</p>{% if presentation.venue_name %}<p class="conference-programme-venue">{{ presentation.venue_name }}</p>{% endif %}</div></article>
+                        <article class="conference-programme-item conference-paper-presentation"><time class="conference-programme-time">{{ presentation.starts_at|date:"H:i" }}–{{ presentation.ends_at|date:"H:i" }}</time><div class="conference-programme-copy"><span class="conference-programme-type">{% translate "Accepted paper presentation" %}</span><h3>{{ presentation.paper.title }}</h3><p><strong>{{ presentation.presenter_name }}</strong> · {{ presentation.paper.institution }}</p>{% if presentation.venue_name %}<p class="conference-programme-venue">{{ presentation.venue_name }}</p>{% endif %}</div></article>
                     {% endfor %}
                 </div>
             </section>
