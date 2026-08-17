@@ -172,6 +172,11 @@ class ConferenceRegistrationTests(TestCase):
         self.assertContains(response, "Dr. Amina Mushi")
         self.assertContains(response, "Moderator")
         self.assertContains(response, "Print programme")
+        self.assertContains(
+            response,
+            '<time class="conference-programme-time">09:30–12:00</time>',
+            html=True,
+        )
 
     def test_unpublished_programme_item_is_hidden_from_public(self):
         programme_item = ConferenceProgrammeItem.objects.get(
