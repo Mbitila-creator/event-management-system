@@ -1212,12 +1212,7 @@ def conference_detail(request, form_id):
     })
 
 
-def _participant_export_rows(event_form):
-    submissions = list(
-        event_form.submissions.filter(is_active=True, is_complete=True)
-        .prefetch_related("answers__selected_options")
-        .order_by("badge_name", "created_at", "id")
-    )
+def _participant_export_rows(event_form, session_id="", status="", query=""):
     sessions = list(
         ConferenceSession.objects.filter(event=event_form.event, is_active=True)
         .order_by("starts_at", "display_order", "id")
@@ -1225,6 +1220,33 @@ def _participant_export_rows(event_form):
     sessions_by_value = {
         session.registration_option_value: session for session in sessions
     }
+    submissions = event_form.submissions.filter(is_active=True, is_complete=True)
+    selected_session = None
+    if str(session_id).isdigit():
+        selected_session = next(
+            (session for session in sessions if session.pk == int(session_id)),
+            None,
+        )
+        if selected_session:
+            submissions = submissions.filter(
+                answers__selected_options__value=selected_session.registration_option_value
+            )
+    valid_statuses = {value for value, _label in FormSubmission.ReviewStatus.choices}
+    if status in valid_statuses:
+        submissions = submissions.filter(review_status=status)
+    query = query.strip()
+    if query:
+        submissions = submissions.filter(
+            Q(reference_number__icontains=query)
+            | Q(badge_name__icontains=query)
+            | Q(badge_organization__icontains=query)
+            | Q(submitter_email__icontains=query)
+            | Q(submitter_phone__icontains=query)
+        )
+    submissions = list(
+        submissions.distinct().prefetch_related("answers__selected_options")
+        .order_by("badge_name", "created_at", "id")
+    )
     rows = []
     for number, submission in enumerate(submissions, start=1):
         selected_sessions = [
@@ -1239,7 +1261,13 @@ def _participant_export_rows(event_form):
             "sessions": selected_sessions,
             "session_names": ", ".join(item.title for item in selected_sessions),
         })
-    return rows
+    return {
+        "rows": rows,
+        "sessions": sessions,
+        "selected_session": selected_session,
+        "selected_status": status if status in valid_statuses else "",
+        "query": query,
+    }
 
 
 @login_required
@@ -1247,10 +1275,17 @@ def _participant_export_rows(event_form):
 def participant_list_print(request, form_id):
     _require_access(request.user)
     event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
+    export_data = _participant_export_rows(
+        event_form,
+        session_id=request.GET.get("session", ""),
+        status=request.GET.get("status", ""),
+        query=request.GET.get("q", ""),
+    )
     return render(request, "conferences/participant_list_print.html", {
         "event_form": event_form,
         "event": event_form.event,
-        "rows": _participant_export_rows(event_form),
+        **export_data,
+        "status_choices": FormSubmission.ReviewStatus.choices,
         "generated_at": timezone.localtime(),
     })
 
@@ -1261,7 +1296,13 @@ def participant_list_excel(request, form_id):
     _require_access(request.user)
     event_form = get_object_or_404(_conference_registration_forms(), pk=form_id)
     event = event_form.event
-    rows = _participant_export_rows(event_form)
+    export_data = _participant_export_rows(
+        event_form,
+        session_id=request.GET.get("session", ""),
+        status=request.GET.get("status", ""),
+        query=request.GET.get("q", ""),
+    )
+    rows = export_data["rows"]
 
     workbook = Workbook()
     sheet = workbook.active
@@ -1287,6 +1328,17 @@ def participant_list_excel(request, form_id):
     venue = event.venue.name if event.venue else ""
     sheet["A3"] = f"{date_range}{' · ' + venue if venue else ''} · Total: {len(rows)}"
     sheet["A3"].alignment = Alignment(horizontal="center")
+    filter_labels = []
+    if export_data["selected_session"]:
+        filter_labels.append(f"Session: {export_data['selected_session'].title}")
+    if export_data["selected_status"]:
+        filter_labels.append(f"Status: {export_data['selected_status'].title()}")
+    if export_data["query"]:
+        filter_labels.append(f"Search: {export_data['query']}")
+    sheet.merge_cells("A4:H4")
+    sheet["A4"] = " · ".join(filter_labels) if filter_labels else "All participants"
+    sheet["A4"].font = Font(italic=True, color="526579")
+    sheet["A4"].alignment = Alignment(horizontal="center")
 
     headers = (
         "No.", "Reference", "Full name", "Institution", "Email address",
