@@ -53,7 +53,12 @@ class ConferenceRegistrationTests(TestCase):
             role=User.Role.PARTICIPANT,
         )
 
-    def submit_registration(self, selected_values=None, name="Dr. Amina Mushi"):
+    def submit_registration(
+        self,
+        selected_values=None,
+        name="Dr. Amina Mushi",
+        extra_answers=None,
+    ):
         selected_values = selected_values or [
             "BASIC_EDUCATION_17_AUG",
             "STI_21_AUG",
@@ -65,6 +70,17 @@ class ConferenceRegistrationTests(TestCase):
                 is_active=True,
             )
         }
+        payload = {
+            f"question_{questions['Full Name'].pk}": name,
+            f"question_{questions['Institution Name'].pk}": "University of Dodoma",
+            f"question_{questions['Position / Title'].pk}": "Lecturer",
+            f"question_{questions['Email Address'].pk}": "amina@example.test",
+            f"question_{questions['Phone Number'].pk}": "+255700000001",
+            f"question_{questions['Which session(s) will you attend?'].pk}": selected_values,
+        }
+        for label, value in (extra_answers or {}).items():
+            payload[f"question_{questions[label].pk}"] = value
+
         response = self.client.post(
             reverse(
                 "forms_builder:public_event_form",
@@ -73,14 +89,7 @@ class ConferenceRegistrationTests(TestCase):
                     "form_slug": self.event_form.slug,
                 },
             ),
-            {
-                f"question_{questions['Full Name'].pk}": name,
-                f"question_{questions['Institution Name'].pk}": "University of Dodoma",
-                f"question_{questions['Position / Title'].pk}": "Lecturer",
-                f"question_{questions['Email Address'].pk}": "amina@example.test",
-                f"question_{questions['Phone Number'].pk}": "+255700000001",
-                f"question_{questions['Which session(s) will you attend?'].pk}": selected_values,
-            },
+            payload,
         )
         self.assertEqual(response.status_code, 200)
         return FormSubmission.objects.get(
@@ -114,6 +123,17 @@ class ConferenceRegistrationTests(TestCase):
             ConferenceCallForPapers.objects.filter(event=self.event_form.event).count(),
             1,
         )
+        guiding_sections = self.event_form.sections.filter(
+            condition_question=question,
+        )
+        self.assertEqual(guiding_sections.count(), 9)
+        self.assertEqual(
+            FormQuestion.objects.filter(
+                section__in=guiding_sections,
+                is_active=True,
+            ).count(),
+            33,
+        )
 
     def test_public_form_shows_invitation_and_session_examples(self):
         response = self.client.get(
@@ -139,6 +159,48 @@ class ConferenceRegistrationTests(TestCase):
         self.assertContains(response, "Higher Education and TVET Session")
         self.assertContains(response, "Fursa Women and Youth Innovation Clinic")
         self.assertContains(response, "View conference programme")
+        self.assertContains(
+            response,
+            "Shifting to Competency: Strengthening Foundational Learning",
+        )
+        self.assertContains(
+            response,
+            'data-condition-value="BASIC_EDUCATION_17_AUG"',
+        )
+
+    def test_selected_session_guiding_response_is_saved(self):
+        question_label = (
+            "How can apprenticeship systems be strengthened to meet future "
+            "labour market demands?"
+        )
+        submission = self.submit_registration(
+            selected_values=["HIGHER_EDUCATION_TVET_19_AUG"],
+            extra_answers={
+                question_label: "Expand structured partnerships with employers.",
+            },
+        )
+
+        answer = submission.answers.get(question__label_en=question_label)
+        self.assertEqual(
+            answer.text_value,
+            "Expand structured partnerships with employers.",
+        )
+
+    def test_unselected_session_guiding_response_is_not_saved(self):
+        question_label = (
+            "How can apprenticeship systems be strengthened to meet future "
+            "labour market demands?"
+        )
+        submission = self.submit_registration(
+            selected_values=["STI_21_AUG"],
+            extra_answers={
+                question_label: "This hidden response must be ignored.",
+            },
+        )
+
+        self.assertFalse(
+            submission.answers.filter(question__label_en=question_label).exists()
+        )
 
     def test_public_programme_shows_published_agenda_and_contributors(self):
         programme_item = ConferenceProgrammeItem.objects.get(
